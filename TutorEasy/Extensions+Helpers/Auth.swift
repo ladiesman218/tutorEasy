@@ -84,6 +84,7 @@ class Auth {
 			}
 			
 			guard let data = data, let registeredUser = try? JSONDecoder().decode(User.self, from: data) else {
+				
 				fatalError("Register failed")
 			}
 			
