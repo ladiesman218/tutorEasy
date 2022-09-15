@@ -9,5 +9,6 @@ import Foundation
 
 struct ResponseError: Error, Decodable {
 	let error: Bool
-	let reason: String
+	var reason: String
 }
+

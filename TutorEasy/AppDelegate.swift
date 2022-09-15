@@ -20,21 +20,34 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 		let navVC = UINavigationController()
 		navVC.navigationBar.isHidden = true
 		
-		let accountsVC = AccountsVC(nibName: nil, bundle: nil)
-		let startVC = LanguagesVC(nibName: nil, bundle: nil)
+		lazy var accountsVC = AccountsVC(nibName: nil, bundle: nil)
+		lazy var startVC = LanguagesVC(nibName: nil, bundle: nil)
 		
-		let destinationVC: UIViewController
-		Auth.token = nil
-		if Keychain.load(key: Auth.keychainKey) != nil {
-			destinationVC = startVC
-		} else {
-			destinationVC = accountsVC
+//		Auth.tokenValue = nil
+		var destinationVC: UIViewController = (Auth.tokenValue == nil) ? accountsVC : startVC
+		
+		if Keychain.load(key: Auth.keychainTokenKey) != nil {
+			Auth.getPublicUserFromToken { result in
+				
+				switch result {
+				case .success:
+					destinationVC = startVC
+				case .failure:
+					destinationVC = accountsVC
+				}
+				if navVC.topViewController != destinationVC {
+					DispatchQueue.main.async {
+						navVC.pushViewController(destinationVC, animated: true)
+					}
+				}
+			}
+			
 		}
-		
-		navVC.pushViewController(destinationVC, animated: false)
 		
 		window!.rootViewController = navVC
 		window!.makeKeyAndVisible()
+		navVC.pushViewController(destinationVC, animated: false)
+		
 		return true
 	}
 	

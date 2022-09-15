@@ -7,14 +7,13 @@
 
 import UIKit
 
-
 class RegisterViewController: UIViewController {
 	
-	private let registrationEmailTextField = UITextField()
-	private let usernameTextField = UITextField()
-	private let passwordTextField = UITextField()
-	private let password2TextField = UITextField()
-	private let registerButton = UIButton()
+	private var registrationEmailTextField: UITextField!
+	private var usernameTextField: UITextField!
+	private var passwordTextField: UITextField!
+	private var password2TextField: UITextField!
+	private var registerButton: UIButton!
 	
 	static private let borderColor: CGColor = UIColor.gray.cgColor
 	static private let textColor = UIColor.cyan
@@ -22,17 +21,22 @@ class RegisterViewController: UIViewController {
 	override func viewDidLoad() {
 				
 		super.viewDidLoad()
+		registrationEmailTextField = UITextField()
+		usernameTextField = UITextField()
+		passwordTextField = UITextField()
+		password2TextField = UITextField()
+		registerButton = UIButton()
 		
 		registrationEmailTextField.autocapitalizationType = .none
 		registrationEmailTextField.keyboardType = .emailAddress
-		registrationEmailTextField.placeholder = "请输入邮箱地址"
+		registrationEmailTextField.placeholder = "请输入邮箱地址(必填)"
 		registrationEmailTextField.textColor = Self.textColor
 		registrationEmailTextField.layer.borderWidth = 1
 		registrationEmailTextField.layer.borderColor = Self.borderColor
 		view.addSubview(registrationEmailTextField)
 		
 		usernameTextField.autocapitalizationType = .none
-		usernameTextField.placeholder = "请输入用户名"
+		usernameTextField.placeholder = "用户名(必填)，4-35个字符之间"
 		usernameTextField.textColor = Self.textColor
 		usernameTextField.layer.borderColor = Self.borderColor
 		usernameTextField.layer.borderWidth = 1
@@ -40,7 +44,7 @@ class RegisterViewController: UIViewController {
 		
 		passwordTextField.textColor = Self.textColor
 		passwordTextField.isSecureTextEntry = true	// Show * instead of actual characters
-		passwordTextField.placeholder = "请输入密码"
+		passwordTextField.placeholder = "密码，6-40个字符之间"
 		passwordTextField.layer.borderWidth = 1
 		passwordTextField.layer.borderColor = Self.borderColor
 		view.addSubview(passwordTextField)
@@ -95,8 +99,8 @@ class RegisterViewController: UIViewController {
 			return
 		}
 		
-		guard let username = usernameTextField.text, !username.isEmpty && userNameLength.contains(username.count) else {
-			MessagePresenter.showMessage(title: "无效用户名", message: "用户名长度为4-35个字符", on: self, actions: [])
+		guard let username = usernameTextField.text, !username.isEmpty else {
+			MessagePresenter.showMessage(title: "无效用户名", message: "", on: self, actions: [])
 			return
 		}
 		
@@ -112,36 +116,23 @@ class RegisterViewController: UIViewController {
 		
 		let registerInput = User.RegisterInput(email: email, username: username, firstName: nil, lastName: nil, password1: password1, password2: password2)
 		
-		var request = URLRequest(url: Auth.userEndPoint.appendingPathComponent("register"))
-		request.httpMethod = "POST"
-		guard let jsonData = try? JSONEncoder().encode(registerInput) else {
-			fatalError("Encode register input failed")
-		}
-		
-		request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-		request.httpBody = jsonData
-		
-		let task = URLSession.shared.dataTask(with: request) { data, response, error in
-			if let error = error {
-				#warning("Change This")
-				print(error.localizedDescription)
-				return
-			}
-			
-			guard let response = response as? HTTPURLResponse, response.statusCode == 201 else {
-				#warning("Change This")
-				fatalError("Unknown registration response")
-			}
-			
-			// Here means registration is successful, redirect to the previous UI user was in, or account UI
-			Auth.login(username: username, password: password1) { _ in
-				DispatchQueue.main.async {
-					let languageVC = LanguagesVC()
-					let navVC = UINavigationController(rootViewController: languageVC)
-					self.present(navVC, animated: true)
+		Auth.register(registerInput: registerInput) { result in
+			switch result {
+			case .success:
+				Auth.login(username: registerInput.username, password: registerInput.password1) { _ in
+					DispatchQueue.main.async {
+						let languageVC = LanguagesVC()
+						let navVC = UINavigationController(rootViewController: languageVC)
+						self.present(navVC, animated: true)
+					}
 				}
+			case .failure(let reason):
+				let reason = reason
+				MessagePresenter.showMessage(title: "注册失败", message: "\(reason)", on: self, actions: [])
 			}
 		}
-		task.resume()
+		
+			
+			
 	}
 }

@@ -18,4 +18,4 @@ let phoneNumberRegex = "^([+](\\d{1,3}|\\d{1,2}[- ]{1,}\\d{3,4})[- ]{1,}){0,1}\\
 let userNameLength = Range(4...35)
 let nameLength = Range(3...40)
 let passwordLength = Range(6...40)
-
+let adminEmail = "chn_dunce@126.com"

@@ -9,9 +9,9 @@ import UIKit
 
 class LoginViewController: UIViewController {
 	
-	private let loginNameTextField = UITextField()
-	private let passwordTextField = UITextField()
-	private let loginButton = UIButton()
+	private var loginNameTextField: UITextField!
+	private var passwordTextField: UITextField!
+	private var loginButton: UIButton!
 	
 	static private let borderColor: CGColor = UIColor.gray.cgColor
 	static private let textColor = UIColor.cyan
@@ -33,23 +33,27 @@ class LoginViewController: UIViewController {
 				DispatchQueue.main.async {
 					let languageVC = LanguagesVC()
 					let navVC = UINavigationController(rootViewController: languageVC)
+					navVC.navigationBar.isHidden = true
 					self.present(navVC, animated: true)
 				}
-			case .failure:
-				MessagePresenter.showMessage(title: "登录失败", message: "请检查用户名或密码", on: self, actions: [])
+			case .failure(let reason):
+				MessagePresenter.showMessage(title: "登录失败", message: "\(reason)", on: self, actions: [])
 			}
 		}		
 	}
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
+		loginNameTextField = UITextField()
+		passwordTextField = UITextField()
+		loginButton = UIButton()
 		
 		loginNameTextField.becomeFirstResponder()
 		
 		loginNameTextField.autocapitalizationType = .none
 		loginNameTextField.keyboardType = .emailAddress
 		loginNameTextField.textColor = Self.textColor
-		loginNameTextField.placeholder = "请输入用户名/邮箱"
+		loginNameTextField.placeholder = "请输入用户名"
 		loginNameTextField.layer.borderWidth = 1
 		loginNameTextField.layer.borderColor = Self.borderColor
 		

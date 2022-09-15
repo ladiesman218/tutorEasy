@@ -9,7 +9,7 @@ import UIKit
 
 class AccountsVC: UIViewController {
 	
-	private let containerView = UIView()
+	private var containerView: UIView!
 	private let loginVC = LoginViewController()
 	private lazy var registerVC = RegisterViewController()
 	
@@ -21,12 +21,14 @@ class AccountsVC: UIViewController {
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
+		containerView = UIView()
+		
 		view.backgroundColor = UIColor(patternImage: UIImage(named: "LoginBg")!)
 
 		setupButtons()
 		setupContainerView()
 		
-		//-MARK: Default to login view
+		// Default to login view
 		// Using the following code to add loginVC avoids instantiating a registerVC, which in some case won't be necessary hence waste resources.
 		registerViewButton.backgroundColor = Self.deactiveBgColor
 		loginViewButton.backgroundColor = Self.activeBgColor
