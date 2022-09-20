@@ -16,8 +16,8 @@ class AccountsVC: UIViewController {
 	static private let activeBgColor = UIColor.blue
 	static private let deactiveBgColor = UIColor.gray
 	
-	var loginViewButton: UIButton!
-	var registerViewButton: UIButton!
+	private var loginViewButton: UIButton!
+	private var registerViewButton: UIButton!
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()

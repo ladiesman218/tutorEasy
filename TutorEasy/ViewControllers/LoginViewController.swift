@@ -13,8 +13,8 @@ class LoginViewController: UIViewController {
 	private var passwordTextField: UITextField!
 	private var loginButton: UIButton!
 	
-	static private let borderColor: CGColor = UIColor.gray.cgColor
-	static private let textColor = UIColor.cyan
+	static private let borderColor: CGColor = UIColor.systemGray.cgColor //UIColor.gray.cgColor
+	static private let textColor = UIColor.systemBlue//UIColor.cyan
 	
 	@objc private func login() {
 		guard let username = loginNameTextField.text, !username.isEmpty else {

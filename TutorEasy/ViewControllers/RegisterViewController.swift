@@ -15,8 +15,8 @@ class RegisterViewController: UIViewController {
 	private var password2TextField: UITextField!
 	private var registerButton: UIButton!
 	
-	static private let borderColor: CGColor = UIColor.gray.cgColor
-	static private let textColor = UIColor.cyan
+	static private let borderColor = UIColor.systemGray.cgColor//UIColor.gray.cgColor
+	static private let textColor = UIColor.systemBlue//UIColor.cyan
 	
 	override func viewDidLoad() {
 				

@@ -8,6 +8,7 @@
 import Foundation
 
 let serverURL = URL(string: "http://localhost:8080")!
+let baseURL = serverURL.appendingPathComponent("api")
 //let serverURL = URL(string: "http://20.243.114.35:8080")!
 
 

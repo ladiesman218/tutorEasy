@@ -13,6 +13,8 @@
 		B402DD8D286440DB000EEF40 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B402DD8B286440DB000EEF40 /* Main.storyboard */; };
 		B402DD8F286440DD000EEF40 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B402DD8E286440DD000EEF40 /* Assets.xcassets */; };
 		B402DD92286440DD000EEF40 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B402DD90286440DD000EEF40 /* LaunchScreen.storyboard */; };
+		B425EA3D28D30AA5003A865D /* Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = B425EA3C28D30AA5003A865D /* Language.swift */; };
+		B425EA4028D314DE003A865D /* LanguageCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B425EA3F28D314DE003A865D /* LanguageCell.swift */; };
 		B4489B0728A3AE3A00A6DED9 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4489B0628A3AE3A00A6DED9 /* User.swift */; };
 		B4489B1028ABD2F300A6DED9 /* ResponseError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4489B0F28ABD2F300A6DED9 /* ResponseError.swift */; };
 		B462E06028BF444A0020D610 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B462E05F28BF444A0020D610 /* Keychain.swift */; };
@@ -34,6 +36,8 @@
 		B402DD8E286440DD000EEF40 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B402DD91286440DD000EEF40 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		B402DD93286440DE000EEF40 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B425EA3C28D30AA5003A865D /* Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Language.swift; sourceTree = "<group>"; };
+		B425EA3F28D314DE003A865D /* LanguageCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageCell.swift; sourceTree = "<group>"; };
 		B4489B0628A3AE3A00A6DED9 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		B4489B0F28ABD2F300A6DED9 /* ResponseError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseError.swift; sourceTree = "<group>"; };
 		B462E05F28BF444A0020D610 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
@@ -60,6 +64,7 @@
 		B402DD79286440DB000EEF40 = {
 			isa = PBXGroup;
 			children = (
+				B425EA3E28D31439003A865D /* Views */,
 				B402DD84286440DB000EEF40 /* TutorEasy */,
 				B402DD83286440DB000EEF40 /* Products */,
 			);
@@ -90,11 +95,20 @@
 			path = TutorEasy;
 			sourceTree = "<group>";
 		};
+		B425EA3E28D31439003A865D /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B425EA3F28D314DE003A865D /* LanguageCell.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
 		B4489B0528A3AE2B00A6DED9 /* Model */ = {
 			isa = PBXGroup;
 			children = (
 				B4489B0628A3AE3A00A6DED9 /* User.swift */,
 				B462E06328BF5CF00020D610 /* Token.swift */,
+				B425EA3C28D30AA5003A865D /* Language.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -203,6 +217,8 @@
 				B4F8315628B7CB0C0044021C /* AccountsVC.swift in Sources */,
 				B402DD8A286440DB000EEF40 /* LoginViewController.swift in Sources */,
 				B402DD86286440DB000EEF40 /* AppDelegate.swift in Sources */,
+				B425EA4028D314DE003A865D /* LanguageCell.swift in Sources */,
+				B425EA3D28D30AA5003A865D /* Language.swift in Sources */,
 				B462E06228BF448F0020D610 /* Auth.swift in Sources */,
 				B4EE8A12286710F10050363B /* LanguagesVC.swift in Sources */,
 				B462E06428BF5CF00020D610 /* Token.swift in Sources */,

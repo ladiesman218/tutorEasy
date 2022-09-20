@@ -7,7 +7,6 @@ enum AuthResult {
 }
 
 class Auth {
-	static let baseURL = serverURL.appendingPathComponent("api")
 	static let userEndPoint = baseURL.appendingPathComponent("user")
 	
 	static let keychainTokenKey = "Tutor-Easy-Token"
