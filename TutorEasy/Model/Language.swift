@@ -1,7 +1,7 @@
 import Foundation
 
 
-struct Language: Decodable {
+struct Language: Codable {
 	let id: UUID?
 	let name: String
 	let description: String
@@ -12,4 +12,13 @@ struct Language: Decodable {
 	let path: URL
 	let imageURL: URL?
 	
+	struct PublicInfo: Codable {
+		let id: UUID
+		let name: String
+		let description: String
+		let price: Double?
+		let courses: [Course]?
+		let path: URL?
+		let imageURL: URL?
+	}
 }

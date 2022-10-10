@@ -13,9 +13,6 @@ class LoginViewController: UIViewController {
 	private var passwordTextField: UITextField!
 	private var loginButton: UIButton!
 	
-	static private let borderColor: CGColor = UIColor.systemGray.cgColor //UIColor.gray.cgColor
-	static private let textColor = UIColor.systemBlue//UIColor.cyan
-	
 	@objc private func login() {
 		guard let username = loginNameTextField.text, !username.isEmpty else {
 			MessagePresenter.showMessage(title: "无效用户名", message: "请输入用户名", on: self, actions: [])
@@ -27,15 +24,11 @@ class LoginViewController: UIViewController {
 			return
 		}
 		
-		Auth.login(username: username, password: password) { result in
+		AuthAPI.login(username: username, password: password) { result in
 			switch result {
 			case .success:
-				DispatchQueue.main.async {
-					let languageVC = LanguagesVC()
-					let navVC = UINavigationController(rootViewController: languageVC)
-					navVC.navigationBar.isHidden = true
-					self.present(navVC, animated: true)
-				}
+					let languageVC = LanguageListVC()
+					self.present(languageVC, animated: true)
 			case .failure(let reason):
 				MessagePresenter.showMessage(title: "登录失败", message: "\(reason)", on: self, actions: [])
 			}
@@ -52,10 +45,10 @@ class LoginViewController: UIViewController {
 		
 		loginNameTextField.autocapitalizationType = .none
 		loginNameTextField.keyboardType = .emailAddress
-		loginNameTextField.textColor = Self.textColor
+		loginNameTextField.textColor = textColor
 		loginNameTextField.placeholder = "请输入用户名"
 		loginNameTextField.layer.borderWidth = 1
-		loginNameTextField.layer.borderColor = Self.borderColor
+		loginNameTextField.layer.borderColor = borderColor
 		
 		//Show only bottom border for textfield
 		//		let bottomLine = CALayer()
@@ -65,11 +58,11 @@ class LoginViewController: UIViewController {
 		//		loginNameTextField.layer.addSublayer(bottomLine)
 		view.addSubview(loginNameTextField)
 		
-		passwordTextField.textColor = Self.textColor
+		passwordTextField.textColor = textColor
 		passwordTextField.isSecureTextEntry = true	// Show * instead of actual characters
 		passwordTextField.layer.borderWidth = 1
 		passwordTextField.placeholder = "请输入密码"
-		passwordTextField.layer.borderColor = Self.borderColor
+		passwordTextField.layer.borderColor = borderColor
 		view.addSubview(passwordTextField)
 		
 		loginButton.setTitle("登录", for: .normal)

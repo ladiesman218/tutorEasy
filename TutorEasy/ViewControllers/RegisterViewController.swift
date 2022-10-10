@@ -15,9 +15,6 @@ class RegisterViewController: UIViewController {
 	private var password2TextField: UITextField!
 	private var registerButton: UIButton!
 	
-	static private let borderColor = UIColor.systemGray.cgColor//UIColor.gray.cgColor
-	static private let textColor = UIColor.systemBlue//UIColor.cyan
-	
 	override func viewDidLoad() {
 				
 		super.viewDidLoad()
@@ -30,30 +27,30 @@ class RegisterViewController: UIViewController {
 		registrationEmailTextField.autocapitalizationType = .none
 		registrationEmailTextField.keyboardType = .emailAddress
 		registrationEmailTextField.placeholder = "请输入邮箱地址(必填)"
-		registrationEmailTextField.textColor = Self.textColor
+		registrationEmailTextField.textColor = textColor
 		registrationEmailTextField.layer.borderWidth = 1
-		registrationEmailTextField.layer.borderColor = Self.borderColor
+		registrationEmailTextField.layer.borderColor = borderColor
 		view.addSubview(registrationEmailTextField)
 		
 		usernameTextField.autocapitalizationType = .none
 		usernameTextField.placeholder = "用户名(必填)，4-35个字符之间"
-		usernameTextField.textColor = Self.textColor
-		usernameTextField.layer.borderColor = Self.borderColor
+		usernameTextField.textColor = textColor
+		usernameTextField.layer.borderColor = borderColor
 		usernameTextField.layer.borderWidth = 1
 		view.addSubview(usernameTextField)
 		
-		passwordTextField.textColor = Self.textColor
+		passwordTextField.textColor = textColor
 		passwordTextField.isSecureTextEntry = true	// Show * instead of actual characters
 		passwordTextField.placeholder = "密码，6-40个字符之间"
 		passwordTextField.layer.borderWidth = 1
-		passwordTextField.layer.borderColor = Self.borderColor
+		passwordTextField.layer.borderColor = borderColor
 		view.addSubview(passwordTextField)
 		
-		password2TextField.textColor = Self.textColor
+		password2TextField.textColor = textColor
 		password2TextField.isSecureTextEntry = true	// Show * instead of actual characters
 		password2TextField.placeholder = "再次输入密码"
 		password2TextField.layer.borderWidth = 1
-		password2TextField.layer.borderColor = Self.borderColor
+		password2TextField.layer.borderColor = borderColor
 		view.addSubview(password2TextField)
 
 		registerButton.setTitle("注册", for: .normal)
@@ -116,23 +113,17 @@ class RegisterViewController: UIViewController {
 		
 		let registerInput = User.RegisterInput(email: email, username: username, firstName: nil, lastName: nil, password1: password1, password2: password2)
 		
-		Auth.register(registerInput: registerInput) { result in
+		AuthAPI.register(registerInput: registerInput) { result in
 			switch result {
 			case .success:
-				Auth.login(username: registerInput.username, password: registerInput.password1) { _ in
-					DispatchQueue.main.async {
-						let languageVC = LanguagesVC()
-						let navVC = UINavigationController(rootViewController: languageVC)
-						self.present(navVC, animated: true)
-					}
+				AuthAPI.login(username: registerInput.username, password: registerInput.password1) { _ in
+						let languageVC = LanguageListVC()
+						self.present(languageVC, animated: true)
 				}
 			case .failure(let reason):
 				let reason = reason
 				MessagePresenter.showMessage(title: "注册失败", message: "\(reason)", on: self, actions: [])
 			}
 		}
-		
-			
-			
 	}
 }
