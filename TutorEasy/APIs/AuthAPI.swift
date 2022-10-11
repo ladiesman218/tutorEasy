@@ -41,10 +41,10 @@ struct AuthAPI {
         }
         set {
             if let newToken = newValue {
-                print("token new value: \(newValue)")
+                print("token new value: \(newToken)")
                 Keychain.save(key: AuthAPI.keychainTokenKey, data: newToken)
             } else {
-                print("token set without a new value")
+                print("token value set to nil")
                 Keychain.delete(key: AuthAPI.keychainTokenKey)
             }
         }
@@ -136,17 +136,13 @@ struct AuthAPI {
             
             // Here we are dealing with the connection error, eg: server not running or timeout, etc
             if let error = error {
-                DispatchQueue.main.async {
-                    completion(.failure(reason: error.localizedDescription))
-                }
+                DispatchQueue.main.async { completion(.failure(reason: error.localizedDescription)) }
                 return
             }
             
             // Make sure dataTask has returned some sort of data, if the server ever reponds, this should always be the case.
             guard let data = data else {
-                DispatchQueue.main.async {
-                    completion(.failure(reason: "未知错误，请联系管理员\(adminEmail)"))
-                }
+                DispatchQueue.main.async { completion(.failure(reason: "未知错误，请联系管理员\(adminEmail)")) }
                 return
             }
             
@@ -154,9 +150,7 @@ struct AuthAPI {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
             if let responseError = try? decoder.decode(ResponseError.self, from: data) {
-                DispatchQueue.main.async {
-                    completion(.failure(reason: responseError.reason))
-                }
+                DispatchQueue.main.async { completion(.failure(reason: responseError.reason)) }
                 return
             }
             
@@ -168,23 +162,10 @@ struct AuthAPI {
                 Keychain.save(key: keychainPasswordKey, data: password)
                 
                 // This saves user's public info into UserDefaults, which will be used later in application process.
-                getPublicUserFromToken { result in
-                    switch result {
-                    case .success:
-                        DispatchQueue.main.async {
-                            completion(.success)
-                        }
-                    case .failure(let reason):
-                        DispatchQueue.main.async {
-                            completion(.failure(reason: reason))
-                        }
-                    }
-                }
+                
             } catch {
                 // Here we are dealing with decoding errors, which should never happen
-                DispatchQueue.main.async {
-                    completion(.failure(reason: "解码错误，请联系管理员\(adminEmail)"))
-                }
+                DispatchQueue.main.async { completion(.failure(reason: "解码错误，请联系管理员\(adminEmail)")) }
             }
         }
         dataTask.resume()
@@ -196,78 +177,80 @@ struct AuthAPI {
         
         let task = URLSession.shared.dataTask(with: req) { _, response, _ in
             guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
-                DispatchQueue.main.async {
-                    completion(.failure(reason: "退出登录错误"))
-                }
+                DispatchQueue.main.async { completion(.failure(reason: "退出登录错误")) }
                 return
             }
             
             tokenValue = nil
             UserDefaults.standard.removeObject(forKey: "user-public-info")
-            DispatchQueue.main.async {
-                completion(.success)
-            }
+            DispatchQueue.main.async { completion(.success) }
         }
         
         task.resume()
     }
     
-    // Funcions use semaphores inside
-    static func getPublicUserFromToken(completion: @escaping (AuthResult) -> Void) {
-        
+    static func getPublicUserFromToken(completion: @escaping (User.PublicInfo?, URLResponse?, ResponseError?) -> Void) {
         guard let tokenValue = tokenValue else {
-            completion(.failure(reason: "未找到令牌"))
+            completion(nil, nil, .init(error: true, reason: "未找到令牌"))
             return
         }
         
-        var req = URLRequest(url: userEndPoint.appendingPathComponent("token").appendingPathComponent("user-public"))
-        req.httpMethod = "GET"
-        //        req.timeoutInterval = 5
+        let url = userEndPoint.appendingPathComponent("token").appendingPathComponent("user-public")
         
-        req.addValue("Bearer \(tokenValue)", forHTTPHeaderField: "Authorization")
-        
-        let semaphore = DispatchSemaphore(value: 0)
-        let task = URLSession.shared.dataTask(with: req) { data, response, error in
+        URLSession.shared.userFromTokenTask(with: url, tokenValue: tokenValue) { userInfo, response, error in
             if let error = error {
-                completion(.failure(reason: error.localizedDescription))
-                semaphore.signal()
-                //                return
-            }
-            
-            guard let data = data else {
-                completion(.failure(reason: "服务器错误，请联系管理员\(adminEmail)"))
-                semaphore.signal()
+                completion(nil, response, error)
                 return
             }
             
-            // Check if server returned an error response
-            let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601
-            if let responseError = try? decoder.decode(ResponseError.self, from: data) {
-                self.tokenValue = nil
-                userInfo = nil
-                completion(.failure(reason: responseError.reason))
-                semaphore.signal()
-                //                return
-            }
+            self.userInfo = userInfo!
+            completion(userInfo!, response, nil)
             
-            do {
-                userInfo = try decoder.decode(User.PublicInfo.self, from: data)
-            } catch {
-                completion(.failure(reason: "解码错误，请联系管理员\(adminEmail)"))
-                semaphore.signal()
-                return
-            }
-            completion(.success)
-            semaphore.signal()
-            
-        }
-        print(1)
-        task.resume()
-        print(2)
-        semaphore.wait()
-        print(3)
-        return
+        }.resume()
     }
+    
+//    static func getPublicUserFromToken(completion: @escaping (AuthResult) -> Void) {
+//
+//        guard let tokenValue = tokenValue else {
+//            completion(.failure(reason: "未找到令牌"))
+//            return
+//        }
+//
+//        var req = URLRequest(url: userEndPoint.appendingPathComponent("token").appendingPathComponent("user-public"))
+//        req.httpMethod = "GET"
+//
+//        req.addValue("Bearer \(tokenValue)", forHTTPHeaderField: "Authorization")
+//
+//        URLSession.shared.dataTask(with: req) { data, response, error in
+//            if let error = error {
+//                DispatchQueue.main.async { completion(.failure(reason: error.localizedDescription)) }
+//                return
+//            }
+//
+//            guard let data = data else {
+//                DispatchQueue.main.async { completion(.failure(reason: "服务器错误，请联系管理员\(adminEmail)")) }
+//                return
+//            }
+//
+//            // Check if server returned an error response
+//            let decoder = JSONDecoder()
+//            decoder.dateDecodingStrategy = .iso8601
+//            if let responseError = try? decoder.decode(ResponseError.self, from: data) {
+//                self.tokenValue = nil
+//                userInfo = nil
+//                DispatchQueue.main.async { completion(.failure(reason: responseError.reason)) }
+//                return
+//            }
+//
+//            do {
+//                userInfo = try decoder.decode(User.PublicInfo.self, from: data)
+//            } catch {
+//                DispatchQueue.main.async { completion(.failure(reason: "解码错误，请联系管理员\(adminEmail)")) }
+//                return
+//            }
+//
+//            DispatchQueue.main.async { completion(.success) }
+//        }.resume()
+//    }
 }
 

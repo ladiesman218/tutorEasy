@@ -27,7 +27,7 @@ let adminEmail = "chn_dunce@126.com"
 
 let borderColor: CGColor = UIColor.systemGray.cgColor
 let textColor = UIColor.systemBlue
-var backgroundColor: UIColor = {
+let backgroundColor: UIColor = {
     if #available(iOS 13, *) {
         return .systemGray
     } else {
@@ -39,52 +39,21 @@ var backgroundColor: UIColor = {
 
 
 func setupDestinationVC(window: UIWindow) {
-    lazy var accountsVC = AccountsVC(nibName: nil, bundle: nil)
-    lazy var languageVC = LanguageListVC(nibName: nil, bundle: nil)
+    let languageVC = LanguageListVC(nibName: nil, bundle: nil)
+    languageVC.navigationItem.backButtonTitle = "返回"
     
-    //        AuthAPI.tokenValue = nil
+    let navVC = UINavigationController(rootViewController: languageVC)
+    window.rootViewController = navVC
+    window.makeKeyAndVisible()
     
-    //    var destinationVC: UIViewController = (AuthAPI.tokenValue == nil) ? accountsVC : languageVC
-    var destinationVC: UIViewController!
-    
-    if AuthAPI.tokenValue == nil {
-        print("token not found ")
-        destinationVC = accountsVC
-    } else {
-        AuthAPI.getPublicUserFromToken { result in
-            switch result {
-            case .success:
-                destinationVC = languageVC
-            case .failure(let reason):
-                    print("Token invalid: \(reason)")
-                    destinationVC = accountsVC
-            }
+    AuthAPI.getPublicUserFromToken { userInfo, response, error in
+        if let userInfo = userInfo {
+            print("userInfo: \(userInfo)")
+            
+        } else {
+            let accountsVC = AccountsVC(nibName: nil, bundle: nil)
+            print(error!.reason)
+            navVC.pushViewController(accountsVC, animated: true)
         }
     }
-    print("setting rootViewController for window: \(destinationVC.debugDescription)")
-    window.rootViewController = destinationVC
-    window.makeKeyAndVisible()
-
 }
-//    #warning("Switch devices can't set right destination vc accordingly")
-//    if Keychain.load(key: AuthAPI.keychainTokenKey) != nil {
-//        AuthAPI.getPublicUserFromToken { result in
-//            switch result {
-//            case .success:
-//                DispatchQueue.main.async {
-//                    destinationVC = languageVC
-//                }
-//            case .failure(let reason):
-//                DispatchQueue.main.async {
-//                    print("Token invalid: \(reason)")
-//                    destinationVC = accountsVC
-//                    print("dest vc set to accountsVC")
-//                }
-//            }
-//        }
-//    }
-//    print("setting rootViewController for window: \(destinationVC.debugDescription)")
-//    window.rootViewController = destinationVC
-//    window.makeKeyAndVisible()
-//}
-

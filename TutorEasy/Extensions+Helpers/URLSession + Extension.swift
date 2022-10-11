@@ -9,8 +9,12 @@ import Foundation
 
 
 extension URLSession {
-    fileprivate func codableTask<T: Codable>(with url: URL, completionHandler: @escaping (T?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
-        return self.dataTask(with: url) { data, response, error in
+     func codableTask<T: Codable>(with url: URL, tokenValue: String? = nil, completionHandler: @escaping (T?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
+        var req = URLRequest(url: url)
+        if let tokenValue = tokenValue {
+            req.addValue("Bearer \(tokenValue)", forHTTPHeaderField: "Authorization")
+        }
+        return self.dataTask(with: req) { data, response, error in
             guard let data = data, error == nil else {
                 DispatchQueue.main.async {
                     completionHandler(nil, response, ResponseError(error: true, reason: error!.localizedDescription))
@@ -32,11 +36,15 @@ extension URLSession {
         }
     }
     
-    func languageTask(with url: URL, completionHandler: @escaping (Language.PublicInfo?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
-        return self.codableTask(with: url, completionHandler: completionHandler)
+    func languageTask(with url: URL, tokenValue: String? = nil, completionHandler: @escaping (Language.PublicInfo?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
+        return self.codableTask(with: url, tokenValue: tokenValue, completionHandler: completionHandler)
     }
     
-    func languagesTask(with url: URL, completionHandler: @escaping ([Language.PublicInfo]?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
-        return self.codableTask(with: url, completionHandler: completionHandler)
+    func languagesTask(with url: URL, tokenValue: String? = nil, completionHandler: @escaping ([Language.PublicInfo]?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
+        return self.codableTask(with: url, tokenValue: tokenValue, completionHandler: completionHandler)
+    }
+    
+    func userFromTokenTask(with url: URL, tokenValue: String, completionHandler: @escaping (User.PublicInfo?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
+        return self.codableTask(with: url, tokenValue: tokenValue, completionHandler: completionHandler)
     }
 }

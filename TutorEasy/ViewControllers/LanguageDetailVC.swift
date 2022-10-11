@@ -10,9 +10,6 @@ import UIKit
 class LanguageDetailVC: UIViewController {
 	var language: Language.PublicInfo!
 
-    #warning("The right way to initialize views?")
-	var button: UIButton!
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
