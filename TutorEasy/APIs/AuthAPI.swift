@@ -104,19 +104,7 @@ struct AuthAPI {
                 return
             }
             
-            // Here means register is successful, automatically login the user.
-            login(username: registerInput.username, password: registerInput.password1) { loginResult in
-                switch loginResult {
-                case .success:
-                    DispatchQueue.main.async {
-                        completion(.success)
-                    }
-                case .failure(let reason):
-                    DispatchQueue.main.async {
-                        completion(.failure(reason: reason))
-                    }
-                }
-            }
+            DispatchQueue.main.async { completion(.success) }
         }
         
         task.resume()
@@ -132,8 +120,7 @@ struct AuthAPI {
         req.addValue("Basic \(loginString)", forHTTPHeaderField: "Authorization")
         req.httpMethod = "POST"
         
-        let dataTask = URLSession.shared.dataTask(with: req) { data, response, error in
-            
+        URLSession.shared.dataTask(with: req) { data, response, error in
             // Here we are dealing with the connection error, eg: server not running or timeout, etc
             if let error = error {
                 DispatchQueue.main.async { completion(.failure(reason: error.localizedDescription)) }
@@ -160,22 +147,19 @@ struct AuthAPI {
                 self.tokenValue = token.value
                 Keychain.save(key: keychainUsernameKey, data: username)
                 Keychain.save(key: keychainPasswordKey, data: password)
-                
-                // This saves user's public info into UserDefaults, which will be used later in application process.
-                
+                DispatchQueue.main.async { completion(.success) }
             } catch {
                 // Here we are dealing with decoding errors, which should never happen
                 DispatchQueue.main.async { completion(.failure(reason: "解码错误，请联系管理员\(adminEmail)")) }
             }
-        }
-        dataTask.resume()
+        }.resume()
     }
     
     static func logout(completion: @escaping (AuthResult) -> Void) {
         var req = URLRequest(url: Self.userEndPoint.appendingPathComponent("logout"))
         req.httpMethod = "POST"
         
-        let task = URLSession.shared.dataTask(with: req) { _, response, _ in
+        URLSession.shared.dataTask(with: req) { _, response, _ in
             guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
                 DispatchQueue.main.async { completion(.failure(reason: "退出登录错误")) }
                 return
@@ -184,9 +168,7 @@ struct AuthAPI {
             tokenValue = nil
             UserDefaults.standard.removeObject(forKey: "user-public-info")
             DispatchQueue.main.async { completion(.success) }
-        }
-        
-        task.resume()
+        }.resume()
     }
     
     static func getPublicUserFromToken(completion: @escaping (User.PublicInfo?, URLResponse?, ResponseError?) -> Void) {
@@ -195,9 +177,9 @@ struct AuthAPI {
             return
         }
         
-        let url = userEndPoint.appendingPathComponent("token").appendingPathComponent("user-public")
-        
-        URLSession.shared.userFromTokenTask(with: url, tokenValue: tokenValue) { userInfo, response, error in
+        var req = URLRequest(url: userEndPoint.appendingPathComponent("token").appendingPathComponent("user-public"))
+        req.addValue("Bearer \(tokenValue)", forHTTPHeaderField: "Authorization")
+        URLSession.shared.publicUserTask(with: req) { userInfo, response, error in
             if let error = error {
                 completion(nil, response, error)
                 return
@@ -208,49 +190,5 @@ struct AuthAPI {
             
         }.resume()
     }
-    
-//    static func getPublicUserFromToken(completion: @escaping (AuthResult) -> Void) {
-//
-//        guard let tokenValue = tokenValue else {
-//            completion(.failure(reason: "未找到令牌"))
-//            return
-//        }
-//
-//        var req = URLRequest(url: userEndPoint.appendingPathComponent("token").appendingPathComponent("user-public"))
-//        req.httpMethod = "GET"
-//
-//        req.addValue("Bearer \(tokenValue)", forHTTPHeaderField: "Authorization")
-//
-//        URLSession.shared.dataTask(with: req) { data, response, error in
-//            if let error = error {
-//                DispatchQueue.main.async { completion(.failure(reason: error.localizedDescription)) }
-//                return
-//            }
-//
-//            guard let data = data else {
-//                DispatchQueue.main.async { completion(.failure(reason: "服务器错误，请联系管理员\(adminEmail)")) }
-//                return
-//            }
-//
-//            // Check if server returned an error response
-//            let decoder = JSONDecoder()
-//            decoder.dateDecodingStrategy = .iso8601
-//            if let responseError = try? decoder.decode(ResponseError.self, from: data) {
-//                self.tokenValue = nil
-//                userInfo = nil
-//                DispatchQueue.main.async { completion(.failure(reason: responseError.reason)) }
-//                return
-//            }
-//
-//            do {
-//                userInfo = try decoder.decode(User.PublicInfo.self, from: data)
-//            } catch {
-//                DispatchQueue.main.async { completion(.failure(reason: "解码错误，请联系管理员\(adminEmail)")) }
-//                return
-//            }
-//
-//            DispatchQueue.main.async { completion(.success) }
-//        }.resume()
-//    }
 }
 

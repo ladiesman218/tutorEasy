@@ -62,8 +62,8 @@ class LoginViewController: UIViewController {
         AuthAPI.login(username: username, password: password) { result in
             switch result {
             case .success:
-                let languageVC = LanguageListVC()
-                self.present(languageVC, animated: true)
+                // If login is successful, pop to previous VC in navigation stack
+                self.navigationController?.popViewController(animated: true)
             case .failure(let reason):
                 MessagePresenter.showMessage(title: "登录失败", message: "\(reason)", on: self, actions: [])
             }

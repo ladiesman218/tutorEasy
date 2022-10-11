@@ -9,42 +9,47 @@ import Foundation
 
 
 extension URLSession {
-     func codableTask<T: Codable>(with url: URL, tokenValue: String? = nil, completionHandler: @escaping (T?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
-        var req = URLRequest(url: url)
-        if let tokenValue = tokenValue {
-            req.addValue("Bearer \(tokenValue)", forHTTPHeaderField: "Authorization")
-        }
+    fileprivate func codableTask<T: Codable>(with req: URLRequest, dispatchThread: DispatchQueue = .main, completionHandler: @escaping (T?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
+
         return self.dataTask(with: req) { data, response, error in
             guard let data = data, error == nil else {
-                DispatchQueue.main.async {
+                dispatchThread.async {
                     completionHandler(nil, response, ResponseError(error: true, reason: error!.localizedDescription))
                 }
                 return
             }
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
+            
+            if let responseError = try? decoder.decode(ResponseError.self, from: data) {
+                dispatchThread.async {
+                    completionHandler(nil, response, responseError)
+                }
+                return
+            }
+            
             do {
                 let decodedData = try decoder.decode(T.self, from: data)
-                DispatchQueue.main.async {
+                dispatchThread.async {
                     completionHandler(decodedData, response, nil)
                 }                
             } catch {
-                DispatchQueue.main.async {
+                dispatchThread.async {
                     completionHandler(nil, response, ResponseError(error: true, reason: "数据解析错误"))
                 }
             }
         }
     }
     
-    func languageTask(with url: URL, tokenValue: String? = nil, completionHandler: @escaping (Language.PublicInfo?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
-        return self.codableTask(with: url, tokenValue: tokenValue, completionHandler: completionHandler)
+    func languageTask(with req: URLRequest, dispatchThread: DispatchQueue = .main, completionHandler: @escaping (Language.PublicInfo?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
+        return self.codableTask(with: req, dispatchThread: dispatchThread, completionHandler: completionHandler)
     }
     
-    func languagesTask(with url: URL, tokenValue: String? = nil, completionHandler: @escaping ([Language.PublicInfo]?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
-        return self.codableTask(with: url, tokenValue: tokenValue, completionHandler: completionHandler)
+    func languagesTask(with req: URLRequest, dispatchThread: DispatchQueue = .main, completionHandler: @escaping ([Language.PublicInfo]?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
+        return self.codableTask(with: req, dispatchThread: dispatchThread, completionHandler: completionHandler)
     }
     
-    func userFromTokenTask(with url: URL, tokenValue: String, completionHandler: @escaping (User.PublicInfo?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
-        return self.codableTask(with: url, tokenValue: tokenValue, completionHandler: completionHandler)
+    func publicUserTask(with req: URLRequest, dispatchThread: DispatchQueue = .main, completionHandler: @escaping (User.PublicInfo?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
+        return self.codableTask(with: req, dispatchThread: dispatchThread, completionHandler: completionHandler)
     }
 }

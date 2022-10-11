@@ -124,12 +124,11 @@ class RegisterViewController: UIViewController {
         AuthAPI.register(registerInput: registerInput) { result in
             switch result {
             case .success:
+                // Here means registration process is successful.
                 AuthAPI.login(username: registerInput.username, password: registerInput.password1) { _ in
-                    let languageVC = LanguageListVC()
-                    self.present(languageVC, animated: true)
+                    self.navigationController?.popViewController(animated: true)
                 }
             case .failure(let reason):
-                let reason = reason
                 MessagePresenter.showMessage(title: "注册失败", message: "\(reason)", on: self, actions: [])
             }
         }
