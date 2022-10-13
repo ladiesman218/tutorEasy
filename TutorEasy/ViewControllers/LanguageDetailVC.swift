@@ -12,21 +12,30 @@ class LanguageDetailVC: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .white
+        view.backgroundColor = .red
         
+//        if #available(iOS 14.0, *) {
+//            navigationItem.backButtonDisplayMode = .minimal
+//        } else {
+//            // Fallback on earlier versions
+//        }
+//        if #available(iOS 14.0, *) {
+//            self.navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "chevron.backward.circle.fill")!, style: .plain, target: self, action: #selector(goBack))
+//        } else {
+//            // SF symbols are available in iOS 13 and later, the symbol used here is available in iOS 14, this is a hack from https://stackoverflow.com/questions/43073738/change-size-of-uibarbuttonitem-image-in-swift-3
+//            setUpGoBackButton()
+//        }
+//
+//        let backTitle = UIBarButtonItem(title: language.name, style: .done, target: nil, action: nil)
+//        backTitle.isEnabled = false
+//        backTitle.tintColor = .black
+//
+//        self.navigationItem.leftBarButtonItems?.append(backTitle)
         if #available(iOS 14.0, *) {
-            self.navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "chevron.backward.circle.fill")!, style: .plain, target: self, action: #selector(goBack))
+//            navigationItem.backBarButtonItem = UIBarButtonItem(systemItem: .action)
         } else {
-            // SF symbols are available in iOS 13 and later, the symbol used here is available in iOS 14, this is a hack from https://stackoverflow.com/questions/43073738/change-size-of-uibarbuttonitem-image-in-swift-3
-            setUpGoBackButton()
+            // Fallback on earlier versions
         }
-        
-        let backTitle = UIBarButtonItem(title: language.name, style: .done, target: nil, action: nil)
-        backTitle.isEnabled = false
-        backTitle.tintColor = .black
-        
-        self.navigationItem.leftBarButtonItems?.append(backTitle)
-
     }
     
     func setUpGoBackButton() {
@@ -42,7 +51,7 @@ class LanguageDetailVC: UIViewController {
     }
     
 	@objc func goBack() {
-		self.dismiss(animated: true)
+        navigationController?.popViewController(animated: true)
 	}
 	
 }

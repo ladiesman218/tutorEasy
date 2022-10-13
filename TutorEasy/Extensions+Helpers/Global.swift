@@ -40,9 +40,10 @@ let backgroundColor: UIColor = {
 
 func setupDestinationVC(window: UIWindow) {
     let languageVC = LanguageListVC(nibName: nil, bundle: nil)
-    languageVC.navigationItem.backButtonTitle = "返回"
     
     let navVC = UINavigationController(rootViewController: languageVC)
+    navVC.isNavigationBarHidden = true
+    
     window.rootViewController = navVC
     window.makeKeyAndVisible()
     

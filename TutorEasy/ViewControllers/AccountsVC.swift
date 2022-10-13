@@ -83,11 +83,6 @@ class AccountsVC: UIViewController {
         switchVCs(sender: loginViewButton)
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        self.navigationController?.isNavigationBarHidden = false
-    }
-    
     @objc private func switchVCs(sender: UIButton) {
         if sender.tag == 0 {
             registerViewButton.backgroundColor = Self.deactiveBgColor

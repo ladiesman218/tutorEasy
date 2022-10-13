@@ -1,5 +1,7 @@
 import UIKit
 
+
+// This is a hack from https://stackoverflow.com/questions/24231680/loading-downloading-image-from-url-on-swift
 extension UIImageView {
     func downloaded(from url: URL, contentMode mode: ContentMode = .scaleAspectFit) {
         contentMode = mode

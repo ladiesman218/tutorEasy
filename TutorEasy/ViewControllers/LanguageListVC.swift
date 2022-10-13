@@ -115,7 +115,7 @@ class LanguageListVC: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        self.navigationController?.isNavigationBarHidden = true
+//        self.navigationController?.isNavigationBarHidden = true
     }
     
     func loadLanguages() {
@@ -191,9 +191,7 @@ extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource, 
             
             let detailVC = LanguageDetailVC()
             detailVC.language = language
-            let navVC = UINavigationController(rootViewController: detailVC)
-            navVC.navigationBar.barTintColor = .systemYellow
-            self.present(navVC, animated: true)
+            self.navigationController?.pushViewController(detailVC, animated: true)
         }
     }
 }
