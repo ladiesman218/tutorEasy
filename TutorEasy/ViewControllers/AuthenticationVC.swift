@@ -7,7 +7,7 @@
 
 import UIKit
 
-class AccountsVC: UIViewController {
+class AuthenticationVC: UIViewController {
     
     private let containerView: UIView = {
         let view = UIView()
@@ -40,6 +40,19 @@ class AccountsVC: UIViewController {
         return button
     }()
     
+    private let closeButton: UIButton = {
+        let button = UIButton()
+//        if #available(iOS 13, *) {
+//            button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+//        } else {
+////            button.setImage(UIImage(named: "arrow back"), for: .normal)
+//        }
+        button.setTitle("<<稍后登录", for: .normal)
+        button.setTitleColor(.blue, for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
     private let loginVC = LoginViewController()
     private lazy var registerVC = RegisterViewController()
     
@@ -60,6 +73,9 @@ class AccountsVC: UIViewController {
         
         view.addSubview(containerView)
         
+        closeButton.addTarget(self, action: #selector(goBack), for: .touchUpInside)
+        view.addSubview(closeButton)
+        
         // Two switch view buttons are constrained above container view rather than in the container view itself.
         NSLayoutConstraint.activate([
             containerView.leadingAnchor.constraint(equalTo: loginViewButton.leadingAnchor),
@@ -75,8 +91,12 @@ class AccountsVC: UIViewController {
             registerViewButton.leadingAnchor.constraint(equalTo: loginViewButton.trailingAnchor),
             registerViewButton.topAnchor.constraint(equalTo: loginViewButton.topAnchor),
             registerViewButton.heightAnchor.constraint(equalTo: loginViewButton.heightAnchor),
-            registerViewButton.widthAnchor.constraint(equalTo: loginViewButton.widthAnchor)
+            registerViewButton.widthAnchor.constraint(equalTo: loginViewButton.widthAnchor),
             
+            closeButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
+            closeButton.topAnchor.constraint(equalTo: view.topAnchor, constant: 10),
+            closeButton.heightAnchor.constraint(equalToConstant: 30),
+            closeButton.widthAnchor.constraint(equalToConstant: 120)
         ])
         
         // Default to login view
@@ -120,5 +140,9 @@ class AccountsVC: UIViewController {
                 registerVC.view.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
             ])
         }
+    }
+    
+    @objc func goBack() {
+        navigationController?.popViewController(animated: true)
     }
 }
