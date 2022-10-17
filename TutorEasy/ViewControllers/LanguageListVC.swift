@@ -110,11 +110,11 @@ class LanguageListVC: UIViewController {
     }
 }
 
-extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        //        return languages.count + 1  // Added extra 1 for banners
-        return 13
+        // Accounts for banner item, so add extra one
+        return 10 ; #warning("change")
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -126,37 +126,22 @@ extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource, 
             return bannerCell
         } else {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: LanguageCell.identifier, for: indexPath) as! LanguageCell
-            
-            //            cell.nameLabel.text = languages[indexPath.item].name
-            //            cell.priceLabel.text = languages[indexPath.item].price?.description
-            //            cell.descriptionLabel.text = languages[indexPath.item].description
-            
-            //            if let url = languages[indexPath.item].imageURL {
-            //                cell.imageView.downloaded(from: url, contentMode: .scaleAspectFill)
-            //            }
+            // Account for banner item
+            let indexOffset = indexPath.item - 1
+//            cell.nameLabel.text = languages[indexOffset].name
+//            cell.priceLabel.text = languages[indexOffset].price?.description
+//            cell.descriptionLabel.text = languages[indexOffset].description
+//
+//            if let url = languages[indexOffset].imageURL {
+//                cell.imageView.downloaded(from: url, contentMode: .scaleAspectFill)
+//            }
             return cell
         }
         
     }
     
-//    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-//        if indexPath == [0, 0]  {
-//            let width = collectionView.frame.width / 2 - 10
-//            return CGSize(width: width, height: width)
-//        } else {
-//            let width = collectionView.frame.width / 4 - 10
-//            return CGSize(width: width, height: width)
-//        }
-//    }
-//
-//    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
-//        return UIEdgeInsets(top: 5, left: 5, bottom: 5, right: 5)
-//    }
-    
     func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
-        if indexPath == [0, 0] {
-            return false
-        } else { return true }
+        return indexPath == [0, 0] ? false : true
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
@@ -178,6 +163,8 @@ extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource, 
     
     func configCollectionView() -> UICollectionView {
         let contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
+        
+        // Height is always anchored to width, so despite devices' display ratio, we always get an item with fixed ratio.
         let bannerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5), heightDimension: .fractionalWidth(0.5))
         let bannerItem = NSCollectionLayoutItem(layoutSize: bannerSize)
         bannerItem.contentInsets = contentInsets
@@ -185,30 +172,52 @@ extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource, 
         let topRightItemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5), heightDimension: .fractionalWidth(0.5))
         let topRightItem = NSCollectionLayoutItem(layoutSize: topRightItemSize)
         topRightItem.contentInsets = contentInsets
+        
+        // A horizontal group, contains 2 items. Since width for topRightItem is set to 0.5 of the total width, set hight to the same value gives us a square.
         let topRightRow = NSCollectionLayoutGroup.horizontal(layoutSize: .init(widthDimension: .fractionalWidth(1), heightDimension: .fractionalWidth(0.5)), subitems: [topRightItem, topRightItem])
+        // A vertical group, contains 2 rows.
         let topRightGroup = NSCollectionLayoutGroup.vertical(layoutSize: .init(widthDimension: .fractionalWidth(0.5), heightDimension: .fractionalWidth(0.5)), subitems: [topRightRow, topRightRow])
+        
+        // The top right group, combined with the banner and the 2 by 2 group.
         let topGroup = NSCollectionLayoutGroup.horizontal(layoutSize: .init(widthDimension: .fractionalWidth(1), heightDimension: .fractionalWidth(0.5)), subitems: [bannerItem, topRightGroup])
         
+        // Normal mean size for items below banner. This is the size for all other items below banner row.
         let normalSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1/4), heightDimension: .fractionalWidth(1/4))
         let normalItem = NSCollectionLayoutItem(layoutSize: normalSize)
         normalItem.contentInsets = contentInsets
+        // Again height is anchored to width, since the width for normalItem is set to 1/4 of view's width, set height to same value gives us a square.
         let normalGroup = NSCollectionLayoutGroup.horizontal(layoutSize: .init(widthDimension: .fractionalWidth(1), heightDimension: .fractionalWidth(1/4)), subitems: [normalItem, normalItem, normalItem, normalItem])
-
-        let row = Int(((Float(12) - 4) / 4).rounded(.up))
-
-        var normalRow: NSCollectionLayoutGroup
-        let height = normalGroup.layoutSize.heightDimension.dimension
-
-        if #available(iOS 16.0, *) {
-            normalRow = NSCollectionLayoutGroup.vertical(layoutSize: .init(widthDimension: .fractionalWidth(1), heightDimension: .fractionalWidth(CGFloat(row) * height)), repeatingSubitem: normalGroup, count: row)
+        
+        let floatCount = Float(9) ;#warning("change")
+        let removedBanner = floatCount - 1
+        let removedTopRight = removedBanner - 4
+        // Calculate how many rows are needed, if the division has remainder, then round up to get an extra row, thus all items get displayed.
+        let row = Int((removedTopRight / 4).rounded(.up))
+        print("\(row) rows")
+        // Create final group based on the row's value.
+        let group: NSCollectionLayoutGroup
+        // If no row is needed, set the final group to contain topGroup only. Notice the value of row will be used to create group in repeatingSubitem/count parameter, it has to be greater or equal to 1, or app will crash.
+        if !(row >= 1) {
+            group = NSCollectionLayoutGroup.vertical(layoutSize: .init(widthDimension: .fractionalWidth(1), heightDimension: .estimated(1000)), subitems: [topGroup])
         } else {
-            normalRow = NSCollectionLayoutGroup.horizontal(layoutSize: .init(widthDimension: .fractionalWidth(1), heightDimension: .fractionalWidth(CGFloat(row) * height)), subitem: normalGroup, count: row)
-        }
+            // According to previous configuration, normalGroup's height dimension is a decimal number(1/4 to be exact). This is the height for 1 row, depending how how many rows are there, we get the proper total height for the display area below banner.
+            let height = normalGroup.layoutSize.heightDimension.dimension
+            
+            // Depending on how many rows, create a vertical group to wrap them all in.
+            var normalRow: NSCollectionLayoutGroup
 
-        let group = NSCollectionLayoutGroup.vertical(layoutSize: .init(widthDimension: .fractionalWidth(1), heightDimension: .estimated(3000)), subitems: [topGroup, normalRow])
+            if #available(iOS 16.0, *) {
+                // Height of the group is also anchored to width.
+                normalRow = NSCollectionLayoutGroup.vertical(layoutSize: .init(widthDimension: .fractionalWidth(1), heightDimension: .fractionalWidth(CGFloat(row) * height)), repeatingSubitem: normalGroup, count: row)
+            } else {
+                normalRow = NSCollectionLayoutGroup.horizontal(layoutSize: .init(widthDimension: .fractionalWidth(1), heightDimension: .fractionalWidth(CGFloat(row) * height)), subitem: normalGroup, count: row)
+            }
+            #warning("there is one extra large item added, y?")
+            group = NSCollectionLayoutGroup.vertical(layoutSize: .init(widthDimension: .fractionalWidth(1), heightDimension: .estimated(1000)), subitems: [topGroup, normalRow])
+//            print(normalRow.subitems.first!.debugDescription)
+        }
         
         let section = NSCollectionLayoutSection(group: group)
-        
         
         let layout = UICollectionViewCompositionalLayout(section: section)
         let collectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
