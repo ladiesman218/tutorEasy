@@ -15,12 +15,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 	
 	func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
 		
-		window = UIWindow(frame: UIScreen.main.bounds)
-
-        // Only if OS is lower than 13.0, run this. In iOS 13.0 and later, code in SceneDelegate will run, so we can avoid calling the same function twice for iOS 13 and later.
-        if #unavailable(iOS 13.0) {
-            setupDestinationVC(window: self.window!)
-        }
+		_ = UIWindow(frame: UIScreen.main.bounds)
 
         return true
 	}

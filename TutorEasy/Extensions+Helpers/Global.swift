@@ -11,6 +11,8 @@ let serverURL = URL(string: "http://localhost:8080")!
 let baseURL = serverURL.appendingPathComponent("api")
 let mediaURL = baseURL.appendingPathComponent("media")
 
+// MARK: - Checkout ngrok
+
 //let serverURL = URL(string: "http://20.243.114.35:8080")!
 
 
@@ -22,7 +24,7 @@ let userNameLength = Range(4...35)
 let nameLength = Range(3...40)
 let passwordLength = Range(6...40)
 let adminEmail = "chn_dunce@126.com"
-
+var isLoggedIn = false
 
 
 let borderColor: CGColor = UIColor.systemGray.cgColor
@@ -49,12 +51,20 @@ func setupDestinationVC(window: UIWindow) {
     
     AuthAPI.getPublicUserFromToken { userInfo, response, error in
         if let userInfo = userInfo {
-            print("userInfo: \(userInfo)")
-            
+            AuthAPI.userInfo = userInfo
         } else {
-            let accountsVC = AccountsVC(nibName: nil, bundle: nil)
+            AuthAPI.userInfo = nil
+            let accountsVC = AuthenticationVC(nibName: nil, bundle: nil)
             print(error!.reason)
             navVC.pushViewController(accountsVC, animated: true)
         }
+    }
+}
+
+func getProfileImage() -> UIImage {
+    if isLoggedIn {
+        return UIImage()
+    } else {
+        return UIImage(systemName: "person.crop.circle.fill")!
     }
 }

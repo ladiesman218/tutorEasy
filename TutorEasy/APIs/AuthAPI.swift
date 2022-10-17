@@ -42,9 +42,11 @@ struct AuthAPI {
         set {
             if let newToken = newValue {
                 print("token new value: \(newToken)")
+                isLoggedIn = true
                 Keychain.save(key: AuthAPI.keychainTokenKey, data: newToken)
             } else {
                 print("token value set to nil")
+                isLoggedIn = false
                 Keychain.delete(key: AuthAPI.keychainTokenKey)
             }
         }
@@ -185,7 +187,6 @@ struct AuthAPI {
                 return
             }
             
-            self.userInfo = userInfo!
             completion(userInfo!, response, nil)
             
         }.resume()

@@ -19,12 +19,12 @@ class LanguageDetailVC: UIViewController {
 //        } else {
 //            // Fallback on earlier versions
 //        }
-//        if #available(iOS 14.0, *) {
-//            self.navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "chevron.backward.circle.fill")!, style: .plain, target: self, action: #selector(goBack))
-//        } else {
-//            // SF symbols are available in iOS 13 and later, the symbol used here is available in iOS 14, this is a hack from https://stackoverflow.com/questions/43073738/change-size-of-uibarbuttonitem-image-in-swift-3
-//            setUpGoBackButton()
-//        }
+        if #available(iOS 14.0, *) {
+            self.navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "chevron.backward.circle.fill")!, style: .plain, target: self, action: #selector(goBack))
+        } else {
+            // SF symbols are available in iOS 13 and later, the symbol used here is available in iOS 14, this is a hack from https://stackoverflow.com/questions/43073738/change-size-of-uibarbuttonitem-image-in-swift-3
+            setUpGoBackButton()
+        }
 //
 //        let backTitle = UIBarButtonItem(title: language.name, style: .done, target: nil, action: nil)
 //        backTitle.isEnabled = false

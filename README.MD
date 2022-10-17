@@ -1,8 +1,2 @@
-//
-//  README.MD
-//  TutorEasy
-//
-//  Created by Lei Gao on 2022/10/13.
-//
+SwiftUI Previews are only for iOS13 and later, also it doesn't support landscape mode until iOS15.
 
-import Foundation

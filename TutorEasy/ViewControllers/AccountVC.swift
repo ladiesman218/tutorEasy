@@ -1,5 +1,5 @@
 //
-//  AccountVCViewController.swift
+//  AccountVC.swift
 //  TutorEasy
 //
 //  Created by Lei Gao on 2022/10/14.
@@ -7,11 +7,11 @@
 
 import UIKit
 
-class AccountVCViewController: UIViewController {
+class AccountVC: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        print("view loaded")
         // Do any additional setup after loading the view.
     }
     

@@ -24,6 +24,7 @@ class LanguageCell: UICollectionViewCell {
 //                contentView.layer.borderWidth = 1
                 contentView.layer.cornerRadius = 10
 //        		contentView.layer.borderColor = UIColor.systemGray.cgColor
+        contentView.backgroundColor = .red
         contentView.clipsToBounds = true
         
         nameLabel = UILabel()
