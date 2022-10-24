@@ -29,13 +29,7 @@ var isLoggedIn = false
 
 let borderColor: CGColor = UIColor.systemGray.cgColor
 let textColor = UIColor.systemBlue
-let backgroundColor: UIColor = {
-    if #available(iOS 13, *) {
-        return .systemGray
-    } else {
-        return .white
-    }
-}()
+let backgroundColor = UIColor.systemBackground
 
 
 

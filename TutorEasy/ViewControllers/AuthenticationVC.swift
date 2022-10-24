@@ -14,7 +14,7 @@ class AuthenticationVC: UIViewController {
         view.layer.cornerRadius = 10
         view.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .white
+        view.backgroundColor = backgroundColor
         return view
     }()
     
@@ -42,13 +42,9 @@ class AuthenticationVC: UIViewController {
     
     private let closeButton: UIButton = {
         let button = UIButton()
-//        if #available(iOS 13, *) {
-//            button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
-//        } else {
-////            button.setImage(UIImage(named: "arrow back"), for: .normal)
-//        }
-        button.setTitle("<<稍后登录", for: .normal)
-        button.setTitleColor(.blue, for: .normal)
+        button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+        button.setTitle("稍后登录", for: .normal)
+        button.setTitleColor(.systemTeal, for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -60,9 +56,13 @@ class AuthenticationVC: UIViewController {
     static private let deactiveBgColor = UIColor.gray
     static private let buttonCornerRadius = CGFloat(10)
     
+    var shorterConstraint: NSLayoutConstraint!
+    var tallerConstraint: NSLayoutConstraint!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         self.dismissKeyboard()
+        
         view.backgroundColor = UIColor(patternImage: UIImage(named: "LoginBg")!)
         
         loginViewButton.addTarget(self, action: #selector(switchVCs), for: .touchUpInside)
@@ -76,27 +76,36 @@ class AuthenticationVC: UIViewController {
         closeButton.addTarget(self, action: #selector(goBack), for: .touchUpInside)
         view.addSubview(closeButton)
         
+        shorterConstraint = containerView.heightAnchor.constraint(equalToConstant: 200)
+        tallerConstraint = containerView.heightAnchor.constraint(equalToConstant: 250)
+
         // Two switch view buttons are constrained above container view rather than in the container view itself.
         NSLayoutConstraint.activate([
-            containerView.leadingAnchor.constraint(equalTo: loginViewButton.leadingAnchor),
-            containerView.topAnchor.constraint(equalTo: loginViewButton.bottomAnchor),
-            containerView.widthAnchor.constraint(equalTo: loginViewButton.widthAnchor, multiplier: 2),
-            containerView.heightAnchor.constraint(equalToConstant: 250),
+            closeButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 10),
+            closeButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
+            closeButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 60),
+            closeButton.heightAnchor.constraint(equalToConstant: 30),
+
+            containerView.leadingAnchor.constraint(greaterThanOrEqualToSystemSpacingAfter: view.safeAreaLayoutGuide.leadingAnchor, multiplier: 15),
+            containerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.4),
+            view.centerXAnchor.constraint(equalToSystemSpacingAfter: containerView.trailingAnchor, multiplier: 1),
+
+//            containerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 250),
+            shorterConstraint,
+            containerView.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 20),
+//            containerView.topAnchor.constraint(lessThanOrEqualToSystemSpacingBelow: view.safeAreaLayoutGuide.topAnchor, multiplier: 40),
             
-            loginViewButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            loginViewButton.topAnchor.constraint(equalTo: view.topAnchor, constant: 50),
+            loginViewButton.bottomAnchor.constraint(equalTo: containerView.topAnchor),
             loginViewButton.heightAnchor.constraint(equalToConstant: 40),
-            loginViewButton.widthAnchor.constraint(equalToConstant: 150),
+            loginViewButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            loginViewButton.widthAnchor.constraint(greaterThanOrEqualTo: containerView.widthAnchor, multiplier: 0.5),//equalTo: view.widthAnchor, multiplier: 0.3),
             
             registerViewButton.leadingAnchor.constraint(equalTo: loginViewButton.trailingAnchor),
             registerViewButton.topAnchor.constraint(equalTo: loginViewButton.topAnchor),
             registerViewButton.heightAnchor.constraint(equalTo: loginViewButton.heightAnchor),
             registerViewButton.widthAnchor.constraint(equalTo: loginViewButton.widthAnchor),
             
-            closeButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
-            closeButton.topAnchor.constraint(equalTo: view.topAnchor, constant: 10),
-            closeButton.heightAnchor.constraint(equalToConstant: 30),
-            closeButton.widthAnchor.constraint(equalToConstant: 120)
+            
         ])
         
         // Default to login view
@@ -108,10 +117,12 @@ class AuthenticationVC: UIViewController {
             registerViewButton.backgroundColor = Self.deactiveBgColor
             registerVC.view.removeFromSuperview()
             registerVC.removeFromParent()
+            tallerConstraint.isActive = false
             
             loginViewButton.backgroundColor = Self.activeBgColor
             self.addChild(loginVC)
             containerView.addSubview(loginVC.view)
+            shorterConstraint.isActive = true
             
             loginVC.view.translatesAutoresizingMaskIntoConstraints = false
             
@@ -126,10 +137,12 @@ class AuthenticationVC: UIViewController {
             loginViewButton.backgroundColor = Self.deactiveBgColor
             loginVC.view.removeFromSuperview()
             loginVC.removeFromParent()
+            shorterConstraint.isActive = false
             
             registerViewButton.backgroundColor = Self.activeBgColor
             self.addChild(registerVC)
             containerView.addSubview(registerVC.view)
+            tallerConstraint.isActive = true
             
             registerVC.view.translatesAutoresizingMaskIntoConstraints = false
             

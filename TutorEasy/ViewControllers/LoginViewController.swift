@@ -80,9 +80,9 @@ class LoginViewController: UIViewController {
         loginButton.addTarget(self, action: #selector(login), for: .touchUpInside)
         
         NSLayoutConstraint.activate([
-            loginNameTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            loginNameTextField.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
-            loginNameTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            loginNameTextField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            loginNameTextField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            loginNameTextField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
             
             passwordTextField.leadingAnchor.constraint(equalTo: loginNameTextField.leadingAnchor),
             passwordTextField.topAnchor.constraint(equalTo: loginNameTextField.bottomAnchor, constant: 20),

@@ -76,19 +76,19 @@ class RegisterViewController: UIViewController {
         
         NSLayoutConstraint.activate([
             
-            registrationEmailTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            registrationEmailTextField.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
+            registrationEmailTextField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            registrationEmailTextField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
             registrationEmailTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
             usernameTextField.leadingAnchor.constraint(equalTo: registrationEmailTextField.leadingAnchor),
             usernameTextField.topAnchor.constraint(equalTo: registrationEmailTextField.bottomAnchor, constant: 20),
-            usernameTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            usernameTextField.widthAnchor.constraint(equalTo: registrationEmailTextField.widthAnchor),
             
-            passwordTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            passwordTextField.leadingAnchor.constraint(equalTo: registrationEmailTextField.leadingAnchor),
             passwordTextField.topAnchor.constraint(equalTo: usernameTextField.bottomAnchor, constant: 20),
             passwordTextField.widthAnchor.constraint(equalTo: registrationEmailTextField.widthAnchor),
             
-            password2TextField.leadingAnchor.constraint(equalTo: passwordTextField.leadingAnchor),
+            password2TextField.leadingAnchor.constraint(equalTo: registrationEmailTextField.leadingAnchor),
             password2TextField.topAnchor.constraint(equalTo: passwordTextField.bottomAnchor, constant: 20),
             password2TextField.widthAnchor.constraint(equalTo: passwordTextField.widthAnchor),
             

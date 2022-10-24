@@ -1,87 +1,73 @@
 import UIKit
 
 class LanguageListVC: UIViewController {
-    
+//#warning("Split extentions into Filename + functionality format?")
+//#warning("comment out background color settings in vcs for testing purposes")
+//#warning("Change bg color to be easier on the eye")
+//#warning("Add extra info beside icon button")
+//#warning("Adjust layout constraints for different sizes")
+//#warning("Fix banners not get displayed")
+
+
     // MARK: -
     private var collectionView: UICollectionView!
     
     private let topView: UIView = {
         let view = UIView()
+        view.backgroundColor = .systemYellow
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
     
-    private let pager: UIPageControl = {
-        let pageControl = UIPageControl()
-        pageControl.currentPage = 1
-        pageControl.currentPageIndicatorTintColor = .blue
-        //        pageControl.pageIndicatorTintColor = .red
-        pageControl.layer.zPosition = .greatestFiniteMagnitude
-        pageControl.translatesAutoresizingMaskIntoConstraints = false
-        return pageControl
-    }()
-    
-    private var profileButton: UIButton!
-    
-    static let topViewHeight = CGFloat(70)
-    
+    private var profileView: UIView!
+        
     private var languages = [Language.PublicInfo]() {
         didSet { self.collectionView.reloadData() }
     }
-    
-    private var bannerImages = [UIImage]()
-    
+        
     // MARK: -
     override func loadView() {
         super.loadView()
         loadLanguages()
-        loadBanners()
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = backgroundColor
         collectionView = configCollectionView()
+        collectionView.backgroundColor = UIColor.clear      // Without this, collectionView will get an black bg color
         collectionView.dataSource = self
         collectionView.delegate = self
         
         view.addSubview(collectionView)
-        view.addSubview(pager)
-        //        pager.addTarget(self, action: #selector(pageControlTap), for: .touchUpInside)
         
         view.addSubview(topView)
-        profileButton = configProfileIcon(for: self)
-        topView.addSubview(profileButton)
-        
-        
+        profileView = configProfileView()
+        topView.addSubview(profileView)
+
         NSLayoutConstraint.activate([
-            collectionView.topAnchor.constraint(equalTo: topView.bottomAnchor),
-            collectionView.widthAnchor.constraint(equalToConstant: view.frame.width),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            
             topView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             topView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            topView.heightAnchor.constraint(equalToConstant: Self.topViewHeight),
+            topView.heightAnchor.constraint(greaterThanOrEqualTo: view.heightAnchor, multiplier: 0.10),
             
-            profileButton.heightAnchor.constraint(equalToConstant: Self.topViewHeight - 10),
-            profileButton.centerYAnchor.constraint(equalTo: topView.centerYAnchor),
-            profileButton.widthAnchor.constraint(equalTo: profileButton.heightAnchor),
-            profileButton.leadingAnchor.constraint(equalTo: topView.leadingAnchor, constant: 20),
+            profileView.heightAnchor.constraint(equalTo: topView.heightAnchor, multiplier: 0.95),
+            profileView.centerYAnchor.constraint(equalTo: topView.centerYAnchor),
+            profileView.widthAnchor.constraint(greaterThanOrEqualToConstant: 300),
+            profileView.leadingAnchor.constraint(equalTo: topView.leadingAnchor, constant: 20),
             
-            //            pager.heightAnchor.constraint(equalToConstant: 30),
-            //            pager.bottomAnchor.constraint(equalTo: bannerSlides.bottomAnchor),
-            //            pager.widthAnchor.constraint(lessThanOrEqualTo: bannerSlides.widthAnchor),
-            //            pager.centerXAnchor.constraint(equalTo: bannerSlides.centerXAnchor),
+            collectionView.widthAnchor.constraint(equalToConstant: view.frame.width),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.topAnchor.constraint(equalTo: topView.bottomAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            
         ])
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        profileButton = configProfileIcon(for: self)
-        // load profilepic according to isLoggedIn value
-        
+        // Reload profilepic according to isLoggedIn value
+        profileView = configProfileView()
     }
     
     func loadLanguages() {
@@ -94,20 +80,6 @@ class LanguageListVC: UIViewController {
         }
     }
     
-    func loadBanners() {
-        for i in 1 ... 10 {
-            let url = mediaURL.appendingPathComponent("Courses/" + "banner\(i)")
-            
-            URLSession.shared.dataTask(with: url) { [unowned self] data, response, error in
-                guard let res = response as? HTTPURLResponse, res.statusCode == 200, error == nil else { return }
-                guard let data = data else { return }
-                let image = UIImage(data: data)!
-                DispatchQueue.main.async {
-                    self.bannerImages.append(image)
-                }
-            }.resume()
-        }
-    }
 }
 
 extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource {
@@ -121,8 +93,6 @@ extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource {
         
         if indexPath == [0, 0]  {
             let bannerCell = collectionView.dequeueReusableCell(withReuseIdentifier: BannerSlidesCell.identifier, for: indexPath) as! BannerSlidesCell
-            bannerCell.scrollView.delegate = self
-            bannerCell.bannerImages = bannerImages
             return bannerCell
         } else {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: LanguageCell.identifier, for: indexPath) as! LanguageCell
@@ -146,8 +116,7 @@ extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         
-        let id = languages[indexPath.item].id
-        
+        let id = languages[indexPath.item - 1].id   // -1 is also for banner
         LanguageAPI.getLanguage(id: id) { [unowned self] language, response, error in
             
             guard let language = language, error == nil else {
@@ -225,24 +194,7 @@ extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource {
         
         collectionView.register(LanguageCell.self, forCellWithReuseIdentifier: LanguageCell.identifier)
         collectionView.register(BannerSlidesCell.self, forCellWithReuseIdentifier: BannerSlidesCell.identifier)
-        collectionView.backgroundColor = UIColor.clear
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         return collectionView
     }
-}
-
-extension LanguageListVC: UIScrollViewDelegate {
-    
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        let x = scrollView.contentOffset.x
-        let width = scrollView.bounds.size.width
-        pager.currentPage = Int(ceil(x/width))
-    }
-    
-    // Tapping on pagecontrol changes scrollView contentOffset also..
-    //    @objc private func pageControlTap(_ sender: UIPageControl) {
-    //        let pageWidth: CGFloat = bannerSlides.frame.width
-    //        let slideToX: CGFloat = CGFloat(sender.currentPage) * pageWidth
-    //        bannerSlides.setContentOffset(CGPoint(x: slideToX, y: 0), animated: true)
-    //    }
 }
