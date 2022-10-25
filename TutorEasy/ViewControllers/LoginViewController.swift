@@ -63,7 +63,7 @@ class LoginViewController: UIViewController {
             switch result {
             case .success:
                 // If login is successful, pop to previous VC in navigation stack
-                self.navigationController?.popViewController(animated: true)
+                self.backButtonClicked()//navigationController?.popViewController(animated: true)
             case .failure(let reason):
                 MessagePresenter.showMessage(title: "登录失败", message: "\(reason)", on: self, actions: [])
             }

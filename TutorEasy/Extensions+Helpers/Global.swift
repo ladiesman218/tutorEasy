@@ -24,7 +24,12 @@ let userNameLength = Range(4...35)
 let nameLength = Range(3...40)
 let passwordLength = Range(6...40)
 let adminEmail = "chn_dunce@126.com"
-var isLoggedIn = false
+let loginChanged: Notification.Name = .init(rawValue: "login-status-changed")
+var isLoggedIn = false {
+    didSet {
+        NotificationCenter.default.post(name: loginChanged, object: nil)
+    }
+}
 
 
 let borderColor: CGColor = UIColor.systemGray.cgColor
@@ -52,13 +57,5 @@ func setupDestinationVC(window: UIWindow) {
             print(error!.reason)
             navVC.pushViewController(accountsVC, animated: true)
         }
-    }
-}
-
-func getProfileImage() -> UIImage {
-    if isLoggedIn {
-        return UIImage()
-    } else {
-        return UIImage(systemName: "person.crop.circle.fill")!
     }
 }

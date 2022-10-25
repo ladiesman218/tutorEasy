@@ -27,10 +27,12 @@ struct AuthAPI {
         }
         
         set {
-            if let encodedData = try? JSONEncoder().encode(newValue) {
-                UserDefaults.standard.set(encodedData, forKey: "user-public-info")
-            } else {
+            if newValue == nil {
                 UserDefaults.standard.removeObject(forKey: "user-public-info")
+                isLoggedIn = false
+            } else if let encodedData = try? JSONEncoder().encode(newValue) {
+                UserDefaults.standard.set(encodedData, forKey: "user-public-info")
+                isLoggedIn = true
             }
         }
     }
@@ -168,7 +170,7 @@ struct AuthAPI {
             }
             
             tokenValue = nil
-            UserDefaults.standard.removeObject(forKey: "user-public-info")
+            userInfo = nil
             DispatchQueue.main.async { completion(.success) }
         }.resume()
     }
@@ -186,9 +188,7 @@ struct AuthAPI {
                 completion(nil, response, error)
                 return
             }
-            
             completion(userInfo!, response, nil)
-            
         }.resume()
     }
 }

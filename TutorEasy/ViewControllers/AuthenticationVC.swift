@@ -40,8 +40,8 @@ class AuthenticationVC: UIViewController {
         return button
     }()
     
-    private let closeButton: UIButton = {
-        let button = UIButton()
+    private let closeButton: CustomButton = {
+        let button = CustomButton()
         button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
         button.setTitle("稍后登录", for: .normal)
         button.setTitleColor(.systemTeal, for: .normal)
@@ -73,7 +73,7 @@ class AuthenticationVC: UIViewController {
         
         view.addSubview(containerView)
         
-        closeButton.addTarget(self, action: #selector(goBack), for: .touchUpInside)
+        closeButton.addTarget(self, action: #selector(backButtonClicked), for: .touchUpInside)
         view.addSubview(closeButton)
         
         shorterConstraint = containerView.heightAnchor.constraint(equalToConstant: 200)
@@ -153,9 +153,5 @@ class AuthenticationVC: UIViewController {
                 registerVC.view.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
             ])
         }
-    }
-    
-    @objc func goBack() {
-        navigationController?.popViewController(animated: true)
     }
 }

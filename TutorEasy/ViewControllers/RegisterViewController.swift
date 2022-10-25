@@ -126,7 +126,7 @@ class RegisterViewController: UIViewController {
             case .success:
                 // Here means registration process is successful.
                 AuthAPI.login(username: registerInput.username, password: registerInput.password1) { _ in
-                    self.navigationController?.popViewController(animated: true)
+                    self.backButtonClicked()//navigationController?.popViewController(animated: true)
                 }
             case .failure(let reason):
                 MessagePresenter.showMessage(title: "注册失败", message: "\(reason)", on: self, actions: [])

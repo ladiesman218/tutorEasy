@@ -9,9 +9,12 @@ import UIKit
 
 class AccountVC: UIViewController {
 
+    private var topView: UIView!
     override func viewDidLoad() {
         super.viewDidLoad()
-        print("view loaded")
+        
+        topView = configTopView()
+        setUpGoBackButton(in: topView)
         // Do any additional setup after loading the view.
     }
     

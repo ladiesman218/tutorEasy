@@ -1,25 +1,11 @@
 import UIKit
 
 class LanguageListVC: UIViewController {
-//#warning("Split extentions into Filename + functionality format?")
-//#warning("comment out background color settings in vcs for testing purposes")
-//#warning("Change bg color to be easier on the eye")
-//#warning("Add extra info beside icon button")
-//#warning("Adjust layout constraints for different sizes")
-//#warning("Fix banners not get displayed")
-
 
     // MARK: -
     private var collectionView: UICollectionView!
     
-    private let topView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .systemYellow
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
-    
-    private var profileView: UIView!
+    private var topView: UIView!
         
     private var languages = [Language.PublicInfo]() {
         didSet { self.collectionView.reloadData() }
@@ -41,33 +27,18 @@ class LanguageListVC: UIViewController {
         
         view.addSubview(collectionView)
         
-        view.addSubview(topView)
-        profileView = configProfileView()
-        topView.addSubview(profileView)
+        topView = configTopView()
+        configProfileView(in: topView)
+        
+        // According to documentation "If your app targets iOS 9.0 and later or macOS 10.11 and later, you do not need to unregister an observer that you created with this function. If you forget or are unable to remove an observer, the system cleans up the next time it would have posted to it."
+        NotificationCenter.default.addObserver(self, selector: #selector(loginStatusChanged), name: loginChanged, object: nil)
 
         NSLayoutConstraint.activate([
-            topView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            topView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            topView.heightAnchor.constraint(greaterThanOrEqualTo: view.heightAnchor, multiplier: 0.10),
-            
-            profileView.heightAnchor.constraint(equalTo: topView.heightAnchor, multiplier: 0.95),
-            profileView.centerYAnchor.constraint(equalTo: topView.centerYAnchor),
-            profileView.widthAnchor.constraint(greaterThanOrEqualToConstant: 300),
-            profileView.leadingAnchor.constraint(equalTo: topView.leadingAnchor, constant: 20),
-            
             collectionView.widthAnchor.constraint(equalToConstant: view.frame.width),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.topAnchor.constraint(equalTo: topView.bottomAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            
         ])
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        // Reload profilepic according to isLoggedIn value
-        profileView = configProfileView()
     }
     
     func loadLanguages() {
@@ -80,6 +51,11 @@ class LanguageListVC: UIViewController {
         }
     }
     
+    @objc func loginStatusChanged() {
+        DispatchQueue.main.async { [unowned self] in
+            configProfileView(in: self.topView)
+        }
+    }
 }
 
 extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource {
@@ -126,7 +102,7 @@ extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource {
             
             let detailVC = LanguageDetailVC()
             detailVC.language = language
-            self.navigationController?.pushViewController(detailVC, animated: true)
+            self.navigationController?.pushViewController(detailVC, animated: false)
         }
     }
     
