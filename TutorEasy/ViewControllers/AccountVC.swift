@@ -9,13 +9,37 @@ import UIKit
 
 class AccountVC: UIViewController {
 
+    // MARK: -
     private var topView: UIView!
+    private var backButtonView: UIView!
+    
+    // MARK: -
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        topView = configTopView()
-        setUpGoBackButton(in: topView)
+        view.backgroundColor = backgroundColor
+        topView = configTopView(bgColor: .systemBlue.withAlphaComponent(0.6))
+
+
+        backButtonView = setUpGoBackButton(in: topView)
         // Do any additional setup after loading the view.
+        
+        
+        let button = UIButton(frame: CGRect(origin: .init(x: 100, y: 50), size: .init(width: 100, height: 40)))
+        button.backgroundColor = .black
+        button.setTitle("Log out", for: .normal)
+        button.addTarget(self, action: #selector(logout), for: .touchUpInside)
+        view.addSubview(button)
+    }
+    
+    @objc func logout() {
+        AuthAPI.logout { result in
+            switch result {
+            case .success:
+                self.navigationController?.popViewController(animated: true)
+            case .failure(let reason):
+                MessagePresenter.showMessage(title: "注销错误", message: reason, on: self, actions: [])
+            }
+        }
     }
     
 

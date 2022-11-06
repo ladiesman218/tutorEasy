@@ -9,67 +9,25 @@ import UIKit
 
 extension UIViewController {
     
-    func configTopView() -> UIView {
+//    let topViewHeight = view.frame.height * 0.1
+    var topViewHeight: CGFloat {
+        view.frame.height * 0.1
+    }
+    func configTopView(bgColor: UIColor) -> UIView {
         let topView = UIView()
-        topView.backgroundColor = .systemYellow
+        topView.backgroundColor = bgColor
         view.addSubview(topView)
         topView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             topView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             topView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            topView.heightAnchor.constraint(greaterThanOrEqualTo: view.heightAnchor, multiplier: 0.10),
+            topView.heightAnchor.constraint(equalToConstant: topViewHeight)
         ])
         return topView
     }
     
-    func configProfileView(in superView: UIView) {
-        let iconView = UIView()
-        let image = UIImage(systemName: "person.crop.circle")
-        let imageView = UIImageView()
-        let usernameLabel = UILabel()
-        
-        if isLoggedIn {
-            imageView.image = image
-            usernameLabel.text = "已登录"
-        } else {
-            imageView.image = image
-            usernameLabel.text = "未登录"
-        }
-        //        usernameLabel.backgroundColor = .blue
-        iconView.addSubview(imageView)
-        iconView.addSubview(usernameLabel)
-        superView.addSubview(iconView)
-        
-        iconView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        usernameLabel.translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            iconView.heightAnchor.constraint(equalTo: superView.heightAnchor, multiplier: 0.95),
-            iconView.centerYAnchor.constraint(equalTo: superView.centerYAnchor),
-            iconView.widthAnchor.constraint(greaterThanOrEqualToConstant: 300),
-            iconView.leadingAnchor.constraint(equalTo: superView.leadingAnchor, constant: 20),
-            
-            imageView.leadingAnchor.constraint(equalTo: iconView.leadingAnchor),
-            imageView.topAnchor.constraint(equalTo: iconView.topAnchor),
-            imageView.bottomAnchor.constraint(equalTo: iconView.bottomAnchor),
-            imageView.widthAnchor.constraint(equalTo: imageView.heightAnchor),
-            
-            usernameLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor),
-            usernameLabel.topAnchor.constraint(equalTo: iconView.topAnchor),
-            usernameLabel.heightAnchor.constraint(equalTo: iconView.heightAnchor, multiplier: 0.5),
-        ])
-        
-        iconView.layer.backgroundColor = UIColor.red.cgColor
-        
-        let tap = UITapGestureRecognizer( target: self, action: #selector(UIViewController.profileIconClicked))
-        imageView.addGestureRecognizer(tap)
-        imageView.isUserInteractionEnabled = true
-        
-    }
-    
-    func setUpGoBackButton(in superView: UIView, animated: Bool? = true) {
+    func setUpGoBackButton(in superView: UIView, animated: Bool? = true) -> UIView {
         let image = UIImage(systemName: "backward.fill")
         
         let imageView = UIImageView(image: image)
@@ -91,10 +49,10 @@ extension UIViewController {
          3. When defining the action method, accept the subclass as a parameter in function signature, then read the associated value inside the subclassed object.
             
          Original explanation should be found at https://programmingwithswift.com/pass-arguments-to-a-selector-with-swift/
-         The simplest way of implementing all above thinks should be as follows:
+         The simplest way of implementing all above methods should be as follows:
          
          class CustomButton: UIButton {
-         var testValue: String?
+            var testValue: String?
          }
          
          let button = CustomButton()
@@ -103,7 +61,7 @@ extension UIViewController {
          
          @objc func someFunc(sender: CustomButton) {
             if let string = sender.testValue {
-                // Do something about the string
+                // Do something with the string
             }
          }
          */
@@ -111,23 +69,61 @@ extension UIViewController {
         let tap = CustomTapGestureRecognizer(target: self, action: #selector(backButtonClicked))
         tap.animated = animated
         imageView.addGestureRecognizer(tap)
-        imageView.isUserInteractionEnabled = true   // By default, isUserInteractionEnabled is set for UIImageView
+        imageView.isUserInteractionEnabled = true   // By default, isUserInteractionEnabled is set to false for UIImageView
+        return imageView
     }
     
     @objc func profileIconClicked() {
-        let destinationVC: UIViewController = (isLoggedIn) ? AccountVC(nibName: nil, bundle: nil) : AuthenticationVC(nibName: nil, bundle: nil)
+        let destinationVC: UIViewController = (AuthAPI.userInfo != nil) ? AccountVC(nibName: nil, bundle: nil) : AuthenticationVC(nibName: nil, bundle: nil)
         self.navigationController?.pushViewController(destinationVC, animated: true)
     }
     
-    // Despite we have accepted an optional CustomTapGestureRecognizer as parameter and default to nil, when adding this function as selector for a UIButton(in AuthenticationVC for closeButton), the sender will still be presented and of type UIButton... the reason is hard to understand but that's the fact. Therefore when we try to read sender.animated value in backButtonClicked, app will crash since a UIButton doesn't have an property named 'animated'. So we have to subclass UIButton, downbelow as CustomButton, and created closeButton from it.
+    /// This function configure the behaviour of the back button.
+    /// - Parameter sender: The sender of this @objc function. You should subclass a UIControl class with custom properties here. Despite we have accepted an optional CustomTapGestureRecognizer as parameter and default to nil, when adding this function as selector for a UIButton(in AuthenticationVC for closeButton), the sender will still be presented and of type UIButton... the reason is hard to understand but that's the fact. Therefore when we try to read sender.animated value in backButtonClicked, app will crash since a UIButton doesn't have an property named 'animated'. So we have to subclass UIButton, downbelow as CustomButton, and created closeButton from it.
     @objc func backButtonClicked(sender: CustomTapGestureRecognizer? = nil) {
-        
         guard let animated = sender?.animated else {
             self.navigationController?.popViewController(animated: true)
             return
         }
         self.navigationController?.popViewController(animated: animated)
     }
+    
+    /// This function creates a navigationbar-like title inside the given superview, set its title text and background color, constraint the title bar after the given leadingView, then return itself so you can use it later for setting up other constraints. By default the width of the lable is 2 times of its containing text.
+    /// - Parameters:
+    ///   - title: Text string to use in the title
+    ///   - superView: In which the title view will be added to as a subview
+    ///   - bgColor: Background color of the title label.
+    /// - Returns: The title label itself. Returning this is only for later use, for example, in case you need to set other constraints based on the title's location.
+//    func configNavTitle(title: String, in superView: UIView) -> UIView {
+//
+//        let label = PaddingLabel(top: 0, bottom: 0, left: superView.bounds.height, right: superView.bounds.height)
+//        label.text = title
+//        label.font = label.font.withSize(superView.frame.height / 2)
+        
+//        label.sizeToFit()   // Calling this after setting the font size, to get the size(essentially we only need the width here) just to hold the label, then double the width later to give us sort of margin on both left and right side. Without calling this function, the size for the label would be (0, 0) .
+//        let width = label.bounds.width + 50
+//        label.textAlignment = .center   // Since there are margins on both sides, center the text.
+//        label.
+        
+        // Set a corner-like edge on the right side of the background
+//        label.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
+//        label.layer.cornerCurve = .circular
+//        label.layer.cornerRadius = label.bounds.height * 0.5
+        // We are using backed layer to draw a round radius corner, simply set label's background color will render all previous configurations obsolete since view's background color comes on top of layer. So use layer's backgroundColor here.
+//        label.backgroundColor = bgColor
+
+
+//        label.translatesAutoresizingMaskIntoConstraints = false
+//        superView.addSubview(label)
+//
+//        NSLayoutConstraint.activate([
+//            label.leadingAnchor.constraint(equalTo: leadingView.trailingAnchor),
+//            label.heightAnchor.constraint(equalTo: superView.heightAnchor),
+//            label.centerYAnchor.constraint(equalTo: superView.centerYAnchor),
+//            label.widthAnchor.constraint(equalToConstant: width),
+//        ])
+//        return label
+//    }
 }
 
 class CustomTapGestureRecognizer: UITapGestureRecognizer {

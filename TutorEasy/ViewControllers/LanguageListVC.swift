@@ -1,39 +1,43 @@
 import UIKit
 
 class LanguageListVC: UIViewController {
-
-    // MARK: -
+    
+    // MARK: - Properties
+    private var languages = [Language]() {
+        didSet { self.collectionView.reloadData() }
+    }
+    
+    // MARK: - Custom subviews
     private var collectionView: UICollectionView!
     
     private var topView: UIView!
-        
-    private var languages = [Language.PublicInfo]() {
-        didSet { self.collectionView.reloadData() }
-    }
-        
-    // MARK: -
-    override func loadView() {
-        super.loadView()
-        loadLanguages()
-    }
     
+    private var iconView: ProfileIconView! = .init(frame: .zero, extraInfo: true)
+    
+  // MARK: - Controller functions
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = backgroundColor
-        collectionView = configCollectionView()
-        collectionView.backgroundColor = UIColor.clear      // Without this, collectionView will get an black bg color
-        collectionView.dataSource = self
-        collectionView.delegate = self
         
+        collectionView = configCollectionView()
         view.addSubview(collectionView)
         
-        topView = configTopView()
-        configProfileView(in: topView)
+        topView = configTopView(bgColor: UIColor.clear)
         
-        // According to documentation "If your app targets iOS 9.0 and later or macOS 10.11 and later, you do not need to unregister an observer that you created with this function. If you forget or are unable to remove an observer, the system cleans up the next time it would have posted to it."
-        NotificationCenter.default.addObserver(self, selector: #selector(loginStatusChanged), name: loginChanged, object: nil)
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        topView.addSubview(iconView)
+        
+        let tap = UITapGestureRecognizer(target: self, action: #selector(UIViewController.profileIconClicked))
+        iconView.addGestureRecognizer(tap)
 
+        
         NSLayoutConstraint.activate([
+            iconView.heightAnchor.constraint(equalTo: topView.heightAnchor, multiplier: 0.95),
+            iconView.centerYAnchor.constraint(equalTo: topView.centerYAnchor),
+            iconView.widthAnchor.constraint(greaterThanOrEqualToConstant: 300),
+            iconView.leadingAnchor.constraint(equalTo: topView.leadingAnchor, constant: 20),
+            
             collectionView.widthAnchor.constraint(equalToConstant: view.frame.width),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.topAnchor.constraint(equalTo: topView.bottomAnchor),
@@ -48,12 +52,6 @@ class LanguageListVC: UIViewController {
                 return
             }
             self.languages = languages
-        }
-    }
-    
-    @objc func loginStatusChanged() {
-        DispatchQueue.main.async { [unowned self] in
-            configProfileView(in: self.topView)
         }
     }
 }
@@ -74,12 +72,12 @@ extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: LanguageCell.identifier, for: indexPath) as! LanguageCell
             // Account for banner item
             let indexOffset = indexPath.item - 1
-            cell.nameLabel.text = languages[indexOffset].name
-            cell.priceLabel.text = languages[indexOffset].price?.description
-            cell.descriptionLabel.text = languages[indexOffset].description
-            
-            if let url = languages[indexOffset].imageURL {
-                cell.imageView.downloaded(from: url, contentMode: .scaleAspectFill)
+            //            cell.nameLabel.text = languages[indexOffset].name
+            //            cell.priceLabel.text = languages[indexOffset].price?.description
+            //            cell.descriptionLabel.text = languages[indexOffset].description
+            if let path = languages[indexOffset].imagePath {
+                
+                cell.imageView.downloaded(from: path, contentMode: .scaleAspectFill)
             }
             return cell
         }
@@ -171,6 +169,10 @@ extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource {
         collectionView.register(LanguageCell.self, forCellWithReuseIdentifier: LanguageCell.identifier)
         collectionView.register(BannerSlidesCell.self, forCellWithReuseIdentifier: BannerSlidesCell.identifier)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
+        
+        collectionView.backgroundColor = UIColor.clear      // Without this, collectionView will get an black bg color
+        collectionView.dataSource = self
+        collectionView.delegate = self
         return collectionView
     }
 }

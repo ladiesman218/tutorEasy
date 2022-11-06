@@ -41,15 +41,27 @@ extension URLSession {
         }
     }
     
-    func languageTask(with req: URLRequest, dispatchThread: DispatchQueue = .main, completionHandler: @escaping (Language.PublicInfo?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
+    func languageTask(with req: URLRequest, dispatchThread: DispatchQueue = .main, completionHandler: @escaping (Language?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
         return self.codableTask(with: req, dispatchThread: dispatchThread, completionHandler: completionHandler)
     }
     
-    func languagesTask(with req: URLRequest, dispatchThread: DispatchQueue = .main, completionHandler: @escaping ([Language.PublicInfo]?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
+    func languagesTask(with req: URLRequest, dispatchThread: DispatchQueue = .main, completionHandler: @escaping ([Language]?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
         return self.codableTask(with: req, dispatchThread: dispatchThread, completionHandler: completionHandler)
     }
     
     func publicUserTask(with req: URLRequest, dispatchThread: DispatchQueue = .main, completionHandler: @escaping (User.PublicInfo?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
         return self.codableTask(with: req, dispatchThread: dispatchThread, completionHandler: completionHandler)
+    }
+    
+    func coursesTask(with req: URLRequest, dispatchThread: DispatchQueue = .main, completionHandler: @escaping ([Course]?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
+        return self.codableTask(with: req, dispatchThread: dispatchThread, completionHandler: completionHandler)
+    }
+    
+    func courseTask(with req: URLRequest, dispatchQueue: DispatchQueue = .main, completionHandler: @escaping (Course?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
+        return self.codableTask(with: req, completionHandler: completionHandler)
+    }
+    
+    func pathsTask(with req: URLRequest, dispatchThread: DispatchQueue = .main, completionHandler: @escaping ([String]?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
+        return self.codableTask(with: req, completionHandler: completionHandler)
     }
 }

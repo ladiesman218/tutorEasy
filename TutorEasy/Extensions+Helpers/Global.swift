@@ -7,15 +7,25 @@
 
 import UIKit
 
-let serverURL = URL(string: "http://localhost:8080")!
+//let serverURL = URL(string: "http://localhost:8080")!     //localhost
+let serverURL = URL(string: "https://a1d0-39-154-137-3.ap.ngrok.io")!     //ngrok
+//let serverURL = URL(string: "http://20.243.114.35:8080")!     //azure
+//let serverURL = URL(string: "http://0.0.0.0:8080")!     // docker production environment
 let baseURL = serverURL.appendingPathComponent("api")
-let mediaURL = baseURL.appendingPathComponent("media")
+let fileURL = baseURL.appendingPathComponent("file")
 
 // MARK: - Checkout ngrok
 
-//let serverURL = URL(string: "http://20.243.114.35:8080")!
+enum ImageName: String, CaseIterable {
+    case image
+    case banner
+}
 
-
+enum ImageExtension: String, CaseIterable {
+    case png
+    case jpg
+    case jpeg
+}
 
 //let courseRoot = URL(string: "../Courses")!
 let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
@@ -25,11 +35,6 @@ let nameLength = Range(3...40)
 let passwordLength = Range(6...40)
 let adminEmail = "chn_dunce@126.com"
 let loginChanged: Notification.Name = .init(rawValue: "login-status-changed")
-var isLoggedIn = false {
-    didSet {
-        NotificationCenter.default.post(name: loginChanged, object: nil)
-    }
-}
 
 
 let borderColor: CGColor = UIColor.systemGray.cgColor
@@ -41,6 +46,7 @@ let backgroundColor = UIColor.systemBackground
 
 func setupDestinationVC(window: UIWindow) {
     let languageVC = LanguageListVC(nibName: nil, bundle: nil)
+    languageVC.loadLanguages()
     
     let navVC = UINavigationController(rootViewController: languageVC)
     navVC.isNavigationBarHidden = true
@@ -55,7 +61,9 @@ func setupDestinationVC(window: UIWindow) {
             AuthAPI.userInfo = nil
             let accountsVC = AuthenticationVC(nibName: nil, bundle: nil)
             print(error!.reason)
-            navVC.pushViewController(accountsVC, animated: true)
+            if navVC.topViewController == languageVC {
+                navVC.pushViewController(accountsVC, animated: true)
+            }
         }
     }
 }

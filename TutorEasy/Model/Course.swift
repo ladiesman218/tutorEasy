@@ -8,22 +8,12 @@
 import Foundation
 
 struct Course: Codable {
-	let id: UUID?
+	let id: UUID
 	let name: String
 	let description: String
 	let price: Double
-	let published: Bool
-	let freeChapters: [Int]
-	
-	
-	struct PublicInfo: Decodable {
-		let name: String
-		let description: String
-		let price: Double
-		let path: URL?
-		let imageURL:  URL?
-		let courseCount: Int
-		let freeChapters: [Int]
-	}
-	
+    let directoryURL: URL
+    let imagePath: String?
+    let freeChapters: [Int]
+    let chapters: [Chapter]
 }

@@ -5,25 +5,21 @@ import UIKit
 extension UIImageView {
     func downloaded(from url: URL, contentMode mode: ContentMode = .scaleAspectFit) {
         contentMode = mode
-        var modifiedURL = url
         
-        // Some of the urls are returned by the server, and are prefixed with "../". Since by default vapor doesn't accept any parent-folder-access request, we have to remove the "../" from url before making the request on client end, then add the "../" after receiving the request on server end to access the files.
-        if url.absoluteString.hasPrefix("../") {
-            let string = url.absoluteString
-            let path = string.replacingOccurrences(of: "../", with: "")
-            modifiedURL = mediaURL.appendingPathComponent(path)
-        }
-        
-        URLSession.shared.dataTask(with: modifiedURL) { data, response, error in
-            guard let httpURLResponse = response as? HTTPURLResponse, httpURLResponse.statusCode == 200,
-                  let mimeType = response?.mimeType, mimeType.hasSuffix("png") || mimeType.hasSuffix("jpg") || mimeType.hasSuffix("jpeg"),
-                  let data = data, error == nil,
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            #warning("return more specific error or response when failing")
+            let a = UIDocument(fileURL: URL(fileURLWithPath: "asdf"))
+            guard let httpURLResponse = response as? HTTPURLResponse,
+                  httpURLResponse.statusCode == 200,
+                  // let mimeType = httpURLResponse.mimeType, /*mimeType.hasSuffix("png") || mimeType.hasSuffix("jpg") || mimeType.hasSuffix("jpeg"),*/
+                  let data = data,
+                  error == nil,
                   let image = UIImage(data: data)
             else {
                 print("load image error")
                 return
             }
-            
+
             DispatchQueue.main.async() { [weak self] in
                 self?.image = image
             }
@@ -31,7 +27,8 @@ extension UIImageView {
     }
     
     func downloaded(from link: String, contentMode mode: ContentMode = .scaleAspectFit) {
-        guard let url = URL(string: link) else { return }
+        //link is the file path, prefix that path with the fileURL to generate the right endpoint url.
+        let url = fileURL.appendingPathComponent(link)
         downloaded(from: url, contentMode: mode)
     }
 }

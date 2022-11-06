@@ -58,18 +58,34 @@ class BannerSlidesCell: UICollectionViewCell {
     }
     
     private func loadBanners() {
-        for i in 1 ... 10 {
-            let url = mediaURL.appendingPathComponent("Courses/" + "banner\(i)")
-            
-            URLSession.shared.dataTask(with: url) { [unowned self] data, response, error in
-                guard let res = response as? HTTPURLResponse, res.statusCode == 200, error == nil else { return }
-                guard let data = data else { return }
-                let image = UIImage(data: data)!
-                DispatchQueue.main.async {
-                    self.bannerImages.append(image)
-                }
-            }.resume()
-        }
+        let apiEndpoint = fileURL.appendingPathComponent("banner").appendingPathComponent("paths")
+        URLSession.shared.pathsTask(with: URLRequest(url: apiEndpoint)) { paths, response, error in
+            guard let paths = paths else { return }
+            for path in paths {
+                let url = fileURL.appendingPathComponent(path)
+                URLSession.shared.dataTask(with: url) { [unowned self] data, response, error in
+                    guard let res = response as? HTTPURLResponse, res.statusCode == 200, error == nil else { return }
+                    guard let data = data, let image = UIImage(data: data) else { return }
+                    DispatchQueue.main.async {
+                        self.bannerImages.append(image)
+                    }
+                }.resume()
+            }
+        }.resume()
+//        let path = ""
+//        for i in 1 ... 10 {
+//            for imageExtension in ImageExtension.allCases {
+//                let url = fileURL.appendingPathComponent("banner\(i)").appendingPathExtension(imageExtension.rawValue)
+//                URLSession.shared.dataTask(with: url) { [unowned self] data, response, error in
+//                    guard let res = response as? HTTPURLResponse, res.statusCode == 200, error == nil else { return }
+//                    guard let data = data else { return }
+//                    let image = UIImage(data: data)!
+//                    DispatchQueue.main.async {
+//                        self.bannerImages.append(image)
+//                    }
+//                }.resume()
+//            }
+//        }
     }
     
     private func addImageToSlides() {

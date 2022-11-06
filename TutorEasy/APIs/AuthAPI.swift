@@ -28,12 +28,14 @@ struct AuthAPI {
         
         set {
             if newValue == nil {
+            print("userInfo set to nil")
                 UserDefaults.standard.removeObject(forKey: "user-public-info")
-                isLoggedIn = false
             } else if let encodedData = try? JSONEncoder().encode(newValue) {
+                print("userInfo set to \(newValue!)")
+
                 UserDefaults.standard.set(encodedData, forKey: "user-public-info")
-                isLoggedIn = true
             }
+            NotificationCenter.default.post(name: loginChanged, object: nil)
         }
     }
     
@@ -44,12 +46,16 @@ struct AuthAPI {
         set {
             if let newToken = newValue {
                 print("token new value: \(newToken)")
-                isLoggedIn = true
                 Keychain.save(key: AuthAPI.keychainTokenKey, data: newToken)
+                // If we get here, that means a new token is generated, get new user info automatically.
+                getPublicUserFromToken { userInfo, _, _ in
+                    guard let info = userInfo else { fatalError() }
+                    self.userInfo = info
+                }
             } else {
                 print("token value set to nil")
-                isLoggedIn = false
                 Keychain.delete(key: AuthAPI.keychainTokenKey)
+                self.userInfo = nil
             }
         }
     }

@@ -11,7 +11,7 @@ struct LanguageAPI {
     
     private static let publicLanguageEndPoint = baseURL.appendingPathComponent("language")
 
-    static func getLanguage(id: UUID, completionHandler: @escaping (Language.PublicInfo?, URLResponse?, ResponseError?) -> Void) {
+    static func getLanguage(id: UUID, completionHandler: @escaping (Language?, URLResponse?, ResponseError?) -> Void) {
 
         let req = URLRequest(url: publicLanguageEndPoint.appendingPathComponent(id.uuidString))
         URLSession.shared.languageTask(with: req, completionHandler: { language, response, error in
@@ -24,7 +24,7 @@ struct LanguageAPI {
         }).resume()
     }
     
-    static func getAllLanguages(completionHandler: @escaping ([Language.PublicInfo]?, URLResponse?, ResponseError?) -> Void) {
+    static func getAllLanguages(completionHandler: @escaping ([Language]?, URLResponse?, ResponseError?) -> Void) {
         let req = URLRequest(url: publicLanguageEndPoint)
         URLSession.shared.languagesTask(with: req) { languages, response, error in
             guard let languages = languages, error == nil else {
