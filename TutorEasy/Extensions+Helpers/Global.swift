@@ -8,13 +8,10 @@
 import UIKit
 
 //let serverURL = URL(string: "http://localhost:8080")!     //localhost
-let serverURL = URL(string: "https://a1d0-39-154-137-3.ap.ngrok.io")!     //ngrok
+let serverURL = URL(string: "https://2b32-1-28-216-191.jp.ngrok.io")!     //ngrok
 //let serverURL = URL(string: "http://20.243.114.35:8080")!     //azure
 //let serverURL = URL(string: "http://0.0.0.0:8080")!     // docker production environment
 let baseURL = serverURL.appendingPathComponent("api")
-let fileURL = baseURL.appendingPathComponent("file")
-
-// MARK: - Checkout ngrok
 
 enum ImageName: String, CaseIterable {
     case image
@@ -59,11 +56,15 @@ func setupDestinationVC(window: UIWindow) {
             AuthAPI.userInfo = userInfo
         } else {
             AuthAPI.userInfo = nil
-            let accountsVC = AuthenticationVC(nibName: nil, bundle: nil)
-            print(error!.reason)
-            if navVC.topViewController == languageVC {
-                navVC.pushViewController(accountsVC, animated: true)
+            let authenticationVC = AuthenticationVC(nibName: nil, bundle: nil)
+            
+            if !navVC.topViewController!.isKind(of: AuthenticationVC.self) {
+                navVC.pushViewController(authenticationVC, animated: true)
+
             }
+//            if navVC.topViewController == languageVC {
+//                navVC.pushViewController(accountsVC, animated: true)
+//            }
         }
     }
 }

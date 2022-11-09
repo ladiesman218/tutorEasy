@@ -36,6 +36,8 @@
 		B4BBAE2428F9C133004368F8 /* ViewController+DissmissKeyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BBAE2328F9C133004368F8 /* ViewController+DissmissKeyboard.swift */; };
 		B4BBAE2628FA85CF004368F8 /* BannerSlidesCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BBAE2528FA85CF004368F8 /* BannerSlidesCell.swift */; };
 		B4CDED9A2917C000004B2F8E /* Chapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CDED992917C000004B2F8E /* Chapter.swift */; };
+		B4CDED9C2917F01A004B2F8E /* FileAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CDED9B2917F01A004B2F8E /* FileAPI.swift */; };
+		B4CDED9E291822AE004B2F8E /* UIView+FindViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CDED9D291822AD004B2F8E /* UIView+FindViewController.swift */; };
 		B4EE8A0E286594CE0050363B /* Global.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4EE8A0D286594CE0050363B /* Global.swift */; };
 		B4EE8A12286710F10050363B /* LanguageListVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4EE8A11286710F10050363B /* LanguageListVC.swift */; };
 		B4F8315628B7CB0C0044021C /* AuthenticationVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F8315528B7CB0C0044021C /* AuthenticationVC.swift */; };
@@ -75,6 +77,8 @@
 		B4BBAE2328F9C133004368F8 /* ViewController+DissmissKeyboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ViewController+DissmissKeyboard.swift"; sourceTree = "<group>"; };
 		B4BBAE2528FA85CF004368F8 /* BannerSlidesCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerSlidesCell.swift; sourceTree = "<group>"; };
 		B4CDED992917C000004B2F8E /* Chapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chapter.swift; sourceTree = "<group>"; };
+		B4CDED9B2917F01A004B2F8E /* FileAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileAPI.swift; sourceTree = "<group>"; };
+		B4CDED9D291822AD004B2F8E /* UIView+FindViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+FindViewController.swift"; sourceTree = "<group>"; };
 		B4EE8A0D286594CE0050363B /* Global.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Global.swift; sourceTree = "<group>"; };
 		B4EE8A11286710F10050363B /* LanguageListVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageListVC.swift; sourceTree = "<group>"; };
 		B4F8315528B7CB0C0044021C /* AuthenticationVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationVC.swift; sourceTree = "<group>"; };
@@ -145,6 +149,7 @@
 			children = (
 				B462E06128BF448F0020D610 /* AuthAPI.swift */,
 				B425EA4428DAD1E7003A865D /* LanguageAPI.swift */,
+				B4CDED9B2917F01A004B2F8E /* FileAPI.swift */,
 				B4376C012908CA1D00E17698 /* CourseAPI.swift */,
 				B4BBAE1F28F850BF004368F8 /* UserAPI.swift */,
 			);
@@ -176,6 +181,7 @@
 			isa = PBXGroup;
 			children = (
 				B4EE8A0D286594CE0050363B /* Global.swift */,
+				B4CDED9D291822AD004B2F8E /* UIView+FindViewController.swift */,
 				B4BBAE2328F9C133004368F8 /* ViewController+DissmissKeyboard.swift */,
 				B417EAEA28FDB42100A2AD44 /* ViewController+TopView.swift */,
 				B41DFD2228EADA780014B158 /* URLSession+CodableTask.swift */,
@@ -272,6 +278,7 @@
 			files = (
 				B417EAEB28FDB42100A2AD44 /* ViewController+TopView.swift in Sources */,
 				B4F8315628B7CB0C0044021C /* AuthenticationVC.swift in Sources */,
+				B4CDED9C2917F01A004B2F8E /* FileAPI.swift in Sources */,
 				B4376C022908CA1D00E17698 /* CourseAPI.swift in Sources */,
 				B402DD8A286440DB000EEF40 /* LoginViewController.swift in Sources */,
 				B402DD86286440DB000EEF40 /* AppDelegate.swift in Sources */,
@@ -298,6 +305,7 @@
 				B4489B0728A3AE3A00A6DED9 /* User.swift in Sources */,
 				B402DD88286440DB000EEF40 /* SceneDelegate.swift in Sources */,
 				B4FAF44828E54D6200955121 /* LanguageDetailVC.swift in Sources */,
+				B4CDED9E291822AE004B2F8E /* UIView+FindViewController.swift in Sources */,
 				B4EE8A0E286594CE0050363B /* Global.swift in Sources */,
 				B462E06028BF444A0020D610 /* Keychain.swift in Sources */,
 				B41DFD2328EADA780014B158 /* URLSession+CodableTask.swift in Sources */,

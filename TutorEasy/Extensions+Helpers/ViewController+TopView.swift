@@ -87,43 +87,6 @@ extension UIViewController {
         }
         self.navigationController?.popViewController(animated: animated)
     }
-    
-    /// This function creates a navigationbar-like title inside the given superview, set its title text and background color, constraint the title bar after the given leadingView, then return itself so you can use it later for setting up other constraints. By default the width of the lable is 2 times of its containing text.
-    /// - Parameters:
-    ///   - title: Text string to use in the title
-    ///   - superView: In which the title view will be added to as a subview
-    ///   - bgColor: Background color of the title label.
-    /// - Returns: The title label itself. Returning this is only for later use, for example, in case you need to set other constraints based on the title's location.
-//    func configNavTitle(title: String, in superView: UIView) -> UIView {
-//
-//        let label = PaddingLabel(top: 0, bottom: 0, left: superView.bounds.height, right: superView.bounds.height)
-//        label.text = title
-//        label.font = label.font.withSize(superView.frame.height / 2)
-        
-//        label.sizeToFit()   // Calling this after setting the font size, to get the size(essentially we only need the width here) just to hold the label, then double the width later to give us sort of margin on both left and right side. Without calling this function, the size for the label would be (0, 0) .
-//        let width = label.bounds.width + 50
-//        label.textAlignment = .center   // Since there are margins on both sides, center the text.
-//        label.
-        
-        // Set a corner-like edge on the right side of the background
-//        label.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
-//        label.layer.cornerCurve = .circular
-//        label.layer.cornerRadius = label.bounds.height * 0.5
-        // We are using backed layer to draw a round radius corner, simply set label's background color will render all previous configurations obsolete since view's background color comes on top of layer. So use layer's backgroundColor here.
-//        label.backgroundColor = bgColor
-
-
-//        label.translatesAutoresizingMaskIntoConstraints = false
-//        superView.addSubview(label)
-//
-//        NSLayoutConstraint.activate([
-//            label.leadingAnchor.constraint(equalTo: leadingView.trailingAnchor),
-//            label.heightAnchor.constraint(equalTo: superView.heightAnchor),
-//            label.centerYAnchor.constraint(equalTo: superView.centerYAnchor),
-//            label.widthAnchor.constraint(equalToConstant: width),
-//        ])
-//        return label
-//    }
 }
 
 class CustomTapGestureRecognizer: UITapGestureRecognizer {

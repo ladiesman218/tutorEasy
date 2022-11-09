@@ -58,34 +58,27 @@ class BannerSlidesCell: UICollectionViewCell {
     }
     
     private func loadBanners() {
-        let apiEndpoint = fileURL.appendingPathComponent("banner").appendingPathComponent("paths")
-        URLSession.shared.pathsTask(with: URLRequest(url: apiEndpoint)) { paths, response, error in
+        
+        // We don't know how many banners are stored on server side, so query /api/file/banner/paths for all possible banner file paths first.
+        let queryBannersPath = FileAPI.publicFileEndPoint.appendingPathComponent("banner").appendingPathComponent("paths")
+        
+        URLSession.shared.pathsTask(with: URLRequest(url: queryBannersPath)) { [unowned self] paths, response, error in
             guard let paths = paths else { return }
+            
             for path in paths {
-                let url = fileURL.appendingPathComponent(path)
-                URLSession.shared.dataTask(with: url) { [unowned self] data, response, error in
-                    guard let res = response as? HTTPURLResponse, res.statusCode == 200, error == nil else { return }
-                    guard let data = data, let image = UIImage(data: data) else { return }
-                    DispatchQueue.main.async {
+                FileAPI.getFile(path: path) { data, response, error in
+                    guard let data = data, error == nil else {
+                        MessagePresenter.showMessage(title: "获取Banner错误", message: error?.localizedDescription ?? "服务器错误", on: self.findViewController(), actions: [])
+                        return
+                    }
+                    
+                    if let image = UIImage(data: data) {
                         self.bannerImages.append(image)
                     }
-                }.resume()
+                }
             }
         }.resume()
-//        let path = ""
-//        for i in 1 ... 10 {
-//            for imageExtension in ImageExtension.allCases {
-//                let url = fileURL.appendingPathComponent("banner\(i)").appendingPathExtension(imageExtension.rawValue)
-//                URLSession.shared.dataTask(with: url) { [unowned self] data, response, error in
-//                    guard let res = response as? HTTPURLResponse, res.statusCode == 200, error == nil else { return }
-//                    guard let data = data else { return }
-//                    let image = UIImage(data: data)!
-//                    DispatchQueue.main.async {
-//                        self.bannerImages.append(image)
-//                    }
-//                }.resume()
-//            }
-//        }
+
     }
     
     private func addImageToSlides() {
