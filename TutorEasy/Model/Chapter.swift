@@ -8,8 +8,8 @@
 import Foundation
 
 struct Chapter: Codable {
-    let url: URL
-    let name: String 
+    let directoryURL: URL
+    let name: String
     let pdfPath: String?
     let imagePath: String?
 }

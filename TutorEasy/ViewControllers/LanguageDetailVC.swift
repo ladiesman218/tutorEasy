@@ -10,11 +10,9 @@ import UIKit
 class LanguageDetailVC: UIViewController {
     
     // MARK: - Properties
-    var language: Language!
-    
-    var courses = [Course]() {
+    var language: Language! {
         didSet {
-            self.courseCollectionView.reloadData()
+            courseCollectionView.reloadData()
         }
     }
     

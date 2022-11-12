@@ -33,6 +33,7 @@ class LanguageCell: UICollectionViewCell {
         super.init(frame: frame)
         //                contentView.layer.borderWidth = 1
         contentView.layer.cornerRadius = 10
+        contentView.layer.backgroundColor = UIColor.blue.cgColor
         //        		contentView.layer.borderColor = UIColor.systemGray.cgColor
 //        contentView.backgroundColor = .red
         contentView.clipsToBounds = true

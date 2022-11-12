@@ -17,7 +17,7 @@ class CourseDetailVC: UIViewController {
     private var topView: UIView!
     private var iconView: ProfileIconView = .init(frame: .zero)
     private var backButtonView: UIView!
-    private var languageNavView: UIView = {
+    private let languageNavView: UIView = {
         let languageNavView = UIView()
         languageNavView.translatesAutoresizingMaskIntoConstraints = false
         // Set a corner-like edge on the right side of the background
@@ -205,6 +205,11 @@ extension CourseDetailVC: UICollectionViewDataSource, UICollectionViewDelegate, 
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
+        
+        if let imagePath = course.chapters[indexPath.item].imagePath {
+            cell.imageView.downloaded(from: imagePath)
+        }
+//        cell.imageView.image =
 //        cell.backgroundColor = .blue
 //        cell.contentView.layer.bo
         
@@ -223,6 +228,15 @@ extension CourseDetailVC: UICollectionViewDataSource, UICollectionViewDelegate, 
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
         collectionView.bounds.height * 0.1
+    }
+    
+    #warning("some async api will block user interaction")
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let chapter = course.chapters[indexPath.item]
+        let chapterVC = ChapterDetailVC()
+        chapterVC.chapter = chapter
+        
+        navigationController?.pushViewController(chapterVC, animated: false)
     }
     
 }

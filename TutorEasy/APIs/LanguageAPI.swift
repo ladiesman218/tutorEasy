@@ -8,31 +8,43 @@
 import Foundation
 
 struct LanguageAPI {
-    
-    private static let publicLanguageEndPoint = baseURL.appendingPathComponent("language")
-
-    static func getLanguage(id: UUID, completionHandler: @escaping (Language?, URLResponse?, ResponseError?) -> Void) {
-
-        let req = URLRequest(url: publicLanguageEndPoint.appendingPathComponent(id.uuidString))
-        URLSession.shared.languageTask(with: req, completionHandler: { language, response, error in
-            guard let language = language, error == nil else {
-                completionHandler(nil, response, error!)
-                return
-            }
-            
-            completionHandler(language, response, nil)
-        }).resume()
-    }
-    
-    static func getAllLanguages(completionHandler: @escaping ([Language]?, URLResponse?, ResponseError?) -> Void) {
-        let req = URLRequest(url: publicLanguageEndPoint)
-        URLSession.shared.languagesTask(with: req) { languages, response, error in
-            guard let languages = languages, error == nil else {
-                completionHandler(nil, response, error!)
-                return
-            }
-            
-            completionHandler(languages, response, nil)
-        }.resume()
-    }
+	
+	private static let publicLanguageEndPoint = baseURL.appendingPathComponent("language")
+	
+	static func getLanguage(id: UUID, completionHandler: @escaping (Language?, URLResponse?, ResponseError?) -> Void) {
+		
+		let req = URLRequest(url: publicLanguageEndPoint.appendingPathComponent(id.uuidString))
+		URLSession.shared.languageTask(with: req, completionHandler: { language, response, error in
+			guard let language = language, error == nil else {
+				completionHandler(nil, response, error!)
+				return
+			}
+			
+			completionHandler(language, response, nil)
+		}).resume()
+	}
+	
+	static func getAllLanguages(completionHandler: @escaping ([Language]?, URLResponse?, ResponseError?) -> Void) {
+		let req = URLRequest(url: publicLanguageEndPoint)
+		URLSession.shared.languagesTask(with: req) { languages, response, error in
+			guard let languages = languages, error == nil else {
+				completionHandler(nil, response, error!)
+				return
+			}
+			
+			completionHandler(languages, response, nil)
+		}.resume()
+	}
+	
+//	static func fetchLanguages() async -> [Language] {
+//		var languages = [Language]()
+//		let req = URLRequest(url: publicLanguageEndPoint)
+//		do {
+//			let (data, _) = try await URLSession.shared.data(for: req)
+//			languages = try JSONDecoder().decode([Language].self, from: data)
+//			return languages
+//		} catch {
+//			return []
+//		}
+//	}
 }
