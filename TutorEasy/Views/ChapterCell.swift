@@ -15,6 +15,8 @@ class ChapterCell: UICollectionViewCell {
         super.init(frame: frame)
         contentView.layer.backgroundColor = UIColor.blue.cgColor
         contentView.layer.cornerRadius = frame.width * 0.07
+		contentView.clipsToBounds = true
+
         imageView = UIImageView()
         contentView.addSubview(imageView)
         

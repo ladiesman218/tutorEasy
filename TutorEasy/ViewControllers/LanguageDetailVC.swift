@@ -130,7 +130,7 @@ extension LanguageDetailVC: UICollectionViewDataSource, UICollectionViewDelegate
                 return
             }
             courseDetailVC.course = course
-            course.chapters.forEach { print($0.name) }
+
             navigationController?.pushViewController(courseDetailVC, animated: true)
         }
         
