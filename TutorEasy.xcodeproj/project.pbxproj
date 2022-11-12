@@ -34,7 +34,6 @@
 		B4BBAE2028F850BF004368F8 /* UserAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BBAE1F28F850BF004368F8 /* UserAPI.swift */; };
 		B4BBAE2228F99398004368F8 /* AccountVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BBAE2128F99398004368F8 /* AccountVC.swift */; };
 		B4BBAE2428F9C133004368F8 /* ViewController+DissmissKeyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BBAE2328F9C133004368F8 /* ViewController+DissmissKeyboard.swift */; };
-		B4BBAE2628FA85CF004368F8 /* BannerSlidesCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BBAE2528FA85CF004368F8 /* BannerSlidesCell.swift */; };
 		B4CDED9A2917C000004B2F8E /* Chapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CDED992917C000004B2F8E /* Chapter.swift */; };
 		B4CDED9C2917F01A004B2F8E /* FileAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CDED9B2917F01A004B2F8E /* FileAPI.swift */; };
 		B4CDED9E291822AE004B2F8E /* UIView+FindViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CDED9D291822AD004B2F8E /* UIView+FindViewController.swift */; };
@@ -76,7 +75,6 @@
 		B4BBAE1F28F850BF004368F8 /* UserAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAPI.swift; sourceTree = "<group>"; };
 		B4BBAE2128F99398004368F8 /* AccountVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountVC.swift; sourceTree = "<group>"; };
 		B4BBAE2328F9C133004368F8 /* ViewController+DissmissKeyboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ViewController+DissmissKeyboard.swift"; sourceTree = "<group>"; };
-		B4BBAE2528FA85CF004368F8 /* BannerSlidesCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerSlidesCell.swift; sourceTree = "<group>"; };
 		B4CDED992917C000004B2F8E /* Chapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chapter.swift; sourceTree = "<group>"; };
 		B4CDED9B2917F01A004B2F8E /* FileAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileAPI.swift; sourceTree = "<group>"; };
 		B4CDED9D291822AD004B2F8E /* UIView+FindViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+FindViewController.swift"; sourceTree = "<group>"; };
@@ -138,7 +136,6 @@
 			isa = PBXGroup;
 			children = (
 				B425EA3F28D314DE003A865D /* LanguageCell.swift */,
-				B4BBAE2528FA85CF004368F8 /* BannerSlidesCell.swift */,
 				B4376C09290FBBFF00E17698 /* ChapterCell.swift */,
 				B4376BFF2907FD2000E17698 /* CourseCell.swift */,
 				B4376C03290D7FC500E17698 /* ProfileIconView.swift */,
@@ -296,7 +293,6 @@
 				B4376C06290E1F2800E17698 /* CourseDetailVC.swift in Sources */,
 				B4376C04290D7FC500E17698 /* ProfileIconView.swift in Sources */,
 				B4376C0A290FBBFF00E17698 /* ChapterCell.swift in Sources */,
-				B4BBAE2628FA85CF004368F8 /* BannerSlidesCell.swift in Sources */,
 				B4CDED9A2917C000004B2F8E /* Chapter.swift in Sources */,
 				B4376C002907FD2000E17698 /* CourseCell.swift in Sources */,
 				B4489B1028ABD2F300A6DED9 /* ResponseError.swift in Sources */,
