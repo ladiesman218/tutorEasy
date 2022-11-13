@@ -42,9 +42,11 @@ class CourseDetailVC: UIViewController {
 		// Set a corner-like edge on the right side of the background
 		languageNavView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
 		languageNavView.layer.cornerCurve = .circular
-//		We are using backed layer to draw a round radius corner, simply set label's background color will render all previous configurations obsolete since view's background color comes on top of layer. So use layer's backgroundColor here. 
+		// We are using backed layer to draw a round radius corner, simply set label's background color will render all previous configurations obsolete since view's background color comes on top of layer. So use layer's backgroundColor here. 
 		languageNavView.layer.backgroundColor = UIColor.systemYellow.cgColor
 		languageNavView.layer.zPosition = .greatestFiniteMagnitude
+		
+		
 		return languageNavView
 	}()
 	
@@ -61,7 +63,7 @@ class CourseDetailVC: UIViewController {
 		// Set a corner-like edge on the right side of the background
 		courseNavView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
 		courseNavView.layer.cornerCurve = .circular
-		//We are using backed layer to draw a round radius corner, simply set label's background color will render all previous configurations obsolete since view's background color comes on top of layer. So use layer's backgroundColor here.
+		// We are using backed layer to draw a round radius corner, simply set label's background color will render all previous configurations obsolete since view's background color comes on top of layer. So use layer's backgroundColor here.
 		courseNavView.layer.backgroundColor = UIColor.systemOrange.cgColor
 		return courseNavView
 	}()
@@ -126,7 +128,6 @@ class CourseDetailVC: UIViewController {
 		let tap = UITapGestureRecognizer(target: self, action: #selector(UIViewController.profileIconClicked))
 		iconView.addGestureRecognizer(tap)
 		topView.addSubview(iconView)
-		iconView.translatesAutoresizingMaskIntoConstraints = false
 		
 		languageNavView.layer.cornerRadius = topViewHeight * 0.3
 		backButtonView = setUpGoBackButton(in: languageNavView)
@@ -226,7 +227,7 @@ extension CourseDetailVC: UICollectionViewDataSource, UICollectionViewDelegate, 
 	
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
-
+		
 		cell.imageView.image = chapterCellImages[indexPath.item]
 		
 		return cell

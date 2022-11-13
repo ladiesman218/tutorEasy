@@ -39,6 +39,7 @@ class ChapterDetailVC: UIViewController {
 		pdfView.backgroundColor = .yellow
 		pdfView.autoScales = true
 		
+		#warning("禁用双击缩放")
 //		pdfView.isInMarkupMode = false
 		pdfView.translatesAutoresizingMaskIntoConstraints = false
 		return pdfView
@@ -75,4 +76,14 @@ class ChapterDetailVC: UIViewController {
     }
 }
 
-extension ChapterDetailVC: PDFViewDelegate {}
+extension ChapterDetailVC: PDFViewDelegate {
+	func pdfViewWillClick(onLink sender: PDFView, with url: URL) {
+		print(url)
+		let path = url.path
+		print(path)
+		FileAPI.getFile(path: path) { data, response, error in
+			print(response)
+		}
+	}
+}
+

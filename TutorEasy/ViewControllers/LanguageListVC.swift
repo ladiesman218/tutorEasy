@@ -78,7 +78,8 @@ class LanguageListVC: UIViewController {
 		
 		topView = configTopView(bgColor: UIColor.clear)
 		
-		iconView.translatesAutoresizingMaskIntoConstraints = false
+		let tap = UITapGestureRecognizer(target: self, action: #selector(UIViewController.profileIconClicked))
+		iconView.addGestureRecognizer(tap)
 		topView.addSubview(iconView)
 		
 		//		let tap = UITapGestureRecognizer(target: self, action: #selector(UIViewController.profileIconClicked))

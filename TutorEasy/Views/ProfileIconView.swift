@@ -14,8 +14,10 @@ class ProfileIconView: UIView {
     
     init(frame: CGRect, extraInfo: Bool = false) {
         super.init(frame: frame)
-        
-        if AuthAPI.userInfo != nil {
+		
+		self.translatesAutoresizingMaskIntoConstraints = false
+		
+		if AuthAPI.userInfo != nil {
             // User has logged in
             imageView.image = UIImage(systemName: "person.crop.circle")!
         } else {
