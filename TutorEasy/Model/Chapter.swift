@@ -10,6 +10,6 @@ import Foundation
 struct Chapter: Codable {
     let directoryURL: URL
     let name: String
-    let pdfPath: String?
+    let pdfURL: URL?
     let imagePath: String?
 }

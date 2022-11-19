@@ -8,7 +8,7 @@
 import UIKit
 
 //let serverURL = URL(string: "http://localhost:8080")!     //localhost
-let serverURL = URL(string: "https://4d42-1-28-216-191.jp.ngrok.io")!     //ngrok
+let serverURL = URL(string: "https://98ab-1-28-218-30.jp.ngrok.io")!     //ngrok
 //let serverURL = URL(string: "http://20.243.114.35:8080")!     //azure
 //let serverURL = URL(string: "http://0.0.0.0:8080")!     // docker production environment
 let baseURL = serverURL.appendingPathComponent("api")
@@ -60,11 +60,7 @@ func setupDestinationVC(window: UIWindow) {
             
             if !navVC.topViewController!.isKind(of: AuthenticationVC.self) {
                 navVC.pushViewController(authenticationVC, animated: true)
-
             }
-//            if navVC.topViewController == languageVC {
-//                navVC.pushViewController(accountsVC, animated: true)
-//            }
         }
     }
 }

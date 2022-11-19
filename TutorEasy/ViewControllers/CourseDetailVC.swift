@@ -250,12 +250,12 @@ extension CourseDetailVC: UICollectionViewDataSource, UICollectionViewDelegate, 
 #warning("Async api will block user interaction")
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 		let chapter = course.chapters[indexPath.item]
-		let chapterVC = ChapterDetailVC()
-		chapterVC.chapter = chapter
-		guard chapter.pdfPath != nil else {
+		guard chapter.pdfURL != nil else {
 			print("Can't find pdf path for chapter")
 			return
 		}
+		let chapterVC = ChapterDetailVC()
+		chapterVC.chapter = chapter
 		navigationController?.pushViewController(chapterVC, animated: false)
 	}
 	
