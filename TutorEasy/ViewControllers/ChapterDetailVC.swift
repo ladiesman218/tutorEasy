@@ -16,16 +16,21 @@ class ChapterDetailVC: UIViewController {
 		didSet {
 			let url = chapter.pdfURL!
 			self.pdfView.document = PDFDocument(url: url)!
-			self.pdfView.setNeedsDisplay()
+//			self.pdfView.setNeedsDisplay()
 		}
 	}
 	// This will hold the scaleFactor value for pdfView after it's set for the first time
 	private var scaleFactor: CGFloat!
 	
-	// Properties for video playback
 	private let player: AVPlayer = AVPlayer()
-	// After video finished playing, try to play it again will give black screen with ongoing audio. Debug view hierarchy shows something wierd in AVPlayerViewController's view. Solution for now is to create a new instance of AVPlayerViewController everytime user click to play a video, so it has to be instantiated inside the pdfViewWillClick function.
+	// After video finished playing, try to play it again will give black screen with ongoing audio. Debug view hierarchy shows something wierd in AVPlayerViewController's subview. Solution for now is to create a new instance of AVPlayerViewController everytime user click to play a video, so it has to be instantiated inside the pdfViewWillClick delegate method.
 	private var playerViewController: AVPlayerViewController!
+	// To hold thumbnails we manually generated for the pdf document, then showing them later in a collectionView. The built-in PDFThumbnailView has an hard to work-around issue: when clicking an thumbnail, it automatically become larger and cover other thumbnails next to it.
+	private var thumbnails = [UIImage]() {
+		didSet {
+			thumbnailCollectionView.reloadData()
+		}
+	}
 	
 	// MARK: - Custom subviews
 	private var topView: UIView!
@@ -39,8 +44,7 @@ class ChapterDetailVC: UIViewController {
 	
 	var pdfView: PDFView = {
 		let pdfView = PDFView()
-		pdfView.displayMode = .singlePageContinuous
-		pdfView.backgroundColor = .yellow
+		pdfView.displayMode = .singlePage
 		pdfView.autoScales = true
 		pdfView.enableDataDetectors = true
 #warning("Disable selecting, editing, for pdfView")
@@ -49,19 +53,29 @@ class ChapterDetailVC: UIViewController {
 		return pdfView
 	}()
 	
+	let thumbnailCollectionView: UICollectionView = {
+		let layout = UICollectionViewFlowLayout()
+		let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+		collectionView.backgroundColor = backgroundColor
+		collectionView.translatesAutoresizingMaskIntoConstraints = false
+		collectionView.register(PDFThumbnailCell.self, forCellWithReuseIdentifier: PDFThumbnailCell.identifier)
+		
+		return collectionView
+	}()
+	
 	// MARK: - Controller functions
 	
 	override func viewDidLayoutSubviews() {
 		super.viewDidLayoutSubviews()
+
 		scaleFactor = pdfView.scaleFactor
 		// Setting min and max scaleFactor to a fixed value will prevent pdfView to zoom-in or out.
 		pdfView.minScaleFactor = scaleFactor
 		pdfView.maxScaleFactor = scaleFactor
-		//		NotificationCenter.default.addObserver(self, selector: #selector(noZoom), name: .PDFViewScaleChanged, object: nil)
-		
 		//		pdfView.isUserInteractionEnabled = false	// This disable all user interactions including clicking on a link.
 		//		print(pdfView.document?.accessPermissions.rawValue)
 		//		print(pdfView.document?.permissionsStatus.rawValue)
+
 	}
 	
 	override func viewDidLoad() {
@@ -78,6 +92,17 @@ class ChapterDetailVC: UIViewController {
 		pdfView.delegate = self
 		view.addSubview(pdfView)
 		
+		thumbnailCollectionView.delegate = self
+		thumbnailCollectionView.dataSource = self
+		view.addSubview(thumbnailCollectionView)
+		
+		// Generate thumbnails manually
+		for number in 0 ... pdfView.document!.pageCount - 1 {
+			let box = pdfView.displayBox
+			let image = pdfView.document!.page(at: number)!.thumbnail(of: .init(width: 500, height: 350), for: box)
+			thumbnails.append(image)
+		}
+
 		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
 		
 		NSLayoutConstraint.activate([
@@ -86,9 +111,14 @@ class ChapterDetailVC: UIViewController {
 			chapterTitle.topAnchor.constraint(equalTo: topView.topAnchor),
 			chapterTitle.bottomAnchor.constraint(equalTo: topView.bottomAnchor),
 			
-			pdfView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+			thumbnailCollectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+			thumbnailCollectionView.topAnchor.constraint(equalTo: topView.bottomAnchor, constant: 20),
+			thumbnailCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+			thumbnailCollectionView.widthAnchor.constraint(equalToConstant: view.frame.size.width * 0.2),
+	
+			pdfView.leadingAnchor.constraint(equalTo: thumbnailCollectionView.trailingAnchor),
 			pdfView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-			pdfView.topAnchor.constraint(equalTo: topView.bottomAnchor, constant: 20),
+			pdfView.topAnchor.constraint(equalTo: thumbnailCollectionView.topAnchor),
 			pdfView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 		])
 	}
@@ -125,6 +155,7 @@ extension ChapterDetailVC: PDFViewDelegate {
 		
 	}
 }
+
 extension ChapterDetailVC: AVPlayerViewControllerDelegate {
 	
 	// When pip started, this method returns true, which enbales user to view pdf contents. If this returns false, pdf contents will be blocked by playerVC itself(which is a blank screen in pip mode).
@@ -162,3 +193,29 @@ extension ChapterDetailVC: AVPlayerViewControllerDelegate {
 ////		NotificationCenter.default.post(name: .kAVPlayerViewControllerDismissingNotification, object: nil)
 //	}
 //}
+
+extension ChapterDetailVC: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
+	func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+		return thumbnails.count
+	}
+	
+	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PDFThumbnailCell.identifier, for: indexPath) as! PDFThumbnailCell
+		cell.imageView.image = thumbnails[indexPath.item]
+		return cell
+	}
+	
+	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+		return .init(width: collectionView.bounds.size.width * 0.9, height: collectionView.bounds.size.width * 0.6)
+	}
+	
+	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
+		.init(top: 10, left: 0, bottom: 10, right: 0)
+	}
+	
+	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+		let page = pdfView.document!.page(at: indexPath.item)!
+		pdfView.go(to: page)
+	}
+	
+}

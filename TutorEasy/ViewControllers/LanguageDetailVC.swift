@@ -29,7 +29,7 @@ class LanguageDetailVC: UIViewController {
         
         collectionView.register(CourseCell.self, forCellWithReuseIdentifier: CourseCell.identifier)
         collectionView.backgroundColor = .systemGray4
-        collectionView.contentInset = .init(top: 40, left: 40, bottom: 0, right: 20)
+        collectionView.contentInset = .init(top: 40, left: 20, bottom: 0, right: 20)
         collectionView.layer.cornerRadius = 20
         
         collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -91,13 +91,8 @@ extension LanguageDetailVC: UICollectionViewDataSource, UICollectionViewDelegate
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CourseCell.identifier, for: indexPath) as! CourseCell
         
-        cell.layer.shadowColor = UIColor.gray.cgColor
-        let cellDiemension = cell.bounds.size.width
-        cell.layer.shadowOffset = .init(width: cellDiemension * 0.07, height: -(cellDiemension * 0.07))
-        cell.layer.shadowOpacity = 1
-        cell.layer.shadowRadius = 1
-        // Generating shadows dynamically is expensive, because iOS has to draw the shadow around the exact shape of your view's contents. If you can, set the shadowPath property to a specific value so that iOS doesn't need to calculate transparency dynamically. Value 20 comes from the cornerRadius value of CourseCell's contentView
-        cell.layer.shadowPath = UIBezierPath(roundedRect: cell.bounds, cornerRadius: 20).cgPath
+        createShadow(for: cell)
+		
         if let imagePath = language.courses[indexPath.item].imagePath {
             cell.imageView.downloaded(from: imagePath, contentMode: .scaleAspectFill)
         }
@@ -116,7 +111,7 @@ extension LanguageDetailVC: UICollectionViewDataSource, UICollectionViewDelegate
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
-        return 50
+        return 30
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {

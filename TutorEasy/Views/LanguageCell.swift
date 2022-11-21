@@ -32,7 +32,7 @@ class LanguageCell: UICollectionViewCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
         //                contentView.layer.borderWidth = 1
-        contentView.layer.cornerRadius = 10
+		contentView.layer.cornerRadius = contentView.bounds.size.width * cornerRadiusMultiplier
         contentView.layer.backgroundColor = UIColor.blue.cgColor
         //        		contentView.layer.borderColor = UIColor.systemGray.cgColor
 //        contentView.backgroundColor = .red

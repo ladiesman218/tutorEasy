@@ -102,6 +102,8 @@ class CourseDetailVC: UIViewController {
 	private var chapterCollectionView: UICollectionView = {
 		let layout = UICollectionViewFlowLayout()
 		let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+		collectionView.contentInset = .init(top: 30, left: 20, bottom: 30, right: 20)
+		collectionView.layer.cornerRadius = 20
 		collectionView.register(ChapterCell.self, forCellWithReuseIdentifier: ChapterCell.identifier)
 		collectionView.translatesAutoresizingMaskIntoConstraints = false
 		collectionView.layer.backgroundColor = UIColor.systemGray5.cgColor
@@ -120,6 +122,7 @@ class CourseDetailVC: UIViewController {
 		
 		chapterCollectionView.dataSource = self
 		chapterCollectionView.delegate = self
+		view.addSubview(chapterCollectionView)
 		
 		view.backgroundColor = .systemGray4
 		topView = configTopView(bgColor: UIColor.systemGray6)
@@ -163,11 +166,6 @@ class CourseDetailVC: UIViewController {
 		imageView.layer.cornerRadius = view.frame.width * 0.04 * 0.7
 		imageView.clipsToBounds = true
 		themeView.addSubview(imageView)
-		
-		chapterCollectionView.layer.cornerRadius = topViewHeight * 0.3
-		let inset = view.frame.width * 0.02
-		chapterCollectionView.contentInset = .init(top: inset, left: inset, bottom: inset, right: inset)
-		view.addSubview(chapterCollectionView)
 		
 		NSLayoutConstraint.activate([
 			languageTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor, constant: topViewHeight * 0.7),
@@ -228,13 +226,15 @@ extension CourseDetailVC: UICollectionViewDataSource, UICollectionViewDelegate, 
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
 		
+		createShadow(for: cell)
 		cell.imageView.image = chapterCellImages[indexPath.item]
 		
 		return cell
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-		let width = (collectionView.bounds.width * 0.8) / 4
+		let totalWidth = collectionView.bounds.width - (collectionView.contentInset.left + collectionView.contentInset.right)
+		let width = totalWidth / 4 - 5	// Accounts for item spacing
 		
 		return CGSize(width: width, height: width * 1.2)
 	}
@@ -251,6 +251,7 @@ extension CourseDetailVC: UICollectionViewDataSource, UICollectionViewDelegate, 
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 		let chapter = course.chapters[indexPath.item]
 		guard chapter.pdfURL != nil else {
+			#warning("let the users know what happened")
 			print("Can't find pdf path for chapter")
 			return
 		}

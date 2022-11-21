@@ -21,9 +21,9 @@ class CourseCell: UICollectionViewCell {
         super.init(frame: frame)
     
         contentView.addSubview(imageView)
-        contentView.layer.cornerRadius = 20
+		contentView.layer.cornerRadius = contentView.bounds.size.width * cornerRadiusMultiplier
         contentView.clipsToBounds = true
-        contentView.layoutMargins = .init(top: 3, left: 3, bottom: 3, right: 3)
+//        contentView.layoutMargins = .init(top: 3, left: 3, bottom: 3, right: 3)
         
         NSLayoutConstraint.activate([
             imageView.widthAnchor.constraint(equalTo: contentView.widthAnchor),

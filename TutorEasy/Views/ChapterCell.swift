@@ -14,7 +14,7 @@ class ChapterCell: UICollectionViewCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
         contentView.layer.backgroundColor = UIColor.blue.cgColor
-        contentView.layer.cornerRadius = frame.width * 0.07
+		contentView.layer.cornerRadius = contentView.bounds.size.width * cornerRadiusMultiplier
 		contentView.clipsToBounds = true
 
         imageView = UIImageView()
