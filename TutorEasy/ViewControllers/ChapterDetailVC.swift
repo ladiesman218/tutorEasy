@@ -25,7 +25,7 @@ class ChapterDetailVC: UIViewController {
 	private let player: AVPlayer = AVPlayer()
 	// After video finished playing, try to play it again will give black screen with ongoing audio. Debug view hierarchy shows something wierd in AVPlayerViewController's subview. Solution for now is to create a new instance of AVPlayerViewController everytime user click to play a video, so it has to be instantiated inside the pdfViewWillClick delegate method.
 	private var playerViewController: AVPlayerViewController!
-	// To hold thumbnails we manually generated for the pdf document, then showing them later in a collectionView. The built-in PDFThumbnailView has an hard to work-around issue: when clicking an thumbnail, it automatically become larger and cover other thumbnails next to it.
+	// To hold thumbnails we manually generated for the pdf document, then showing them later in a collectionView. The built-in PDFThumbnailView has an hard-to-work-around issue: when clicking an thumbnail, it automatically become larger and cover other thumbnails next to it.
 	private var thumbnails = [UIImage]() {
 		didSet {
 			thumbnailCollectionView.reloadData()

@@ -166,7 +166,13 @@ struct AuthAPI {
     }
     
     static func logout(completion: @escaping (AuthResult) -> Void) {
+		guard let tokenValue = tokenValue else {
+			// If no token value is found, we still generate a false success completion, essentially on caller side throw user back to LanguageListVC
+			DispatchQueue.main.async { completion(.success) }
+			return
+		}
         var req = URLRequest(url: Self.userEndPoint.appendingPathComponent("logout"))
+		req.addValue("Bearer \(tokenValue)", forHTTPHeaderField: "Authorization")
         req.httpMethod = "POST"
         
         URLSession.shared.dataTask(with: req) { _, response, _ in
@@ -175,8 +181,8 @@ struct AuthAPI {
                 return
             }
             
-            tokenValue = nil
-            userInfo = nil
+			// On server side, logout function already invalidate all tokens associated with the user by itself. Here set local tokenValue to nil has 2 purposes: 1. trigger loginChanged notification, so languageListVC will display correct info for login status. 2. In next launch, we will call getPublicUserFromToken to decide if login/register vc is gonna be pushed, without an tokenValue that method returns quicker than goes to server side.
+			Self.tokenValue = nil
             DispatchQueue.main.async { completion(.success) }
         }.resume()
     }

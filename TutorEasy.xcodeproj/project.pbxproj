@@ -31,7 +31,6 @@
 		B462E06228BF448F0020D610 /* AuthAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B462E06128BF448F0020D610 /* AuthAPI.swift */; };
 		B462E06428BF5CF00020D610 /* Token.swift in Sources */ = {isa = PBXBuildFile; fileRef = B462E06328BF5CF00020D610 /* Token.swift */; };
 		B462E06628BF5F920020D610 /* ErrorPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B462E06528BF5F920020D610 /* ErrorPresenter.swift */; };
-		B4BBAE2028F850BF004368F8 /* UserAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BBAE1F28F850BF004368F8 /* UserAPI.swift */; };
 		B4BBAE2228F99398004368F8 /* AccountVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BBAE2128F99398004368F8 /* AccountVC.swift */; };
 		B4BBAE2428F9C133004368F8 /* ViewController+DissmissKeyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BBAE2328F9C133004368F8 /* ViewController+DissmissKeyboard.swift */; };
 		B4CDED9A2917C000004B2F8E /* Chapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CDED992917C000004B2F8E /* Chapter.swift */; };
@@ -73,7 +72,6 @@
 		B462E06128BF448F0020D610 /* AuthAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthAPI.swift; sourceTree = "<group>"; };
 		B462E06328BF5CF00020D610 /* Token.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Token.swift; sourceTree = "<group>"; };
 		B462E06528BF5F920020D610 /* ErrorPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorPresenter.swift; sourceTree = "<group>"; };
-		B4BBAE1F28F850BF004368F8 /* UserAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAPI.swift; sourceTree = "<group>"; };
 		B4BBAE2128F99398004368F8 /* AccountVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountVC.swift; sourceTree = "<group>"; };
 		B4BBAE2328F9C133004368F8 /* ViewController+DissmissKeyboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ViewController+DissmissKeyboard.swift"; sourceTree = "<group>"; };
 		B4CDED992917C000004B2F8E /* Chapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chapter.swift; sourceTree = "<group>"; };
@@ -153,7 +151,6 @@
 				B425EA4428DAD1E7003A865D /* LanguageAPI.swift */,
 				B4CDED9B2917F01A004B2F8E /* FileAPI.swift */,
 				B4376C012908CA1D00E17698 /* CourseAPI.swift */,
-				B4BBAE1F28F850BF004368F8 /* UserAPI.swift */,
 			);
 			path = APIs;
 			sourceTree = "<group>";
@@ -302,7 +299,6 @@
 				B4BBAE2428F9C133004368F8 /* ViewController+DissmissKeyboard.swift in Sources */,
 				B4CFC46D292921F700CB337A /* PDFThumbnailCell.swift in Sources */,
 				B425EA4528DAD1E7003A865D /* LanguageAPI.swift in Sources */,
-				B4BBAE2028F850BF004368F8 /* UserAPI.swift in Sources */,
 				B462E06628BF5F920020D610 /* ErrorPresenter.swift in Sources */,
 				B4F8315828B7CE660044021C /* RegisterViewController.swift in Sources */,
 				B4489B0728A3AE3A00A6DED9 /* User.swift in Sources */,
