@@ -9,26 +9,71 @@ import UIKit
 
 class AccountVC: UIViewController {
 
-    // MARK: -
+	// MARK: - Custom Properties
+	static let customBgColor = UIColor.systemBlue.withAlphaComponent(0.6)
+	private let navigationTexts = ["个人资料", "我的课程", "我的钱包", "退出登录"]
+	static let navigationIdentifier = "accountsVCNavCell"
+	
+    // MARK: - Custom Views
     private var topView: UIView!
     private var backButtonView: UIView!
-    
-    // MARK: -
+	private let navTitle: UILabel = {
+		let label = UILabel()
+		label.translatesAutoresizingMaskIntoConstraints = false
+		label.text = "个人中心"
+		label.textColor = .white
+		return label
+	}()
+	
+	private let navigationTable: UITableView = {
+		let tableView = UITableView()
+//		tableView.backgroundColor = customBgColor
+		tableView.bounces = false
+		tableView.translatesAutoresizingMaskIntoConstraints = false
+		tableView.register(UITableViewCell.self, forCellReuseIdentifier: navigationIdentifier)
+		return tableView
+	}()
+	
+	private let containerView: UIView = {
+		let view = UIView()
+		view.translatesAutoresizingMaskIntoConstraints = false
+		return view
+	}()
+	
+    // MARK: - View Controller functions
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = backgroundColor
-        topView = configTopView(bgColor: .systemBlue.withAlphaComponent(0.6))
-
-
+		view.backgroundColor = backgroundColor
+		
+		topView = configTopView(bgColor: Self.customBgColor)
         backButtonView = setUpGoBackButton(in: topView)
-        // Do any additional setup after loading the view.
+		
+		view.addSubview(navTitle)
+		navTitle.font = navTitle.font.withSize(topViewHeight / 2)
+		
+		view.addSubview(navigationTable)
+		navigationTable.dataSource = self
+		navigationTable.delegate = self
+		
+		view.addSubview(containerView)
+		
+		NSLayoutConstraint.activate([
+			navTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor),
+			navTitle.heightAnchor.constraint(equalTo: topView.heightAnchor),
+			navTitle.topAnchor.constraint(equalTo: topView.topAnchor),
+			
+			navigationTable.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+			navigationTable.topAnchor.constraint(equalTo: topView.bottomAnchor),
+			navigationTable.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+			navigationTable.widthAnchor.constraint(equalToConstant: view.frame.width * 0.2),
+			
+			containerView.topAnchor.constraint(equalTo: topView.bottomAnchor),
+			containerView.leadingAnchor.constraint(equalTo: navigationTable.trailingAnchor),
+			containerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+			containerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+		])
         
-        
-        let button = UIButton(frame: CGRect(origin: .init(x: 100, y: 50), size: .init(width: 100, height: 40)))
-        button.backgroundColor = .black
-        button.setTitle("Log out", for: .normal)
-        button.addTarget(self, action: #selector(logout), for: .touchUpInside)
-        view.addSubview(button)
+
     }
     
     @objc func logout() {
@@ -42,15 +87,47 @@ class AccountVC: UIViewController {
         }
     }
     
+}
 
-    /*
-    // MARK: - Navigation
+extension AccountVC: UITableViewDataSource, UITableViewDelegate {
+	func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+		return 4
+	}
+	
+	func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+		let cell = tableView.dequeueReusableCell(withIdentifier: Self.navigationIdentifier, for: indexPath)
+		cell.textLabel!.text = navigationTexts[indexPath.row]
+		cell.textLabel!.textColor = .white
+		cell.backgroundColor = Self.customBgColor
 
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
-    }
-    */
+		return cell
+	}
+	
+	func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+		return tableView.frame.height / CGFloat(tableView.numberOfRows(inSection: 0))
+	}
+	
+	func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+		for vc in self.children  {
+			vc.removeFromParent()
+		}
 
+		switch indexPath {
+			case [0, 0]:
+				break
+			case [0, 1]:
+				let productsVC = ProductsViewController()
+				self.addChild(productsVC)
+				self.view.addSubview(productsVC.view)
+				productsVC.view.frame = self.containerView.frame
+				
+			case [0, 2]:
+				break
+			case [0, 3]:
+				break
+			default:
+				break
+		}
+		
+	}
 }
