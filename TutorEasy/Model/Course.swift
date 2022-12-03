@@ -11,7 +11,6 @@ struct Course: Codable {
 	let id: UUID
 	let name: String
 	let description: String
-	let price: Double
     let directoryURL: URL
     let imagePath: String?
     let freeChapters: [Int]

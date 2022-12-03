@@ -5,7 +5,7 @@ struct Language: Codable {
 	let id: UUID
 	let name: String
 	let description: String
-    let price: Double?
+    let price: Double
     let courses: [Course]
 	let directoryURL: URL   // We are not using language's directoryURL, at least for now. But to keep decoing json response easy, this property leaves.
 	let imagePath: String?
