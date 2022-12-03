@@ -118,8 +118,8 @@ extension AccountVC: UITableViewDataSource, UITableViewDelegate {
 			case [0, 1]:
 				let productsVC = ProductsViewController()
 				self.addChild(productsVC)
-				self.view.addSubview(productsVC.view)
-				productsVC.view.frame = self.containerView.frame
+				self.containerView.addSubview(productsVC.view)
+				productsVC.view.frame = self.containerView.bounds
 				
 			case [0, 2]:
 				break
