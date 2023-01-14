@@ -9,6 +9,7 @@ import Foundation
 
 
 struct User {
+	let id: UUID?
 	let email: String
 	let username: String
 	let firstName: String?
@@ -35,6 +36,7 @@ extension User {
 
 extension User {
 	struct PublicInfo: Codable {
+		let id: UUID
 		let email: String
 		let username: String
 		var firstName: String?

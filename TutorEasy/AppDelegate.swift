@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import StoreKit
 
 @available(iOS 9.0, *)
 @main
@@ -17,6 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 		
 		_ = UIWindow(frame: UIScreen.main.bounds)
 
+		SKPaymentQueue.default().add(StoreObserver.shared)
         return true
 	}
 	

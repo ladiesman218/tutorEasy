@@ -9,4 +9,5 @@ struct Language: Codable {
     let courses: [Course]
 	let directoryURL: URL   // We are not using language's directoryURL, at least for now. But to keep decoing json response easy, this property leaves.
 	let imagePath: String?
+	let annuallyIAPIdentifer: String
 }

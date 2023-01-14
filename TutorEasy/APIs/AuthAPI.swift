@@ -12,29 +12,27 @@ struct AuthAPI {
     static let keychainTokenKey = "Tutor-Easy-Token"
     static let keychainUsernameKey = "Tutor-Easy-username"
     static let keychainPasswordKey = "Tutor-Easy-password"
-    
+	static let userDefaultsPublicInfoKey = "user-public-info"
     
     static var userInfo: User.PublicInfo? {
-        get {
-            guard let savedData = UserDefaults.standard.object(forKey: "user-public-info") as? Data else {
-                return nil
-            }
-            guard let decodedUser = try? JSONDecoder().decode(User.PublicInfo.self, from: savedData) else {
-                UserDefaults.standard.removeObject(forKey: "user-public-info")
-                return nil
-            }
-            return decodedUser
-        }
+		get {
+			if let savedData = UserDefaults.standard.object(forKey: userDefaultsPublicInfoKey) as? Data,
+			   let decodedUser = try? JSONDecoder().decode(User.PublicInfo.self, from: savedData) {
+				return decodedUser
+			}
+			return nil
+		}
         
         set {
             if newValue == nil {
             print("userInfo set to nil")
-                UserDefaults.standard.removeObject(forKey: "user-public-info")
+                UserDefaults.standard.removeObject(forKey: userDefaultsPublicInfoKey)
             } else if let encodedData = try? JSONEncoder().encode(newValue) {
                 print("userInfo set to \(newValue!)")
 
-                UserDefaults.standard.set(encodedData, forKey: "user-public-info")
+                UserDefaults.standard.set(encodedData, forKey: userDefaultsPublicInfoKey)
             }
+			// loginChanged Notification is observed by ProfileIconView, when received the notification, it will check if userInfo is nil, and update the profile icon and associated text accordingly, also the destination VC of clicking the icon depends on whether userInfo is nil
             NotificationCenter.default.post(name: loginChanged, object: nil)
         }
     }
@@ -59,6 +57,12 @@ struct AuthAPI {
             }
         }
     }
+	
+	static var orders = [Order]() {
+		didSet {
+			print(orders)
+		}
+	}
     
     static func register(registerInput: User.RegisterInput, completion: @escaping (AuthResult) -> Void) {
         var request = URLRequest(url: Self.userEndPoint.appendingPathComponent("register"))
@@ -181,7 +185,7 @@ struct AuthAPI {
                 return
             }
             
-			// On server side, logout function already invalidate all tokens associated with the user by itself. Here set local tokenValue to nil has 2 purposes: 1. trigger loginChanged notification, so languageListVC will display correct info for login status. 2. In next launch, we will call getPublicUserFromToken to decide if login/register vc is gonna be pushed, without an tokenValue that method returns quicker than goes to server side.
+			// On server side, logout function already invalidate all tokens associated with the user by itself. Here set local tokenValue to nil has 2 purposes: 1. trigger loginChanged notification, so languageListVC will display correct info for login status. 2. During next launch, we will call getPublicUserFromToken to decide if login/register vc is gonna be pushed, without an tokenValue that method returns quicker than goes to server side.
 			Self.tokenValue = nil
             DispatchQueue.main.async { completion(.success) }
         }.resume()
@@ -193,7 +197,7 @@ struct AuthAPI {
             return
         }
         
-        var req = URLRequest(url: userEndPoint.appendingPathComponent("token").appendingPathComponent("user-public"))
+        var req = URLRequest(url: userEndPoint.appendingPathComponent("public-info"))
         req.addValue("Bearer \(tokenValue)", forHTTPHeaderField: "Authorization")
         URLSession.shared.publicUserTask(with: req) { userInfo, response, error in
             if let error = error {
@@ -203,5 +207,16 @@ struct AuthAPI {
             completion(userInfo!, response, nil)
         }.resume()
     }
+	
+	static func fetchValidOrders() async throws {
+		let url = baseURL.appendingPathComponent("order").appendingPathComponent("valid")
+		var req = URLRequest(url: url)
+		guard let token = AuthAPI.tokenValue else { return }
+		req.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+		
+		let (data, _) = try await URLSession.shared.data(for: req)
+		let orders = try JSONDecoder().decode([Order].self, from: data)
+		Self.orders = orders
+	}
 }
 

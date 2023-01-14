@@ -5,7 +5,7 @@ class LanguageListVC: UIViewController {
 	// MARK: - Properties
 	
 	// lan is just an empty placeholder, render enought language item in collection view before actual languages are fetched from server.
-	static let lan = Language(id: UUID(), name: "", description: "", price: 1, courses: [], directoryURL: URL(fileURLWithPath: ""), imagePath: nil)
+	static let lan = Language(id: UUID(), name: "", description: "", price: 1, courses: [], directoryURL: URL(fileURLWithPath: ""), imagePath: nil, annuallyIAPIdentifer: "")
 	
 	private var languages: [Language] = .init(repeating: lan, count: placeholderForNumberOfCells) {
 		didSet {

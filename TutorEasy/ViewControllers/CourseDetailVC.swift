@@ -23,6 +23,8 @@ class CourseDetailVC: UIViewController {
 				if let imagePath = chapter.imagePath {
 					FileAPI.getFile(path: imagePath) { [unowned self] data, response, error in
 						if let data = data {
+							#warning("bug while go in this vc, then go back before the images are loaded, then go back again later, with following error message:")
+							// Fatal error: Attempted to read an unowned reference but the object was already deallocatedFatal error: Attempted to read an unowned reference but the object was already deallocated
 							let image = UIImage(data: data)!
 							self.chapterCellImages[index] = image
 						}

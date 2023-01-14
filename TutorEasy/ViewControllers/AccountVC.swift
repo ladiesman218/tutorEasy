@@ -11,7 +11,7 @@ class AccountVC: UIViewController {
 
 	// MARK: - Custom Properties
 	static let customBgColor = UIColor.systemBlue.withAlphaComponent(0.6)
-	private let navigationTexts = ["个人资料", "我的课程", "我的钱包", "退出登录"]
+	private let navigationTexts = ["个人资料", "管理订阅", "我的钱包", "退出登录"]
 	static let navigationIdentifier = "accountsVCNavCell"
 	
     // MARK: - Custom Views

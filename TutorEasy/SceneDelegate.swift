@@ -20,6 +20,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		guard let windowScene = (scene as? UIWindowScene) else { return }
         let window = windowScene.windows.first!
         setupDestinationVC(window: window)
+		Task {
+			do {
+				try await AuthAPI.fetchValidOrders()
+			} catch {
+				MessagePresenter.showMessage(title: "无法获取用户订单", message: error.localizedDescription, on: window.rootViewController, actions: [])
+			}
+		}
 	}
 
 	func sceneDidDisconnect(_ scene: UIScene) {

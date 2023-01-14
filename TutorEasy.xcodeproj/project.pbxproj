@@ -27,10 +27,15 @@
 		B4376C0A290FBBFF00E17698 /* ChapterCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4376C09290FBBFF00E17698 /* ChapterCell.swift */; };
 		B4489B0728A3AE3A00A6DED9 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4489B0628A3AE3A00A6DED9 /* User.swift */; };
 		B4489B1028ABD2F300A6DED9 /* ResponseError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4489B0F28ABD2F300A6DED9 /* ResponseError.swift */; };
+		B44AD5762938FCB500598D5A /* StoreObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B44AD5752938FCB500598D5A /* StoreObserver.swift */; };
+		B44AD57A2939067700598D5A /* ProductsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B44AD5792939067700598D5A /* ProductsViewController.swift */; };
+		B44AD57E293C5C7500598D5A /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B44AD57D293C5C7500598D5A /* StoreKit.framework */; };
 		B462E06028BF444A0020D610 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B462E05F28BF444A0020D610 /* Keychain.swift */; };
 		B462E06228BF448F0020D610 /* AuthAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B462E06128BF448F0020D610 /* AuthAPI.swift */; };
 		B462E06428BF5CF00020D610 /* Token.swift in Sources */ = {isa = PBXBuildFile; fileRef = B462E06328BF5CF00020D610 /* Token.swift */; };
 		B462E06628BF5F920020D610 /* ErrorPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B462E06528BF5F920020D610 /* ErrorPresenter.swift */; };
+		B47D6657295E90AA00591738 /* Order.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47D6656295E90AA00591738 /* Order.swift */; };
+		B47D6659295E918800591738 /* LanguageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47D6658295E918800591738 /* LanguageCache.swift */; };
 		B4BBAE2228F99398004368F8 /* AccountVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BBAE2128F99398004368F8 /* AccountVC.swift */; };
 		B4BBAE2428F9C133004368F8 /* ViewController+DissmissKeyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BBAE2328F9C133004368F8 /* ViewController+DissmissKeyboard.swift */; };
 		B4CDED9A2917C000004B2F8E /* Chapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CDED992917C000004B2F8E /* Chapter.swift */; };
@@ -68,10 +73,15 @@
 		B4376C09290FBBFF00E17698 /* ChapterCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterCell.swift; sourceTree = "<group>"; };
 		B4489B0628A3AE3A00A6DED9 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		B4489B0F28ABD2F300A6DED9 /* ResponseError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseError.swift; sourceTree = "<group>"; };
+		B44AD5752938FCB500598D5A /* StoreObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreObserver.swift; sourceTree = "<group>"; };
+		B44AD5792939067700598D5A /* ProductsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductsViewController.swift; sourceTree = "<group>"; };
+		B44AD57D293C5C7500598D5A /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		B462E05F28BF444A0020D610 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		B462E06128BF448F0020D610 /* AuthAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthAPI.swift; sourceTree = "<group>"; };
 		B462E06328BF5CF00020D610 /* Token.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Token.swift; sourceTree = "<group>"; };
 		B462E06528BF5F920020D610 /* ErrorPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorPresenter.swift; sourceTree = "<group>"; };
+		B47D6656295E90AA00591738 /* Order.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Order.swift; sourceTree = "<group>"; };
+		B47D6658295E918800591738 /* LanguageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageCache.swift; sourceTree = "<group>"; };
 		B4BBAE2128F99398004368F8 /* AccountVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountVC.swift; sourceTree = "<group>"; };
 		B4BBAE2328F9C133004368F8 /* ViewController+DissmissKeyboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ViewController+DissmissKeyboard.swift"; sourceTree = "<group>"; };
 		B4CDED992917C000004B2F8E /* Chapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chapter.swift; sourceTree = "<group>"; };
@@ -91,6 +101,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B44AD57E293C5C7500598D5A /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -102,6 +113,7 @@
 			children = (
 				B402DD84286440DB000EEF40 /* TutorEasy */,
 				B402DD83286440DB000EEF40 /* Products */,
+				B44AD57C293C5C7500598D5A /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -116,6 +128,7 @@
 		B402DD84286440DB000EEF40 /* TutorEasy */ = {
 			isa = PBXGroup;
 			children = (
+				B44AD5742938FC9900598D5A /* In App Purchase */,
 				B425EA3E28D31439003A865D /* Views */,
 				B425EA4328DAD1D0003A865D /* APIs */,
 				B462E05E28BF44380020D610 /* Extensions+Helpers */,
@@ -162,6 +175,7 @@
 				B462E06328BF5CF00020D610 /* Token.swift */,
 				B425EA3C28D30AA5003A865D /* Language.swift */,
 				B425EA4128D9B9FA003A865D /* Course.swift */,
+				B47D6658295E918800591738 /* LanguageCache.swift */,
 				B4CDED992917C000004B2F8E /* Chapter.swift */,
 			);
 			path = Model;
@@ -174,6 +188,24 @@
 				B4489B0F28ABD2F300A6DED9 /* ResponseError.swift */,
 			);
 			path = Errors;
+			sourceTree = "<group>";
+		};
+		B44AD5742938FC9900598D5A /* In App Purchase */ = {
+			isa = PBXGroup;
+			children = (
+				B44AD5752938FCB500598D5A /* StoreObserver.swift */,
+				B44AD5792939067700598D5A /* ProductsViewController.swift */,
+				B47D6656295E90AA00591738 /* Order.swift */,
+			);
+			path = "In App Purchase";
+			sourceTree = "<group>";
+		};
+		B44AD57C293C5C7500598D5A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B44AD57D293C5C7500598D5A /* StoreKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		B462E05E28BF44380020D610 /* Extensions+Helpers */ = {
@@ -282,6 +314,7 @@
 				B4376C022908CA1D00E17698 /* CourseAPI.swift in Sources */,
 				B402DD8A286440DB000EEF40 /* LoginViewController.swift in Sources */,
 				B402DD86286440DB000EEF40 /* AppDelegate.swift in Sources */,
+				B44AD57A2939067700598D5A /* ProductsViewController.swift in Sources */,
 				B425EA4028D314DE003A865D /* LanguageCell.swift in Sources */,
 				B425EA3D28D30AA5003A865D /* Language.swift in Sources */,
 				B462E06228BF448F0020D610 /* AuthAPI.swift in Sources */,
@@ -291,6 +324,7 @@
 				B425EA4228D9B9FA003A865D /* Course.swift in Sources */,
 				B4087AE628E2C3A3002D320C /* ImageView+Downloaded.swift in Sources */,
 				B4376C06290E1F2800E17698 /* CourseDetailVC.swift in Sources */,
+				B44AD5762938FCB500598D5A /* StoreObserver.swift in Sources */,
 				B4376C04290D7FC500E17698 /* ProfileIconView.swift in Sources */,
 				B4376C0A290FBBFF00E17698 /* ChapterCell.swift in Sources */,
 				B4CDED9A2917C000004B2F8E /* Chapter.swift in Sources */,
@@ -304,10 +338,12 @@
 				B4489B0728A3AE3A00A6DED9 /* User.swift in Sources */,
 				B4E5F550291B85CF005F5BE1 /* ChapterDetailVC.swift in Sources */,
 				B402DD88286440DB000EEF40 /* SceneDelegate.swift in Sources */,
+				B47D6657295E90AA00591738 /* Order.swift in Sources */,
 				B4FAF44828E54D6200955121 /* LanguageDetailVC.swift in Sources */,
 				B4CDED9E291822AE004B2F8E /* UIView+FindViewController.swift in Sources */,
 				B4EE8A0E286594CE0050363B /* Global.swift in Sources */,
 				B462E06028BF444A0020D610 /* Keychain.swift in Sources */,
+				B47D6659295E918800591738 /* LanguageCache.swift in Sources */,
 				B41DFD2328EADA780014B158 /* URLSession+CodableTask.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -457,7 +493,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 88XK97279C;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = TutorEasy/Info.plist;
@@ -472,7 +508,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dunce.TutorEasy;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -489,7 +525,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 88XK97279C;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = TutorEasy/Info.plist;
@@ -504,7 +540,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.dunce.TutorEasy;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

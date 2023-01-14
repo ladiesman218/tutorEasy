@@ -64,4 +64,8 @@ extension URLSession {
     func pathsTask(with req: URLRequest, dispatchQueue: DispatchQueue = .main, completionHandler: @escaping ([String]?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
         return self.codableTask(with: req, dispatchQueue: dispatchQueue, completionHandler: completionHandler)
     }
+	
+	func ordersTask(with req: URLRequest, dispatchQueue: DispatchQueue = .main, completionHandler: @escaping ([Order]?, URLResponse?, ResponseError?) -> Void) -> URLSessionDataTask {
+		return self.codableTask(with: req, dispatchQueue: dispatchQueue, completionHandler: completionHandler)
+	}
 }

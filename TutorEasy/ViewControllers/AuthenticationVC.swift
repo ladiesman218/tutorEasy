@@ -6,6 +6,7 @@
 //
 
 import UIKit
+#warning("Terms of Service and Privacy Policy info links according to https://developer.apple.com/design/human-interface-guidelines/technologies/in-app-purchase")
 
 class AuthenticationVC: UIViewController {
     
