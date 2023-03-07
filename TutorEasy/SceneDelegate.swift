@@ -19,14 +19,33 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
 		guard let windowScene = (scene as? UIWindowScene) else { return }
         let window = windowScene.windows.first!
-        setupDestinationVC(window: window)
+		
+		// Setup destination VC
+		let languageVC = LanguageListVC(nibName: nil, bundle: nil)
+		languageVC.loadLanguages()
+		
+		let navVC = UINavigationController(rootViewController: languageVC)
+		navVC.isNavigationBarHidden = true
+		
+		window.rootViewController = navVC
+		window.makeKeyAndVisible()
+		
 		Task {
-			do {
-				try await AuthAPI.fetchValidOrders()
-			} catch {
-				MessagePresenter.showMessage(title: "无法获取用户订单", message: error.localizedDescription, on: window.rootViewController, actions: [])
+			AuthAPI.userInfo = try? await AuthAPI.getPublicUserFromToken().get()
+			// Only push a new authenticationVC when the current top vc is not of type authentication VC
+			if AuthAPI.userInfo == nil {
+				let authenticationVC = AuthenticationVC(nibName: nil, bundle: nil)
+				navVC.pushIfNot(type: AuthenticationVC.self, newVC: authenticationVC)
 			}
 		}
+		
+//		Task {
+//			do {
+//				try await AuthAPI.fetchValidOrders()
+//			} catch {
+//				MessagePresenter.showMessage(title: "无法获取用户订单", message: error.localizedDescription, on: window.rootViewController, actions: [])
+//			}
+//		}
 	}
 
 	func sceneDidDisconnect(_ scene: UIScene) {

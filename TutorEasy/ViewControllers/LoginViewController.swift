@@ -59,15 +59,24 @@ class LoginViewController: UIViewController {
             return
         }
         
-        AuthAPI.login(username: username, password: password) { result in
-            switch result {
-            case .success:
-                // If login is successful, pop to previous VC in navigation stack
-                self.backButtonClicked()//navigationController?.popViewController(animated: true)
-            case .failure(let reason):
-                MessagePresenter.showMessage(title: "登录失败", message: "\(reason)", on: self, actions: [])
-            }
-        }
+		Task {
+			let result = await AuthAPI.login(username: username, password: password)
+			switch result {
+				case .success():
+					self.navigationController?.popViewController(animated: true)
+				case .failure(let error):
+					error.present(on: self, title: "登录失败", actions: [])
+			}
+		}
+//        AuthAPI.login(username: username, password: password) { result in
+//            switch result {
+//            case .success:
+//                // If login is successful, pop to previous VC in navigation stack
+//                self.backButtonClicked()//navigationController?.popViewController(animated: true)
+//            case .failure(let reason):
+//                MessagePresenter.showMessage(title: "登录失败", message: "\(reason)", on: self, actions: [])
+//            }
+//        }
     }
     
     override func viewDidLoad() {

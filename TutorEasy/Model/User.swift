@@ -43,6 +43,7 @@ extension User {
 		var lastName: String?
 		let registerTime: Date?
 		let lastLoginTime: Date?
+		let profilePic: String?
 	}
 	
 }

@@ -10,29 +10,52 @@ import UIKit
 class CourseDetailVC: UIViewController {
 	
 	// MARK: - Properties
+	var courseID: UUID!
 	var languageName: String!
-	private var chapterCellImages: [UIImage?]! {
+	private var course = coursePlaceHolder {
+		didSet {
+			courseTitle.text = course.name
+			descriptionLabel.text = course.description
+			if let imagePath = course.imagePath {
+				imageView.downloaded(from: imagePath, contentMode: .scaleAspectFill)
+			}
+			Task {
+				chapterImages = await loadChapterImages()
+			}
+		}
+	}
+	// chapters are already sorted by name(ascending order) when returning from server
+
+	private var chapterImages: [UIImage?] = .init(repeating: nil, count: placeholderForNumberOfCells) {
 		didSet {
 			chapterCollectionView.reloadData()
 		}
 	}
 	
-	var course: Course! {
-		didSet {
-			for (index, chapter) in course.chapters.enumerated() {
-				if let imagePath = chapter.imagePath {
-					FileAPI.getFile(path: imagePath) { [unowned self] data, response, error in
-						if let data = data {
-							#warning("bug while go in this vc, then go back before the images are loaded, then go back again later, with following error message:")
-							// Fatal error: Attempted to read an unowned reference but the object was already deallocatedFatal error: Attempted to read an unowned reference but the object was already deallocated
-							let image = UIImage(data: data)!
-							self.chapterCellImages[index] = image
-						}
-					}
-				}
-			}
-		}
-	}
+//	private var chapters: [Chapter] = .init(repeating: chapterPlaceHolder, count: placeholderForNumberOfCells) {
+//		didSet {
+//			chapterCollectionView.reloadData()
+//		}
+//	}
+	
+//	var chapterImages: [String: UIImage?] = [:]
+	//	var course: Course! {
+	//		didSet {
+	//			//			for (index, chapter) in course.chapters.enumerated() {
+	//			//				if let imagePath = chapter.imagePath {
+	//			//
+	//			//					FileAPI.getFile(path: imagePath) { [unowned self] data, response, error in
+	//			//						if let data = data {
+	//			//							#warning("bug while go in this vc, then go back before the images are loaded, then go back again later, with following error message:")
+	//			//							// Fatal error: Attempted to read an unowned reference but the object was already deallocatedFatal error: Attempted to read an unowned reference but the object was already deallocated
+	//			//							let image = UIImage(data: data)!
+	//			//							self.chapterCellImages[index] = image
+	//			//						}
+	//			//					}
+	//			//				}
+	//			//			}
+	//		}
+	//	}
 	
 	// MARK: - Custom subviews
 	private var topView: UIView!
@@ -47,7 +70,6 @@ class CourseDetailVC: UIViewController {
 		// We are using backed layer to draw a round radius corner, simply set label's background color will render all previous configurations obsolete since view's background color comes on top of layer. So use layer's backgroundColor here. 
 		languageNavView.layer.backgroundColor = UIColor.systemYellow.cgColor
 		languageNavView.layer.zPosition = .greatestFiniteMagnitude
-		
 		
 		return languageNavView
 	}()
@@ -84,6 +106,17 @@ class CourseDetailVC: UIViewController {
 		return themeView
 	}()
 	
+	// This is the image added to themeView, on top side.
+	private var imageView: UIImageView = {
+		let imageView = UIImageView()
+		imageView.translatesAutoresizingMaskIntoConstraints = false
+		//		if let imagePath = course.imagePath {
+		//			imageView.downloaded(from: imagePath, contentMode: .scaleAspectFill)
+		//		}
+		imageView.clipsToBounds = true
+		return imageView
+	}()
+	
 	private var themeLabel: UILabel = {
 		let label = UILabel()
 		label.translatesAutoresizingMaskIntoConstraints = false
@@ -118,9 +151,8 @@ class CourseDetailVC: UIViewController {
 	// MARK: - Controller functions
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		
-		// downloaded() function for imageView is asynchronous, it's gonna cause problem in collection view: when scrolling, images got misplaced. The solution we took is, create an array with optional images, set its initial value to nil and repeating as many times as chapters for the course. When course is set, get the image for each chapter, if one is found, replace the original nil value with the UIImage just found. This is done in the property observer of course.
-		chapterCellImages = .init(repeating: nil, count: course.chapters.count)
+		getCourse(id: courseID)
+		// downloaded() function for imageView is asynchronous, it's gonna cause problem in collection view: when scrolling, images got misplaced. The solution we took is, create an array with optional images, set its initial value to nil and repeating as many times as chapters for the course. When course is set, get the image for each chapter, if one is found, replace the original nil value with the UIImage just found. This is done in the property observer of chapters.
 		
 		chapterCollectionView.dataSource = self
 		chapterCollectionView.delegate = self
@@ -145,7 +177,6 @@ class CourseDetailVC: UIViewController {
 		courseNavView.layer.cornerRadius = topViewHeight * 0.3
 		topView.addSubview(courseNavView)
 		
-		courseTitle.text = course.name
 		courseTitle.font = courseTitle.font.withSize(topViewHeight / 2)
 		courseNavView.addSubview(courseTitle)
 		
@@ -155,18 +186,10 @@ class CourseDetailVC: UIViewController {
 		themeLabel.font = themeLabel.font.withSize(topViewHeight / 3)
 		themeView.addSubview(themeLabel)
 		
-		descriptionLabel.text = course.description
 		descriptionLabel.font = descriptionLabel.font.withSize(topViewHeight / 3.5)
 		themeView.addSubview(descriptionLabel)
 		
-		// This is the image added to themeView, on top side.
-		let imageView = UIImageView()
-		imageView.translatesAutoresizingMaskIntoConstraints = false
-		if let imagePath = course.imagePath {
-			imageView.downloaded(from: imagePath, contentMode: .scaleAspectFill)
-		}
 		imageView.layer.cornerRadius = view.frame.width * 0.04 * 0.7
-		imageView.clipsToBounds = true
 		themeView.addSubview(imageView)
 		
 		NSLayoutConstraint.activate([
@@ -217,6 +240,41 @@ class CourseDetailVC: UIViewController {
 			chapterCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 		])
 	}
+	
+	func getCourse(id: UUID) {
+		Task {
+			let result = await CourseAPI.getCourse(id: courseID)
+			switch result {
+				case .success(let course):
+					self.course = course
+				case .failure(let error):
+					error.present(on: self, title: "无法获取课程", actions: [])
+			}
+		}
+	}
+	
+	func loadChapterImages() async -> [UIImage?] {
+		var imagesArray: [UIImage?] = .init(repeating: nil, count: placeholderForNumberOfCells)
+//		Task {
+			await withTaskGroup(of: (index: Int, data: Data?).self) { group in
+				for (index, chapter) in course.chapters.enumerated() {
+					if let imagePath = chapter.imagePath {
+						group.addTask {
+							let data = try? await FileAPI.getFile(path: imagePath).get()
+							return (index, data)
+						}
+					}
+				}
+				
+				for await result in group {
+					if let data = result.data, let image = UIImage(data: data) {
+						imagesArray[result.index] = image
+					}
+				}
+			}
+//		}
+		return imagesArray
+	}
 }
 
 extension CourseDetailVC: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
@@ -228,8 +286,14 @@ extension CourseDetailVC: UICollectionViewDataSource, UICollectionViewDelegate, 
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
 		
-		createShadow(for: cell)
-		cell.imageView.image = chapterCellImages[indexPath.item]
+		cell.createShadow()
+		
+		//		cell.imageView.image = chapterCellImages[indexPath.item]
+				cell.imageView.image = nil
+		let name = course.chapters[indexPath.item].name
+		if let image = chapterImages[indexPath.item] {
+			cell.imageView.image = image
+		}
 		
 		return cell
 	}
@@ -249,12 +313,11 @@ extension CourseDetailVC: UICollectionViewDataSource, UICollectionViewDelegate, 
 		collectionView.bounds.height * 0.1
 	}
 	
-#warning("Async api will block user interaction")
+#warning("sync api will block user interaction")
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 		let chapter = course.chapters[indexPath.item]
 		guard chapter.pdfURL != nil else {
-			#warning("let the users know what happened")
-			print("Can't find pdf path for chapter")
+			MessagePresenter.showMessage(title: "未找到课程文件", message: "请联系管理员\(adminEmail)", on: self, actions: [])
 			return
 		}
 		let chapterVC = ChapterDetailVC()
@@ -262,4 +325,33 @@ extension CourseDetailVC: UICollectionViewDataSource, UICollectionViewDelegate, 
 		navigationController?.pushViewController(chapterVC, animated: false)
 	}
 	
+}
+
+extension CourseDetailVC {
+	func getChapterImages() async -> [String: UIImage] {
+		var imagesDict = [String: UIImage]()
+		return await withTaskGroup(of: (name: String, image: UIImage?).self) { group in
+			
+			for chapter in course.chapters {
+				if let imagePath = chapter.imagePath {
+					group.addTask {
+						if let data = try? await FileAPI.getFile(path: imagePath).get(),
+						   let image = UIImage(data: data) {
+							return (chapter.name, image)
+						}
+						return (chapter.name, nil)
+					}
+				}
+			}
+			
+			for await task in group {
+				for name in course.chapters.map({ $0.name }) {
+					if task.name == name {
+						imagesDict[name] = task.image
+					}
+				}
+			}
+			return imagesDict
+		}
+	}
 }

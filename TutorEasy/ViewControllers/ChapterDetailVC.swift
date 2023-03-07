@@ -15,8 +15,17 @@ class ChapterDetailVC: UIViewController {
 	var chapter: Chapter! {
 		didSet {
 			let url = chapter.pdfURL!
-			self.pdfView.document = PDFDocument(url: url)!
-//			self.pdfView.setNeedsDisplay()
+						self.pdfView.document = PDFDocument(url: url)!
+			Task {
+				let result = await FileAPI.getFile(path: url.absoluteString)
+				switch result {
+					case .success(let data):
+						self.pdfView.document = PDFDocument(data: data)
+					case .failure(let error):
+						error.present(on: self, title: "无法获取该小节内容", actions: [])
+				}
+			}
+			//			self.pdfView.setNeedsDisplay()
 		}
 	}
 	// This will hold the scaleFactor value for pdfView after it's set for the first time
@@ -67,7 +76,7 @@ class ChapterDetailVC: UIViewController {
 	
 	override func viewDidLayoutSubviews() {
 		super.viewDidLayoutSubviews()
-
+		
 		scaleFactor = pdfView.scaleFactor
 		// Setting min and max scaleFactor to a fixed value will prevent pdfView to zoom-in or out.
 		pdfView.minScaleFactor = scaleFactor
@@ -75,7 +84,7 @@ class ChapterDetailVC: UIViewController {
 		//		pdfView.isUserInteractionEnabled = false	// This disable all user interactions including clicking on a link.
 		//		print(pdfView.document?.accessPermissions.rawValue)
 		//		print(pdfView.document?.permissionsStatus.rawValue)
-
+		
 	}
 	
 	override func viewDidLoad() {
@@ -102,7 +111,7 @@ class ChapterDetailVC: UIViewController {
 			let image = pdfView.document!.page(at: number)!.thumbnail(of: .init(width: 500, height: 350), for: box)
 			thumbnails.append(image)
 		}
-
+		
 		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
 		
 		NSLayoutConstraint.activate([
@@ -115,7 +124,7 @@ class ChapterDetailVC: UIViewController {
 			thumbnailCollectionView.topAnchor.constraint(equalTo: topView.bottomAnchor, constant: 20),
 			thumbnailCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 			thumbnailCollectionView.widthAnchor.constraint(equalToConstant: view.frame.size.width * 0.2),
-	
+			
 			pdfView.leadingAnchor.constraint(equalTo: thumbnailCollectionView.trailingAnchor),
 			pdfView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 			pdfView.topAnchor.constraint(equalTo: thumbnailCollectionView.topAnchor),
@@ -127,7 +136,7 @@ class ChapterDetailVC: UIViewController {
 extension ChapterDetailVC: PDFViewDelegate {
 	func pdfViewWillClick(onLink sender: PDFView, with url: URL) {
 		// If the player is playing in picture in picture mode, there is a chance user could click the play button again to start another playback, make sure that doesn't happen.
-//		guard player.currentItem == nil else { return }
+		//		guard player.currentItem == nil else { return }
 		
 		guard let senderURL = sender.document?.documentURL else { fatalError() }
 		// senderURL contains the pdf file name and extension in its path, so remove that.
@@ -135,8 +144,8 @@ extension ChapterDetailVC: PDFViewDelegate {
 		let path = url.path
 		
 		let finalURL = baseURL.appendingPathComponent(path)
-//		let finalPath = finalURL.path.removingPercentEncoding ?? finalURL.path
-
+		//		let finalPath = finalURL.path.removingPercentEncoding ?? finalURL.path
+		
 		playerViewController = AVPlayerViewController()
 		playerViewController.delegate = self
 		playerViewController.showsTimecodes = true
@@ -148,7 +157,7 @@ extension ChapterDetailVC: PDFViewDelegate {
 		playerViewController.allowsPictureInPicturePlayback = false
 		player.replaceCurrentItem(with: .init(url: finalURL))
 		playerViewController.player = player
-
+		
 		self.present(playerViewController, animated: true) { [unowned self] in
 			playerViewController.player?.play()
 		}
@@ -160,9 +169,9 @@ extension ChapterDetailVC: AVPlayerViewControllerDelegate {
 	
 	// When pip started, this method returns true, which enbales user to view pdf contents. If this returns false, pdf contents will be blocked by playerVC itself(which is a blank screen in pip mode).
 	func playerViewControllerShouldAutomaticallyDismissAtPictureInPictureStart(_ playerViewController: AVPlayerViewController) -> Bool {
-			return true
+		return true
 	}
-
+	
 	// When clicking the restore button in pip window, restore playerViewController and keep playing the video. Without this, the resotre button acts like the close button.
 	func playerViewController(_ playerViewController: AVPlayerViewController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
 		self.present(playerViewController, animated: true)
@@ -171,9 +180,15 @@ extension ChapterDetailVC: AVPlayerViewControllerDelegate {
 	@objc func didFinishPlaying() {
 		player.replaceCurrentItem(with: nil)
 		// If/when playback is in a pip window, due to the current implementation, playerVC is dismissed, and will be restored after playback finished. In that case the following dismiss command will happen earlier than the restoration without asyncAfter, therefor no dismission will actually happen. Adding asyncAfter will delay dismission, practically guarantee restoration happens first, and we get a successful dismiss.
-		DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [unowned self] in
-			playerViewController.dismiss(animated: false)
+		Task {
+			try await Task.sleep(nanoseconds: 3_000_000)
+			await MainActor.run {
+				playerViewController.dismiss(animated: false)
+			}
 		}
+		//		DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [unowned self] in
+		//			playerViewController.dismiss(animated: false)
+		//		}
 	}
 	
 }

@@ -1,6 +1,6 @@
 import UIKit
 
-enum MessagePresenter {
+@MainActor enum MessagePresenter {
     static func showMessage(title: String, message: String, on viewController: UIViewController?, actions: [UIAlertAction]) {
         weak var weakViewController = viewController
         let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)

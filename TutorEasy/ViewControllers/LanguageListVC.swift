@@ -4,10 +4,7 @@ class LanguageListVC: UIViewController {
 	
 	// MARK: - Properties
 	
-	// lan is just an empty placeholder, render enought language item in collection view before actual languages are fetched from server.
-	static let lan = Language(id: UUID(), name: "", description: "", price: 1, courses: [], directoryURL: URL(fileURLWithPath: ""), imagePath: nil, annuallyIAPIdentifer: "")
-	
-	private var languages: [Language] = .init(repeating: lan, count: placeholderForNumberOfCells) {
+	private var languages: [Language] = .init(repeating: languagePlaceHolder, count: placeholderForNumberOfCells) {
 		didSet {
 			self.collectionView.reloadData()
 		}
@@ -58,12 +55,14 @@ class LanguageListVC: UIViewController {
 	}
 	
 	func loadLanguages() {
-		LanguageAPI.getAllLanguages { languages, response, error in
-			guard let languages = languages, error == nil else {
-				MessagePresenter.showMessage(title: "获取语言列表失败", message: error!.reason, on: self, actions: [])
-				return
+		Task {
+			let result = await LanguageAPI.getAllLanguges()
+			switch result {
+				case .success(let languages):
+					self.languages = languages
+				case .failure(let error):
+					error.present(on: self, title: "无法获取分类列表", actions: [])
 			}
-			self.languages = languages
 		}
 	}
 }
@@ -77,9 +76,8 @@ extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource, 
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: LanguageCell.identifier, for: indexPath) as! LanguageCell
-		
-		createShadow(for: cell)
-		
+		cell.createShadow()
+		#warning("is this gonna be a problem when list grows longer")
 		if let path = languages[indexPath.item].imagePath {
 			cell.imageView.downloaded(from: path, contentMode: .scaleAspectFill)
 		}
@@ -103,17 +101,8 @@ extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource, 
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 		
 		let id = languages[indexPath.item].id
-		
-		LanguageAPI.getLanguage(id: id) { [unowned self] language, response, error in
-			
-			guard let language = language, error == nil else {
-				MessagePresenter.showMessage(title: "获取课程失败", message: error!.reason, on: self, actions: [])
-				return
-			}
-			
-			let detailVC = LanguageDetailVC()
-			detailVC.language = language
-			self.navigationController?.pushViewController(detailVC, animated: false)
-		}
+		let detailVC = LanguageDetailVC()
+		detailVC.languageID = id
+		self.navigationController?.pushIfNot(type: LanguageDetailVC.self, newVC: detailVC)
 	}
 }

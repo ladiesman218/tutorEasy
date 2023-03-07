@@ -26,10 +26,14 @@
 		B4376C06290E1F2800E17698 /* CourseDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4376C05290E1F2800E17698 /* CourseDetailVC.swift */; };
 		B4376C0A290FBBFF00E17698 /* ChapterCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4376C09290FBBFF00E17698 /* ChapterCell.swift */; };
 		B4489B0728A3AE3A00A6DED9 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4489B0628A3AE3A00A6DED9 /* User.swift */; };
-		B4489B1028ABD2F300A6DED9 /* ResponseError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4489B0F28ABD2F300A6DED9 /* ResponseError.swift */; };
 		B44AD5762938FCB500598D5A /* StoreObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B44AD5752938FCB500598D5A /* StoreObserver.swift */; };
 		B44AD57A2939067700598D5A /* ProductsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B44AD5792939067700598D5A /* ProductsViewController.swift */; };
 		B44AD57E293C5C7500598D5A /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B44AD57D293C5C7500598D5A /* StoreKit.framework */; };
+		B45B71C22983DC1000E4C7E3 /* Error + present.swift in Sources */ = {isa = PBXBuildFile; fileRef = B45B71C12983DC1000E4C7E3 /* Error + present.swift */; };
+		B45B71C42983DC9400E4C7E3 /* URLSession + dataAndResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = B45B71C32983DC9400E4C7E3 /* URLSession + dataAndResponse.swift */; };
+		B45B71C62983DCBC00E4C7E3 /* HTTPURLResponse + checkForAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = B45B71C52983DCBC00E4C7E3 /* HTTPURLResponse + checkForAuth.swift */; };
+		B45B71C82983DCEE00E4C7E3 /* UIView + createShadow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B45B71C72983DCEE00E4C7E3 /* UIView + createShadow.swift */; };
+		B45B71CA2986CF0300E4C7E3 /* NavigationController + pushIfNot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B45B71C92986CF0300E4C7E3 /* NavigationController + pushIfNot.swift */; };
 		B462E06028BF444A0020D610 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = B462E05F28BF444A0020D610 /* Keychain.swift */; };
 		B462E06228BF448F0020D610 /* AuthAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B462E06128BF448F0020D610 /* AuthAPI.swift */; };
 		B462E06428BF5CF00020D610 /* Token.swift in Sources */ = {isa = PBXBuildFile; fileRef = B462E06328BF5CF00020D610 /* Token.swift */; };
@@ -45,6 +49,7 @@
 		B4E5F550291B85CF005F5BE1 /* ChapterDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4E5F54F291B85CF005F5BE1 /* ChapterDetailVC.swift */; };
 		B4EE8A0E286594CE0050363B /* Global.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4EE8A0D286594CE0050363B /* Global.swift */; };
 		B4EE8A12286710F10050363B /* LanguageListVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4EE8A11286710F10050363B /* LanguageListVC.swift */; };
+		B4F03120297FF8C00063B75D /* ResponseError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F0311F297FF8C00063B75D /* ResponseError.swift */; };
 		B4F8315628B7CB0C0044021C /* AuthenticationVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F8315528B7CB0C0044021C /* AuthenticationVC.swift */; };
 		B4F8315828B7CE660044021C /* RegisterViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F8315728B7CE660044021C /* RegisterViewController.swift */; };
 		B4FAF44828E54D6200955121 /* LanguageDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4FAF44728E54D6200955121 /* LanguageDetailVC.swift */; };
@@ -72,10 +77,14 @@
 		B4376C05290E1F2800E17698 /* CourseDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseDetailVC.swift; sourceTree = "<group>"; };
 		B4376C09290FBBFF00E17698 /* ChapterCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterCell.swift; sourceTree = "<group>"; };
 		B4489B0628A3AE3A00A6DED9 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
-		B4489B0F28ABD2F300A6DED9 /* ResponseError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseError.swift; sourceTree = "<group>"; };
 		B44AD5752938FCB500598D5A /* StoreObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreObserver.swift; sourceTree = "<group>"; };
 		B44AD5792939067700598D5A /* ProductsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductsViewController.swift; sourceTree = "<group>"; };
 		B44AD57D293C5C7500598D5A /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		B45B71C12983DC1000E4C7E3 /* Error + present.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Error + present.swift"; sourceTree = "<group>"; };
+		B45B71C32983DC9400E4C7E3 /* URLSession + dataAndResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URLSession + dataAndResponse.swift"; sourceTree = "<group>"; };
+		B45B71C52983DCBC00E4C7E3 /* HTTPURLResponse + checkForAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HTTPURLResponse + checkForAuth.swift"; sourceTree = "<group>"; };
+		B45B71C72983DCEE00E4C7E3 /* UIView + createShadow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView + createShadow.swift"; sourceTree = "<group>"; };
+		B45B71C92986CF0300E4C7E3 /* NavigationController + pushIfNot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NavigationController + pushIfNot.swift"; sourceTree = "<group>"; };
 		B462E05F28BF444A0020D610 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		B462E06128BF448F0020D610 /* AuthAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthAPI.swift; sourceTree = "<group>"; };
 		B462E06328BF5CF00020D610 /* Token.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Token.swift; sourceTree = "<group>"; };
@@ -91,6 +100,7 @@
 		B4E5F54F291B85CF005F5BE1 /* ChapterDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterDetailVC.swift; sourceTree = "<group>"; };
 		B4EE8A0D286594CE0050363B /* Global.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Global.swift; sourceTree = "<group>"; };
 		B4EE8A11286710F10050363B /* LanguageListVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageListVC.swift; sourceTree = "<group>"; };
+		B4F0311F297FF8C00063B75D /* ResponseError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ResponseError.swift; sourceTree = "<group>"; };
 		B4F8315528B7CB0C0044021C /* AuthenticationVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationVC.swift; sourceTree = "<group>"; };
 		B4F8315728B7CE660044021C /* RegisterViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterViewController.swift; sourceTree = "<group>"; };
 		B4FAF44728E54D6200955121 /* LanguageDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageDetailVC.swift; sourceTree = "<group>"; };
@@ -184,8 +194,8 @@
 		B4489B0828A68E2400A6DED9 /* Errors */ = {
 			isa = PBXGroup;
 			children = (
+				B4F0311F297FF8C00063B75D /* ResponseError.swift */,
 				B462E06528BF5F920020D610 /* ErrorPresenter.swift */,
-				B4489B0F28ABD2F300A6DED9 /* ResponseError.swift */,
 			);
 			path = Errors;
 			sourceTree = "<group>";
@@ -212,12 +222,17 @@
 			isa = PBXGroup;
 			children = (
 				B4EE8A0D286594CE0050363B /* Global.swift */,
+				B45B71C72983DCEE00E4C7E3 /* UIView + createShadow.swift */,
+				B45B71C52983DCBC00E4C7E3 /* HTTPURLResponse + checkForAuth.swift */,
+				B45B71C32983DC9400E4C7E3 /* URLSession + dataAndResponse.swift */,
+				B45B71C12983DC1000E4C7E3 /* Error + present.swift */,
 				B4CDED9D291822AD004B2F8E /* UIView+FindViewController.swift */,
 				B4BBAE2328F9C133004368F8 /* ViewController+DissmissKeyboard.swift */,
 				B417EAEA28FDB42100A2AD44 /* ViewController+TopView.swift */,
 				B41DFD2228EADA780014B158 /* URLSession+CodableTask.swift */,
 				B4087AE528E2C3A3002D320C /* ImageView+Downloaded.swift */,
 				B462E05F28BF444A0020D610 /* Keychain.swift */,
+				B45B71C92986CF0300E4C7E3 /* NavigationController + pushIfNot.swift */,
 			);
 			path = "Extensions+Helpers";
 			sourceTree = "<group>";
@@ -314,6 +329,7 @@
 				B4376C022908CA1D00E17698 /* CourseAPI.swift in Sources */,
 				B402DD8A286440DB000EEF40 /* LoginViewController.swift in Sources */,
 				B402DD86286440DB000EEF40 /* AppDelegate.swift in Sources */,
+				B45B71CA2986CF0300E4C7E3 /* NavigationController + pushIfNot.swift in Sources */,
 				B44AD57A2939067700598D5A /* ProductsViewController.swift in Sources */,
 				B425EA4028D314DE003A865D /* LanguageCell.swift in Sources */,
 				B425EA3D28D30AA5003A865D /* Language.swift in Sources */,
@@ -326,10 +342,12 @@
 				B4376C06290E1F2800E17698 /* CourseDetailVC.swift in Sources */,
 				B44AD5762938FCB500598D5A /* StoreObserver.swift in Sources */,
 				B4376C04290D7FC500E17698 /* ProfileIconView.swift in Sources */,
+				B45B71C22983DC1000E4C7E3 /* Error + present.swift in Sources */,
+				B45B71C62983DCBC00E4C7E3 /* HTTPURLResponse + checkForAuth.swift in Sources */,
 				B4376C0A290FBBFF00E17698 /* ChapterCell.swift in Sources */,
 				B4CDED9A2917C000004B2F8E /* Chapter.swift in Sources */,
 				B4376C002907FD2000E17698 /* CourseCell.swift in Sources */,
-				B4489B1028ABD2F300A6DED9 /* ResponseError.swift in Sources */,
+				B45B71C82983DCEE00E4C7E3 /* UIView + createShadow.swift in Sources */,
 				B4BBAE2428F9C133004368F8 /* ViewController+DissmissKeyboard.swift in Sources */,
 				B4CFC46D292921F700CB337A /* PDFThumbnailCell.swift in Sources */,
 				B425EA4528DAD1E7003A865D /* LanguageAPI.swift in Sources */,
@@ -340,6 +358,8 @@
 				B402DD88286440DB000EEF40 /* SceneDelegate.swift in Sources */,
 				B47D6657295E90AA00591738 /* Order.swift in Sources */,
 				B4FAF44828E54D6200955121 /* LanguageDetailVC.swift in Sources */,
+				B4F03120297FF8C00063B75D /* ResponseError.swift in Sources */,
+				B45B71C42983DC9400E4C7E3 /* URLSession + dataAndResponse.swift in Sources */,
 				B4CDED9E291822AE004B2F8E /* UIView+FindViewController.swift in Sources */,
 				B4EE8A0E286594CE0050363B /* Global.swift in Sources */,
 				B462E06028BF444A0020D610 /* Keychain.swift in Sources */,

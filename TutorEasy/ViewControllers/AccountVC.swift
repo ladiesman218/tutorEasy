@@ -77,14 +77,22 @@ class AccountVC: UIViewController {
     }
     
     @objc func logout() {
-        AuthAPI.logout { result in
-            switch result {
-            case .success:
-                self.navigationController?.popViewController(animated: true)
-            case .failure(let reason):
-                MessagePresenter.showMessage(title: "注销错误", message: reason, on: self, actions: [])
-            }
-        }
+		Task {
+			do {
+				try await AuthAPI.logout()
+				self.navigationController?.popViewController(animated: true)
+			} catch {
+//				MessagePresenter.showMessage(title: "注销错误", message: reason, on: self, actions: [])
+			}
+		}
+//        AuthAPI.logout { result in
+//            switch result {
+//            case .success:
+//                self.navigationController?.popViewController(animated: true)
+//            case .failure(let reason):
+//                MessagePresenter.showMessage(title: "注销错误", message: reason, on: self, actions: [])
+//            }
+//        }
     }
     
 }
@@ -124,7 +132,10 @@ extension AccountVC: UITableViewDataSource, UITableViewDelegate {
 			case [0, 2]:
 				break
 			case [0, 3]:
-				break
+				Task {
+					let _ = await AuthAPI.logout()
+					self.navigationController?.popViewController(animated: true)
+				}
 			default:
 				break
 		}

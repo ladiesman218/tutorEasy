@@ -10,11 +10,15 @@ import UIKit
 class LanguageDetailVC: UIViewController {
     
     // MARK: - Properties
-    var language: Language! {
-        didSet {
-            courseCollectionView.reloadData()
-        }
-    }
+	var languageID: UUID!
+	
+	private var language: Language = languagePlaceHolder
+	
+	private var courses: [Course] = .init(repeating: coursePlaceHolder, count: placeholderForNumberOfCells) {
+		didSet {
+			courseCollectionView.reloadData()
+		}
+	}
     
     // MARK: - Custom subviews
     let leftBar: UIView = {
@@ -54,7 +58,7 @@ class LanguageDetailVC: UIViewController {
         view.addSubview(leftBar)
         
         topView = configTopView(bgColor: .systemYellow.withAlphaComponent(0.8))
-        backButtonView = setUpGoBackButton(in: topView, animated: false)
+        backButtonView = setUpGoBackButton(in: topView, animated: true)
         
         languageNavTitle = UILabel()
         languageNavTitle.text = language.name
@@ -62,7 +66,7 @@ class LanguageDetailVC: UIViewController {
         languageNavTitle.translatesAutoresizingMaskIntoConstraints = false
         languageNavTitle.backgroundColor = UIColor.clear
         topView.addSubview(languageNavTitle)
-        
+		loadLanguage(id: languageID)
         
         NSLayoutConstraint.activate([
             languageNavTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor),
@@ -80,20 +84,32 @@ class LanguageDetailVC: UIViewController {
             courseCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
         ])
     }
+	
+	func loadLanguage(id: UUID) {
+		Task {
+			let result = await LanguageAPI.getLanuage(id: id)
+			switch result {
+				case .success(let language):
+					self.language = language
+					self.courses = language.courses
+				case .failure(let error):
+					error.present(on: self, title: "无法获取分类", actions: [])
+			}
+		}
+	}
 }
 
 
 extension LanguageDetailVC: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return language.courses.count
+        return courses.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CourseCell.identifier, for: indexPath) as! CourseCell
-        
-        createShadow(for: cell)
+		cell.createShadow()
 		
-        if let imagePath = language.courses[indexPath.item].imagePath {
+        if let imagePath = courses[indexPath.item].imagePath {
             cell.imageView.downloaded(from: imagePath, contentMode: .scaleAspectFill)
         }
         return cell
@@ -116,18 +132,32 @@ extension LanguageDetailVC: UICollectionViewDataSource, UICollectionViewDelegate
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let courseDetailVC = CourseDetailVC()
-        let course = language.courses[indexPath.item]
+		let id = courses[indexPath.item].id
         courseDetailVC.languageName = language.name
-        
-        CourseAPI.getCourse(id: course.id) { [unowned self] course, response, error in
-            guard let course = course else { 
-                MessagePresenter.showMessage(title: "获取课程失败", message: error!.reason, on: self, actions: [])
-                return
-            }
-            courseDetailVC.course = course
+		courseDetailVC.courseID = id
+		self.navigationController?.pushIfNot(type: CourseDetailVC.self, newVC: courseDetailVC)
 
-            navigationController?.pushViewController(courseDetailVC, animated: true)
-        }
+//		Task {
+//			let result = await CourseAPI.getCourse(id:course.id)
+//			switch result {
+//				case .success(let course):
+//					courseDetailVC.course = course
+//					courseDetailVC.chapterImages = await courseDetailVC.getChapterImages()
+//					
+//					navigationController?.pushViewController(courseDetailVC, animated: true)
+//				case .failure(let error):
+//					error.present(on: self, title: "获取课程失败", actions: [])
+//			}
+//		}
+        
+//        CourseAPI.getCourse(id: course.id) { [unowned self] course, response, error in
+//            guard let course = course else { 
+//                MessagePresenter.showMessage(title: "获取课程失败", message: error!.reason, on: self, actions: [])
+//                return
+//            }
+//            courseDetailVC.course = course
+//            navigationController?.pushViewController(courseDetailVC, animated: true)
+//        }
         
     }
 }

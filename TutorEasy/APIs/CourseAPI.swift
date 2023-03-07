@@ -12,18 +12,28 @@ struct CourseAPI {
     
     private static let publicCourseEndPoint = baseURL.appendingPathComponent("course")
 
-    static func getCourse(id: UUID, completionHandler: @escaping (Course?, URLResponse?, ResponseError?) -> Void) {
-
-        let req = URLRequest(url: publicCourseEndPoint.appendingPathComponent(id.uuidString))
-        URLSession.shared.courseTask(with: req, completionHandler: { course, response, error in
-            guard let course = course, error == nil else {
-                completionHandler(nil, response, error!)
-                return
-            }
-
-            completionHandler(course, response, nil)
-        }).resume()
-    }
+	static func getCourse(id: UUID) async -> Result<Course, Error> {
+		let url = publicCourseEndPoint.appendingPathComponent(id.uuidString)
+		do {
+			let (data, _) = try await URLSession.shared.dataAndResponse(from: url)
+			let course = try Decoder.isoDate.decode(Course.self, from: data)
+			return .success(course)
+		} catch {
+			return .failure(error)
+		}
+	}
+//    static func getCourse(id: UUID, completionHandler: @escaping (Course?, URLResponse?, ResponseError?) -> Void) {
+//
+//        let req = URLRequest(url: publicCourseEndPoint.appendingPathComponent(id.uuidString))
+//        URLSession.shared.courseTask(with: req, completionHandler: { course, response, error in
+//            guard let course = course, error == nil else {
+//                completionHandler(nil, response, error!)
+//                return
+//            }
+//
+//            completionHandler(course, response, nil)
+//        }).resume()
+//    }
     
 //    static func getCoursesForLanguage(completionHandler: @escaping ([Language.PublicInfo]?, URLResponse?, ResponseError?) -> Void) {
 //        let req = URLRequest(url: publicLanguageEndPoint)

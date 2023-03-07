@@ -12,16 +12,17 @@ class ProductsViewController: UIViewController {
 	
 	// MARK: - Custom Properties
 	static let cellIdentifier = "IAPProductCell"
-	private var products = [SKProduct]() {
+	private var products: [SKProduct] = [] {
 		didSet {
-			
 			// Make sure VIP membership product is always in the first place
 			products.sort { lhs, rhs in
 				return lhs.localizedTitle.contains("VIP")
 			}
-				
-			DispatchQueue.main.async { [unowned self] in
-				self.productList.reloadData()
+			
+			Task {
+				await MainActor.run {
+					self.productList.reloadData()
+				}
 			}
 		}
 	}
@@ -40,11 +41,8 @@ class ProductsViewController: UIViewController {
 	override func loadView() {
 		super.loadView()
 		fetchProducts()
-
-		guard let userID = AuthAPI.userInfo?.id else { self.navigationController?.popViewController(animated: true)
-			return
-		}
 	}
+	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		
@@ -62,28 +60,25 @@ class ProductsViewController: UIViewController {
 		productList.dataSource = self
 		productList.delegate = self
 	}
-	
+		
 	func fetchProducts() {
 		let url = baseURL.appendingPathComponent("iap")
 		
-		URLSession.shared.dataTask(with: url) {  [unowned self] data, response, error in
-			guard let data = data else {
-				MessagePresenter.showMessage(title: "无法获取在售订阅", message: "请联系管理员\(adminEmail)", on: self, actions: [])
-				return
+		Task {
+			do {
+				let (data, _) = try await URLSession.shared.dataAndResponse(from: url)
+				let identifiers = try JSONDecoder().decode([String].self, from: data)
+				request = SKProductsRequest(productIdentifiers: Set(identifiers))
+				request.delegate = self
+				request.start()
+				
+			} catch {
+				error.present(on: self, title: "无法获取可供订阅的课程信息", actions: [])
 			}
-			guard let identifiers = try? JSONDecoder().decode([String].self, from: data) else {
-				fatalError("无法生成订阅ID")
-			}
-			
-			request = SKProductsRequest(productIdentifiers: Set(identifiers))
-			request.delegate = self
-			request.start()
-
-		}.resume()
+		}
 	}
-
+	
 }
-
 
 extension ProductsViewController: SKProductsRequestDelegate {
 	func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
@@ -110,18 +105,15 @@ extension ProductsViewController: UITableViewDataSource, UITableViewDelegate {
 		purchaseButton.layer.cornerRadius = purchaseButton.bounds.width * 0.35
 
 		for order in AuthAPI.orders {
-			print(order)
 			if order.items.contains(where: { cache in
 				cache.iapIdentifier == product.productIdentifier
 			}) {
-				print("owned")
 				purchaseButton.setTitle("", for: .normal)
 				
 				purchaseButton.setImage(.checkmark, for: .normal)
 				purchaseButton.isEnabled = false
 				purchaseButton.layer.cornerRadius = 0
 				purchaseButton.backgroundColor = nil
-
 			}
 		}
 
@@ -129,28 +121,29 @@ extension ProductsViewController: UITableViewDataSource, UITableViewDelegate {
 		purchaseButton.addTarget(self, action: #selector(purchaseTapped), for: .touchUpInside)
 		cell.accessoryView = purchaseButton
 		
-		
 		return cell
 	}
 	
 	@objc func purchaseTapped(sender: UIButton) {
 		
-		#warning("test if authVC can be properly pushed")
-#warning("If token doesn't exist on server, logout the user. Edge case: client app never logout, serverside db is re-created, so token exist on app, but user doesn't exist on server")
-		guard let userID = AuthAPI.userInfo?.id.uuidString else {
-			let cancel = UIAlertAction(title: "再看看", style: .cancel)
-			let login = UIAlertAction(title: "去登录", style: .default) { [unowned self] _ in
-				let authVC = AuthenticationVC(nibName: nil, bundle: nil)
-				self.navigationController?.pushViewController(authVC, animated: true)
+		Task {
+			guard let userInfo = try? await AuthAPI.getPublicUserFromToken().get() else {
+				// Dispite whether token is nil or not, as long as userInfo can not be get from server, we logout the user(by setting token to nil to make sure), this also pushes user back to authVC)
+				AuthAPI.tokenValue = nil
+				let cancel = UIAlertAction(title: "再看看", style: .cancel)
+				let login = UIAlertAction(title: "去登录", style: .default) { [unowned self] _ in
+					let authVC = AuthenticationVC(nibName: nil, bundle: nil)
+					self.navigationController?.pushViewController(authVC, animated: true)
+				}
+				MessagePresenter.showMessage(title: "登录信息已失效", message: "重新登录后管理您的课程订阅", on: self, actions: [login, cancel])
+				return
 			}
-			MessagePresenter.showMessage(title: "请先登录账号", message: "请在注册/登录后管理您的课程订阅", on: self, actions: [cancel, login])
-			return
+
+			let payment = SKMutablePayment(product: products[sender.tag])
+			payment.applicationUsername = userInfo.id.uuidString
+			
+			SKPaymentQueue.default().add(payment)
 		}
 		
-		let payment = SKMutablePayment(product: products[sender.tag])
-		payment.applicationUsername = userID
-		
-		SKPaymentQueue.default().add(payment)
-
 	}
 }

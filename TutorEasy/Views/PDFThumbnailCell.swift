@@ -9,7 +9,7 @@ import UIKit
 
 class PDFThumbnailCell: UICollectionViewCell {
 	static let identifier = "pdfThumbnailCell"
-	var imageView: UIImageView!// = UIImageView()
+	var imageView: UIImageView!
 	
 	override init(frame: CGRect) {
 		super.init(frame: frame)

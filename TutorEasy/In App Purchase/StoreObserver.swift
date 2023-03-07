@@ -37,7 +37,7 @@ class StoreObserver: NSObject, SKPaymentTransactionObserver {
 					print("purchased")
 					if let receiptURL = Bundle.main.appStoreReceiptURL, FileManager.default.fileExists(atPath: receiptURL.path) {
 						
-						print($0.transactionIdentifier)
+						print("Transaction ID: \(String(describing: $0.transactionIdentifier))")
 //						let rawData = try! Data(contentsOf: receiptURL, options: .alwaysMapped)
 //						print(rawData)
 //						let string = rawData.base64EncodedString(options: )

@@ -8,7 +8,7 @@
 import Foundation
 
 struct ResponseError: Error, Decodable {
-	let error: Bool
+	var error: Bool = true
 	var reason: String
 }
 

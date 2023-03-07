@@ -121,16 +121,15 @@ class RegisterViewController: UIViewController {
         
         let registerInput = User.RegisterInput(email: email, username: username, firstName: nil, lastName: nil, password1: password1, password2: password2)
         
-        AuthAPI.register(registerInput: registerInput) { result in
-            switch result {
-            case .success:
-                // Here means registration process is successful.
-                AuthAPI.login(username: registerInput.username, password: registerInput.password1) { _ in
-                    self.backButtonClicked()//navigationController?.popViewController(animated: true)
-                }
-            case .failure(let reason):
-                MessagePresenter.showMessage(title: "注册失败", message: "\(reason)", on: self, actions: [])
-            }
-        }
+		Task {
+			do {
+				let _ = try await AuthAPI.register(input: registerInput).get()
+				// Here means registration process is successful, then we go login the user
+				let _ = try await AuthAPI.login(username: registerInput.username, password: registerInput.password1).get()
+				self.backButtonClicked()
+			} catch {
+				error.present(on: self, title: "注册失败", actions: [])
+			}
+		}
     }
 }

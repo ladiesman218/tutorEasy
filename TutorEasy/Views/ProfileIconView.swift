@@ -56,16 +56,18 @@ class ProfileIconView: UIView {
     }
     
     @objc func loginStatusChanged() {
-        DispatchQueue.main.async { [unowned self] in
-            if AuthAPI.userInfo != nil {
-                // User has logged in
-                imageView.image = UIImage(systemName: "person.crop.circle")!
-                title?.text = "已登录"
-            } else {
-                imageView.image = UIImage(systemName: "person.circle.fill")!
-                title?.text = "未登录"
-            }
-            self.setNeedsDisplay()
-        }
+		Task {
+			await MainActor.run { 
+				if AuthAPI.userInfo != nil {
+					// User has logged in
+					imageView.image = UIImage(systemName: "person.crop.circle")!
+					title?.text = "已登录"
+				} else {
+					imageView.image = UIImage(systemName: "person.circle.fill")!
+					title?.text = "未登录"
+				}
+				self.setNeedsDisplay()
+			}
+		}
     }
 }
