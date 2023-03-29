@@ -1,8 +1,8 @@
 //
-//  CourseCellCollectionViewCell.swift
+//  LanguageCell.swift
 //  TutorEasy
 //
-//  Created by Lei Gao on 2022/10/25.
+//  Created by Lei Gao on 2022/9/15.
 //
 
 import UIKit
@@ -10,31 +10,43 @@ import UIKit
 class CourseCell: UICollectionViewCell {
     static let identifier = "courseCollectionViewCell"
     
-    let imageView: UIImageView = {
+    var nameLabel: UILabel = {
+        let label = UILabel()
+        label.textColor = .systemRed
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    var imageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.backgroundColor = .blue
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()
     
+    var descriptionLabel: UILabel!
+    var priceLabel: UILabel!
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
-    
-        contentView.addSubview(imageView)
+        //                contentView.layer.borderWidth = 1
 		contentView.layer.cornerRadius = contentView.bounds.size.width * cornerRadiusMultiplier
+        contentView.layer.backgroundColor = UIColor.blue.cgColor
+        //        		contentView.layer.borderColor = UIColor.systemGray.cgColor
+//        contentView.backgroundColor = .red
         contentView.clipsToBounds = true
-//        contentView.layoutMargins = .init(top: 3, left: 3, bottom: 3, right: 3)
+
+        contentView.addSubview(imageView)
         
         NSLayoutConstraint.activate([
+            
             imageView.widthAnchor.constraint(equalTo: contentView.widthAnchor),
-            imageView.heightAnchor.constraint(equalTo: contentView.heightAnchor),
             imageView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            imageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            imageView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            imageView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)//, constant: -50),
         ])
-        
     }
     
     required init?(coder: NSCoder) {
         fatalError()
     }
+    
 }

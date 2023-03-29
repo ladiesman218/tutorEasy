@@ -14,7 +14,7 @@ class ChapterDetailVC: UIViewController {
 	// MARK: - Properties
 	var chapter: Chapter! {
 		didSet {
-			let url = chapter.pdfURL!
+			let url = chapter.pdfURL
 						self.pdfView.document = PDFDocument(url: url)!
 			Task {
 				let result = await FileAPI.getFile(path: url.absoluteString)

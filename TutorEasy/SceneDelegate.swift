@@ -21,10 +21,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = windowScene.windows.first!
 		
 		// Setup destination VC
-		let languageVC = LanguageListVC(nibName: nil, bundle: nil)
-		languageVC.loadLanguages()
+		let courseListVC = CourseListVC(nibName: nil, bundle: nil)
+		courseListVC.loadCourses()
 		
-		let navVC = UINavigationController(rootViewController: languageVC)
+		let navVC = UINavigationController(rootViewController: courseListVC)
 		navVC.isNavigationBarHidden = true
 		
 		window.rootViewController = navVC
@@ -35,7 +35,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 			// Only push a new authenticationVC when the current top vc is not of type authentication VC
 			if AuthAPI.userInfo == nil {
 				let authenticationVC = AuthenticationVC(nibName: nil, bundle: nil)
-				navVC.pushIfNot(type: AuthenticationVC.self, newVC: authenticationVC)
+				navVC.pushIfNot(destinationVCType: AuthenticationVC.self, newVC: authenticationVC)
 			}
 		}
 		

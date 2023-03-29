@@ -8,7 +8,7 @@
 import UIKit
 
 //let serverURL = URL(string: "http://localhost:8080")!     //localhost
-let serverURL = URL(string: "https://32be-1-25-48-244.jp.ngrok.io")!     //ngrok
+let serverURL = URL(string: "https://f256-1-28-242-226.jp.ngrok.io")!     //ngrok
 //let serverURL = URL(string: "http://0.0.0.0:8080")!     // docker production environment
 
 let baseURL = serverURL.appendingPathComponent("api")
@@ -57,6 +57,6 @@ enum Encoder {
 	}
 }
 
-let languagePlaceHolder = Language(id: UUID(), name: "", description: "", price: 1, courses: [], directoryURL: URL(fileURLWithPath: ""), imagePath: nil, annuallyIAPIdentifer: "")
-let coursePlaceHolder = Course(id: UUID(), name: "", description: "", directoryURL: URL(fileURLWithPath: ""), imagePath: nil, freeChapters: [], chapters: [])
-let chapterPlaceHolder = Chapter(directoryURL: URL(fileURLWithPath: ""), name: "", pdfURL: nil, imagePath: nil)
+let chapterPlaceHolder = Chapter(directoryURL: URL(fileURLWithPath: ""), name: "", isFree: false, pdfURL: URL(fileURLWithPath: ""), imageURL: nil)
+let stagePlaceHolder = Stage(directoryURL: URL(fileURLWithPath: "/"), name: "", imageURL: nil, description: "", chapters: [chapterPlaceHolder])
+let coursePlaceHolder = Course(id: UUID(), name: "", description: "", price: 1, stages: [stagePlaceHolder], imageURL: nil, annuallyIAPIdentifier: "")

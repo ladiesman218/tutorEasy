@@ -1,10 +1,9 @@
 import UIKit
 
-class LanguageListVC: UIViewController {
+class CourseListVC: UIViewController {
 	
 	// MARK: - Properties
-	
-	private var languages: [Language] = .init(repeating: languagePlaceHolder, count: placeholderForNumberOfCells) {
+	private var courses: [Course] = .init(repeating: coursePlaceHolder, count: placeholderForNumberOfCells) {
 		didSet {
 			self.collectionView.reloadData()
 		}
@@ -17,7 +16,7 @@ class LanguageListVC: UIViewController {
 		collectionView.backgroundColor = .systemGray5
 		collectionView.layer.cornerRadius = 20
 		collectionView.contentInset = .init(top: 30, left: 30, bottom: 30, right: 30)
-		collectionView.register(LanguageCell.self, forCellWithReuseIdentifier: LanguageCell.identifier)
+		collectionView.register(CourseCell.self, forCellWithReuseIdentifier: CourseCell.identifier)
 		collectionView.translatesAutoresizingMaskIntoConstraints = false
 		return collectionView
 	}()
@@ -54,32 +53,32 @@ class LanguageListVC: UIViewController {
 		])
 	}
 	
-	func loadLanguages() {
+	func loadCourses() {
 		Task {
-			let result = await LanguageAPI.getAllLanguges()
+			let result = await CourseAPI.getAllCourses()
 			switch result {
-				case .success(let languages):
-					self.languages = languages
+				case .success(let courses):
+					self.courses = courses
 				case .failure(let error):
-					error.present(on: self, title: "无法获取分类列表", actions: [])
+					error.present(on: self, title: "无法获取课程列表", actions: [])
 			}
 		}
 	}
 }
 
-extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+extension CourseListVC: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
 	
 	func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-		return languages.count
+		return courses.count
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		
-		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: LanguageCell.identifier, for: indexPath) as! LanguageCell
+		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CourseCell.identifier, for: indexPath) as! CourseCell
 		cell.createShadow()
 		#warning("is this gonna be a problem when list grows longer")
-		if let path = languages[indexPath.item].imagePath {
-			cell.imageView.downloaded(from: path, contentMode: .scaleAspectFill)
+		if let url = courses[indexPath.item].imageURL {
+			cell.imageView.downloaded(from: url.path, contentMode: .scaleAspectFill)
 		}
 		return cell
 	}
@@ -99,10 +98,9 @@ extension LanguageListVC: UICollectionViewDelegate, UICollectionViewDataSource, 
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-		
-		let id = languages[indexPath.item].id
-		let detailVC = LanguageDetailVC()
-		detailVC.languageID = id
-		self.navigationController?.pushIfNot(type: LanguageDetailVC.self, newVC: detailVC)
+		let id = courses[indexPath.item].id
+		let detailVC = CourseDetailVC()
+		detailVC.courseID = id
+		self.navigationController?.pushIfNot(destinationVCType: CourseDetailVC.self, newVC: detailVC)
 	}
 }

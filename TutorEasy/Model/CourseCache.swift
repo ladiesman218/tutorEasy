@@ -7,8 +7,8 @@
 
 import Foundation
 
-struct LanguageCache: Codable {
-	let languageID: UUID
+struct CourseCache: Codable {
+	let id: UUID
 	let name: String
 	let description: String
 	let price: Double
