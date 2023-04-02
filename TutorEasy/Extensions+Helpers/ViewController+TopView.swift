@@ -37,7 +37,7 @@ extension UIViewController {
         superView.addSubview(imageView)
         
         NSLayoutConstraint.activate([
-            imageView.leadingAnchor.constraint(equalTo: superView.leadingAnchor),
+			imageView.leadingAnchor.constraint(equalTo: superView.leadingAnchor, constant: 20),
             imageView.topAnchor.constraint(equalTo: superView.topAnchor),
             imageView.bottomAnchor.constraint(equalTo: superView.bottomAnchor),
             imageView.widthAnchor.constraint(equalTo: imageView.heightAnchor),

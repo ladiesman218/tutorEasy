@@ -35,6 +35,7 @@ class CourseCell: UICollectionViewCell {
         contentView.clipsToBounds = true
 
         contentView.addSubview(imageView)
+		self.createShadow()
         
         NSLayoutConstraint.activate([
             

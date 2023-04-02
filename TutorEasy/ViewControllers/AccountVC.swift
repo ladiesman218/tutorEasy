@@ -8,15 +8,15 @@
 import UIKit
 
 class AccountVC: UIViewController {
-
+	
 	// MARK: - Custom Properties
 	static let customBgColor = UIColor.systemBlue.withAlphaComponent(0.6)
 	private let navigationTexts = ["个人资料", "管理订阅", "我的钱包", "退出登录"]
 	static let navigationIdentifier = "accountsVCNavCell"
 	
-    // MARK: - Custom Views
-    private var topView: UIView!
-    private var backButtonView: UIView!
+	// MARK: - Custom Views
+	private var topView: UIView!
+	private var backButtonView: UIView!
 	private let navTitle: UILabel = {
 		let label = UILabel()
 		label.translatesAutoresizingMaskIntoConstraints = false
@@ -27,7 +27,7 @@ class AccountVC: UIViewController {
 	
 	private let navigationTable: UITableView = {
 		let tableView = UITableView()
-//		tableView.backgroundColor = customBgColor
+		//		tableView.backgroundColor = customBgColor
 		tableView.bounces = false
 		tableView.translatesAutoresizingMaskIntoConstraints = false
 		tableView.register(UITableViewCell.self, forCellReuseIdentifier: navigationIdentifier)
@@ -40,13 +40,13 @@ class AccountVC: UIViewController {
 		return view
 	}()
 	
-    // MARK: - View Controller functions
-    override func viewDidLoad() {
-        super.viewDidLoad()
+	// MARK: - View Controller functions
+	override func viewDidLoad() {
+		super.viewDidLoad()
 		view.backgroundColor = backgroundColor
 		
 		topView = configTopView(bgColor: Self.customBgColor)
-        backButtonView = setUpGoBackButton(in: topView)
+		backButtonView = setUpGoBackButton(in: topView)
 		
 		view.addSubview(navTitle)
 		navTitle.font = navTitle.font.withSize(topViewHeight / 2)
@@ -72,29 +72,22 @@ class AccountVC: UIViewController {
 			containerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 			containerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
 		])
-        
-
-    }
-    
-    @objc func logout() {
+		
+		
+	}
+	
+	@objc func logout() {
 		Task {
+			let result = await AuthAPI.logout()
 			do {
-				try await AuthAPI.logout()
+				try result.get()
 				self.navigationController?.popViewController(animated: true)
 			} catch {
-//				MessagePresenter.showMessage(title: "注销错误", message: reason, on: self, actions: [])
+				error.present(on: self, title: "登出错误", actions: [])
 			}
 		}
-//        AuthAPI.logout { result in
-//            switch result {
-//            case .success:
-//                self.navigationController?.popViewController(animated: true)
-//            case .failure(let reason):
-//                MessagePresenter.showMessage(title: "注销错误", message: reason, on: self, actions: [])
-//            }
-//        }
-    }
-    
+	}
+	
 }
 
 extension AccountVC: UITableViewDataSource, UITableViewDelegate {
@@ -107,7 +100,7 @@ extension AccountVC: UITableViewDataSource, UITableViewDelegate {
 		cell.textLabel!.text = navigationTexts[indexPath.row]
 		cell.textLabel!.textColor = .white
 		cell.backgroundColor = Self.customBgColor
-
+		
 		return cell
 	}
 	
@@ -119,7 +112,7 @@ extension AccountVC: UITableViewDataSource, UITableViewDelegate {
 		for vc in self.children  {
 			vc.removeFromParent()
 		}
-
+		
 		switch indexPath {
 			case [0, 0]:
 				break

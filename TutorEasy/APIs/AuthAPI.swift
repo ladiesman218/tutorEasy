@@ -117,7 +117,7 @@ struct AuthAPI {
 		Self.tokenValue = nil
 		
 		do {
-			// We don't care about response here, even if it's not 200, we've set tokenValue to nil anyway, essentially trigger logout behaviour locally. Get response and check its status code is only for testing purposes and see if there is any other possibilities.
+			// We don't care about response here, even if it's not 200, we've set tokenValue to nil anyway, essentially trigger logout behaviour locally. Get response and check its status code is only for testing purposes and see if there is any other possible errors.
 			let response = try await URLSession.shared.dataAndResponse(for: req).1
 			guard response.statusCode == 200 else { return .failure(ResponseError(reason: "登出错误"))}
 			return .success(())

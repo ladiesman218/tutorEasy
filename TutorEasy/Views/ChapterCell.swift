@@ -18,9 +18,9 @@ class ChapterCell: UICollectionViewCell {
 		contentView.clipsToBounds = true
 
         imageView = UIImageView()
-		imageView.image = nil
         contentView.addSubview(imageView)
-        
+		self.createShadow()
+		
         imageView.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([

@@ -5,16 +5,26 @@ class CourseListVC: UIViewController {
 	// MARK: - Properties
 	private var courses: [Course] = .init(repeating: coursePlaceHolder, count: placeholderForNumberOfCells) {
 		didSet {
-			self.collectionView.reloadData()
+			Task {
+				let urls = courses.map { $0.imageURL }
+				courseImages = await downloadImages(urls: urls)
+			}
+		}
+	}
+	
+	private var courseImages: [UIImage?] = .init(repeating: nil, count: placeholderForNumberOfCells) {
+		didSet {
+			collectionView.reloadData()
 		}
 	}
 	
 	// MARK: - Custom subviews
 	private var collectionView: UICollectionView = {
 		let layout = UICollectionViewFlowLayout()
-		let collectionView = UICollectionView(frame: .init(origin: .zero, size: .zero), collectionViewLayout: layout)
+		let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
 		collectionView.backgroundColor = .systemGray5
 		collectionView.layer.cornerRadius = 20
+		collectionView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
 		collectionView.contentInset = .init(top: 30, left: 30, bottom: 30, right: 30)
 		collectionView.register(CourseCell.self, forCellWithReuseIdentifier: CourseCell.identifier)
 		collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -75,11 +85,7 @@ extension CourseListVC: UICollectionViewDelegate, UICollectionViewDataSource, UI
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CourseCell.identifier, for: indexPath) as! CourseCell
-		cell.createShadow()
-		#warning("is this gonna be a problem when list grows longer")
-		if let url = courses[indexPath.item].imageURL {
-			cell.imageView.downloaded(from: url.path, contentMode: .scaleAspectFill)
-		}
+		cell.imageView.image = courseImages[indexPath.item]
 		return cell
 	}
 	

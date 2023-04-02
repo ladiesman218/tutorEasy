@@ -32,6 +32,7 @@ class ProductsViewController: UIViewController {
 	// MARK: - Custom Views
 	private let productList: UITableView = {
 		let tableView = UITableView()
+		tableView.translatesAutoresizingMaskIntoConstraints = false
 		tableView.register(UITableViewCell.self, forCellReuseIdentifier: cellIdentifier)
 		return tableView
 	}()
@@ -47,8 +48,6 @@ class ProductsViewController: UIViewController {
 		super.viewDidLoad()
 		
 		view.addSubview(productList)
-		//		productList.frame = view.bounds
-		productList.translatesAutoresizingMaskIntoConstraints = false
 		
 		NSLayoutConstraint.activate([
 			productList.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),

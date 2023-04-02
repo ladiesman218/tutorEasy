@@ -15,14 +15,20 @@ class ChapterDetailVC: UIViewController {
 	var chapter: Chapter! {
 		didSet {
 			let url = chapter.pdfURL
-						self.pdfView.document = PDFDocument(url: url)!
 			Task {
-				let result = await FileAPI.getFile(path: url.absoluteString)
+				let result = await FileAPI.getCourseContent(path: url.path)
 				switch result {
 					case .success(let data):
 						self.pdfView.document = PDFDocument(data: data)
 					case .failure(let error):
-						error.present(on: self, title: "无法获取该小节内容", actions: [])
+						if let error = error as? ClientError {
+							print(error.localizedDescription)
+							print("here")
+						}
+						let back = UIAlertAction(title: "返回", style: .cancel) { [unowned self] _ in
+							self.navigationController?.popViewController(animated: true)
+						}
+						error.present(on: self, title: "无法获取课程内容", actions: [back])
 				}
 			}
 			//			self.pdfView.setNeedsDisplay()
@@ -105,11 +111,13 @@ class ChapterDetailVC: UIViewController {
 		thumbnailCollectionView.dataSource = self
 		view.addSubview(thumbnailCollectionView)
 		
-		// Generate thumbnails manually
-		for number in 0 ... pdfView.document!.pageCount - 1 {
-			let box = pdfView.displayBox
-			let image = pdfView.document!.page(at: number)!.thumbnail(of: .init(width: 500, height: 350), for: box)
-			thumbnails.append(image)
+		// Generate thumbnails manually, in case url of getting pdf document fails, don't force unwrap pdfView.document
+		if let document = pdfView.document {
+			for number in 0 ... document.pageCount - 1 {
+				let box = pdfView.displayBox
+				let image = pdfView.document!.page(at: number)!.thumbnail(of: .init(width: 500, height: 350), for: box)
+				thumbnails.append(image)
+			}
 		}
 		
 		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
