@@ -28,9 +28,9 @@ func downloadImages(urls: [URL?]) async -> [UIImage?] {
 				}
 				return (index, nil)
 			}
-
+			
 		}
-
+		
 		for await result in group {
 			if let data = result.1 {
 				images[result.0] = UIImage(data: data)

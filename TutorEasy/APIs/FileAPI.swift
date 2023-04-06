@@ -18,29 +18,18 @@ struct FileAPI {
 		let url = publicImageEndPoint.appendingPathComponent(path, isDirectory: false)
 		
 		do {
-			let (data, response) = try await URLSession.shared.dataAndResponse(from: url)
-			// In this case, server probably won't return a error if there is one, so check for response's status code instead.
-			guard response.statusCode == 200 else {
-				throw ResponseError(reason: "无法获取图片")
-			}
+			let (data, _) = try await URLSession.shared.requestWithToken(url: url)
 			return .success(data)
 		} catch {
+			let error = error as! ResponseError
 			return .failure(error)
 		}
 	}
 	
-	static func getCourseContent(path: String) async -> Result<Data, Error> {
+	static func getCourseContent(path: String) async throws -> (Data, HTTPURLResponse) {
+		// In requestWithToken function we force casted server returned URLResponse to HTTPURLResponse. With a url with file scheme(which is what our server responses for file urls currently), the force casting will fail and cause the app crashing. Here we generate the url from scratch, which makes sure it will always be a http request.
 		let url = contentEndPoint.appendingPathComponent(path, isDirectory: false)
-		
-		do {
-			let (data, response) = try await URLSession.shared.dataAndResponse(from: url)
-			
-			return .success(data)
-		} catch {
-			if let error = error as? ClientError {
-				print(error.localizedDescription)
-			}
-			return .failure(ResponseError(reason: error.localizedDescription))
-		}
+
+		return try await URLSession.shared.requestWithToken(url: url)
 	}
 }

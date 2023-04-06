@@ -53,7 +53,7 @@ class CourseListVC: UIViewController {
 		NSLayoutConstraint.activate([
 			iconView.heightAnchor.constraint(equalTo: topView.heightAnchor, multiplier: 0.95),
 			iconView.centerYAnchor.constraint(equalTo: topView.centerYAnchor),
-			iconView.widthAnchor.constraint(greaterThanOrEqualToConstant: 300),
+			iconView.widthAnchor.constraint(equalTo: topView.widthAnchor),
 			iconView.leadingAnchor.constraint(equalTo: topView.leadingAnchor, constant: 20),
 			
 			collectionView.leadingAnchor.constraint(equalTo: iconView.leadingAnchor),
@@ -107,6 +107,6 @@ extension CourseListVC: UICollectionViewDelegate, UICollectionViewDataSource, UI
 		let id = courses[indexPath.item].id
 		let detailVC = CourseDetailVC()
 		detailVC.courseID = id
-		self.navigationController?.pushIfNot(destinationVCType: CourseDetailVC.self, newVC: detailVC)
+		self.navigationController?.pushIfNot(newVC: detailVC)
 	}
 }

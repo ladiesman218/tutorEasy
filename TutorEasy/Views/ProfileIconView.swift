@@ -8,10 +8,11 @@
 import UIKit
 
 class ProfileIconView: UIView {
-    
+
+	static let logOutTitle = "未登录"
+	
     let imageView = UIImageView()
     var title: UILabel?
-    
     init(frame: CGRect, extraInfo: Bool = false) {
         super.init(frame: frame)
 		
@@ -27,7 +28,6 @@ class ProfileIconView: UIView {
         // According to documentation "If your app targets iOS 9.0 and later or macOS 10.11 and later, you do not need to unregister an observer that you created with this function. If you forget or are unable to remove an observer, the system cleans up the next time it would have posted to it."
         NotificationCenter.default.addObserver(self, selector: #selector(loginStatusChanged), name: loginChanged, object: nil)
         
-        self.layer.backgroundColor = UIColor.red.cgColor
         self.addSubview(imageView)
         imageView.translatesAutoresizingMaskIntoConstraints = false
         
@@ -40,7 +40,7 @@ class ProfileIconView: UIView {
         
         if extraInfo {
             title = UILabel()
-            title!.text = (AuthAPI.userInfo != nil) ? "已登录" : "未登录"
+			title!.text = AuthAPI.userInfo?.username ?? Self.logOutTitle
             title!.textColor = .black
             title!.translatesAutoresizingMaskIntoConstraints = false
             self.addSubview(title!)
@@ -61,10 +61,10 @@ class ProfileIconView: UIView {
 				if AuthAPI.userInfo != nil {
 					// User has logged in
 					imageView.image = UIImage(systemName: "person.crop.circle")!
-					title?.text = "已登录"
+					title?.text = AuthAPI.userInfo?.username
 				} else {
 					imageView.image = UIImage(systemName: "person.circle.fill")!
-					title?.text = "未登录"
+					title?.text = Self.logOutTitle
 				}
 				self.setNeedsDisplay()
 			}

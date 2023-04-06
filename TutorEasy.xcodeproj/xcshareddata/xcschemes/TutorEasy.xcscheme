@@ -58,6 +58,11 @@
             isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
+            key = "CG_PDF_VERBOSE"
+            value = "1"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
             key = "MallocNanoZone"
             value = "0"
             isEnabled = "YES">

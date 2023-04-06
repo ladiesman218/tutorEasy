@@ -53,10 +53,12 @@ class CourseDetailVC: UIViewController {
 		let stageTableView = UITableView()
 		stageTableView.register(UITableViewCell.self, forCellReuseIdentifier: stageTableCellIdentifier)
 		stageTableView.translatesAutoresizingMaskIntoConstraints = false
+		
 		stageTableView.layer.cornerRadius = 20
 		stageTableView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
-		stageTableView.contentInset = .init(top: 30, left: 30, bottom: 30, right: 30)
+		stageTableView.contentInset = .init(top: 15, left: 0, bottom: 0, right: 0)
 		stageTableView.backgroundColor = .systemGray5
+//		stageTableView.bounces = false
 		return stageTableView
 	}()
 	// MARK: - Controller functions
@@ -68,7 +70,7 @@ class CourseDetailVC: UIViewController {
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		getCourse()
+		loadCourse()
 		
 		view.backgroundColor = backgroundColor
 		topView = configTopView(bgColor: UIColor.clear)
@@ -87,6 +89,8 @@ class CourseDetailVC: UIViewController {
 		view.addSubview(stageTableView)
 		stageTableView.dataSource = self
 		stageTableView.delegate = self
+		// Disable horizontal scroll
+		stageTableView.contentSize = .init(width: stageTableView.frame.width, height: stageTableView.contentSize.height)
 		
 		NSLayoutConstraint.activate([
 			courseTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor),
@@ -105,14 +109,17 @@ class CourseDetailVC: UIViewController {
 		])
 	}
 	
-	func getCourse() {
+	private func loadCourse() {
 		Task {
 			let result = await CourseAPI.getCourse(id: courseID)
 			switch result {
 				case .success(let course):
 					self.course = course
 				case .failure(let error):
-					error.present(on: self, title: "无法获取课程", actions: [])
+					let goBack = UIAlertAction(title: "返回", style: .cancel) { [unowned self] _ in
+						self.navigationController?.popViewController(animated: true)
+					}
+					error.present(on: self, title: "无法获取课程", actions: [goBack])
 			}
 		}
 	}
@@ -132,16 +139,20 @@ extension CourseDetailVC: UITableViewDataSource, UITableViewDelegate {
 		let cell = UITableViewCell(style: .subtitle, reuseIdentifier: Self.stageTableCellIdentifier)
 		
 		cell.textLabel!.text = stages[indexPath.row].name
+		cell.textLabel?.font = cell.textLabel?.font.withSize(cellHeight / 7)
+
 		cell.imageView?.layer.cornerRadius = tableView.layer.cornerRadius
 		cell.imageView?.clipsToBounds = true
 		cell.imageView?.image = stageImages[indexPath.row]
-				
-		cell.detailTextLabel?.numberOfLines = 3
-		cell.detailTextLabel?.font = cell.detailTextLabel?.font.withSize(cellHeight / 10)
-		cell.textLabel?.font = cell.textLabel?.font.withSize(cellHeight / 7)
-		cell.detailTextLabel?.text = stages[indexPath.row].description
-		cell.backgroundColor = tableView.backgroundColor
 		
+		// Set detailTextLabel to have 3 lines at most, when overflow, truncate tail
+		cell.detailTextLabel?.numberOfLines = 3
+		cell.detailTextLabel?.allowsDefaultTighteningForTruncation = true
+		cell.detailTextLabel?.lineBreakMode = .byTruncatingTail
+		cell.detailTextLabel?.font = cell.detailTextLabel?.font.withSize(cellHeight / 10)
+		cell.detailTextLabel?.text = stages[indexPath.row].description
+		
+		cell.backgroundColor = tableView.backgroundColor
 		return cell
 	}
 	
@@ -154,9 +165,7 @@ extension CourseDetailVC: UITableViewDataSource, UITableViewDelegate {
 		let chaptersVC = ChaptersVC()
 		chaptersVC.stageURL = stageURL
 		chaptersVC.courseName = course.name
-		navigationController?.pushIfNot(destinationVCType: ChaptersVC.self, newVC: chaptersVC)
+		navigationController?.pushIfNot(newVC: chaptersVC)
 	}
-	
-	
 	
 }

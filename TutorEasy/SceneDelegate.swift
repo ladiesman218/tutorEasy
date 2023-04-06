@@ -21,7 +21,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = windowScene.windows.first!
 		
 		// Setup destination VC
-		let courseListVC = CourseListVC(nibName: nil, bundle: nil)
+		let courseListVC = CourseListVC()
 		courseListVC.loadCourses()
 		
 		let navVC = UINavigationController(rootViewController: courseListVC)
@@ -34,8 +34,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 			AuthAPI.userInfo = try? await AuthAPI.getPublicUserFromToken().get()
 			// Only push a new authenticationVC when the current top vc is not of type authentication VC
 			if AuthAPI.userInfo == nil {
-				let authenticationVC = AuthenticationVC(nibName: nil, bundle: nil)
-				navVC.pushIfNot(destinationVCType: AuthenticationVC.self, newVC: authenticationVC)
+				let authenticationVC = AuthenticationVC()
+				navVC.pushIfNot(newVC: authenticationVC)
 			}
 		}
 		

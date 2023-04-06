@@ -30,9 +30,6 @@ class ChaptersVC: UIViewController {
 	
 	private var chapterImages: [UIImage?] = .init(repeating: nil, count: placeholderForNumberOfCells) {
 		didSet {
-			let imageCount = chapterImages.filter {
-				$0 != nil
-			}.count
 			chaptersCollectionView.reloadData()
 		}
 	}
@@ -68,7 +65,7 @@ class ChaptersVC: UIViewController {
 		chaptersCollectionView.layer.cornerRadius = 20
 		chaptersCollectionView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
 		chaptersCollectionView.backgroundColor = .systemGray5
-
+//		chaptersCollectionView.bounces = false
 		return chaptersCollectionView
 	}()
 	
@@ -128,7 +125,10 @@ class ChaptersVC: UIViewController {
 				case .success(let stage):
 					self.stage = stage
 				case .failure(let error):
-					error.present(on: self, title: "无法获取小节列表", actions: [])
+					let goBack = UIAlertAction(title: "返回", style: .cancel) { [unowned self] _ in
+						self.navigationController?.popViewController(animated: true)
+					}
+					error.present(on: self, title: "无法获取小节列表", actions: [goBack])
 			}
 		}
 	}
@@ -165,7 +165,7 @@ extension ChaptersVC: UICollectionViewDataSource, UICollectionViewDelegate, UICo
 		let chapterDetailVC = ChapterDetailVC()
 		let chapter = chapters[indexPath.item]
 		chapterDetailVC.chapter = chapter
-		navigationController?.pushIfNot(destinationVCType: ChapterDetailVC.self, newVC: chapterDetailVC)
+		navigationController?.pushIfNot(newVC: chapterDetailVC)
 	}
 	
 }

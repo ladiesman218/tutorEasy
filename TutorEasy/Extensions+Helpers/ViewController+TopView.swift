@@ -74,8 +74,14 @@ extension UIViewController {
     }
     
     @objc func profileIconClicked() {
-        let destinationVC: UIViewController = (AuthAPI.userInfo != nil) ? AccountVC(nibName: nil, bundle: nil) : AuthenticationVC(nibName: nil, bundle: nil)
-        self.navigationController?.pushViewController(destinationVC, animated: true)
+		let destinationVC: UIViewController = (AuthAPI.userInfo != nil) ? AccountVC() : AuthenticationVC()
+		if let accountsVC = destinationVC as? AccountVC {
+			// When a logged in user click profileIcon, go to manage profile view by default
+			accountsVC.currentVC = .profile
+			self.navigationController?.pushIfNot(newVC: destinationVC, animated: true)
+		} else {
+			self.navigationController?.pushIfNot(newVC: destinationVC, animated: true)
+		}
     }
     
     /// This function configure the behaviour of the back button.

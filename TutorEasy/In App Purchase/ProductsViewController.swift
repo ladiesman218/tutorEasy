@@ -65,7 +65,7 @@ class ProductsViewController: UIViewController {
 		
 		Task {
 			do {
-				let (data, _) = try await URLSession.shared.dataAndResponse(from: url)
+				let (data, _) = try await URLSession.shared.requestWithToken(url: url)
 				let identifiers = try JSONDecoder().decode([String].self, from: data)
 				request = SKProductsRequest(productIdentifiers: Set(identifiers))
 				request.delegate = self
@@ -131,8 +131,8 @@ extension ProductsViewController: UITableViewDataSource, UITableViewDelegate {
 				AuthAPI.tokenValue = nil
 				let cancel = UIAlertAction(title: "再看看", style: .cancel)
 				let login = UIAlertAction(title: "去登录", style: .default) { [unowned self] _ in
-					let authVC = AuthenticationVC(nibName: nil, bundle: nil)
-					self.navigationController?.pushViewController(authVC, animated: true)
+					let authVC = AuthenticationVC()
+					self.navigationController?.pushIfNot(newVC: authVC, animated: true)
 				}
 				MessagePresenter.showMessage(title: "登录信息已失效", message: "重新登录后管理您的课程订阅", on: self, actions: [login, cancel])
 				return

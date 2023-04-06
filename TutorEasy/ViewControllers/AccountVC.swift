@@ -11,8 +11,49 @@ class AccountVC: UIViewController {
 	
 	// MARK: - Custom Properties
 	static let customBgColor = UIColor.systemBlue.withAlphaComponent(0.6)
-	private let navigationTexts = ["个人资料", "管理订阅", "我的钱包", "退出登录"]
 	static let navigationIdentifier = "accountsVCNavCell"
+	
+	enum SubVC: String, CaseIterable {
+		case profile = "个人资料"
+		case subscription = "管理订阅"
+		case wallet = "我的钱包"
+		case logout = "退出登录"
+	}
+	static let subVCs = SubVC.allCases
+	var currentVC: SubVC! {
+		didSet {
+			// Remove previous added view controller from self, and remove its view from containerView first.
+			self.children.forEach {
+				$0.removeFromParent()
+			}
+			containerView.subviews.forEach {
+				$0.removeFromSuperview()
+			}
+
+			// Add new viewController and its view accordingly.
+			switch currentVC {
+				case .profile:
+					let profileVC = ProfileVC()
+					addChild(profileVC)
+					containerView.addSubview(profileVC.view)
+					profileVC.view.frame = containerView.bounds
+				case .subscription:
+					let productsVC = ProductsViewController()
+					addChild(productsVC)
+					containerView.addSubview(productsVC.view)
+					productsVC.view.frame = containerView.bounds
+				case .wallet:
+					break
+				case .logout:
+					Task {
+						let _ = await AuthAPI.logout()
+						self.navigationController?.popViewController(animated: true)
+					}
+				case .none:
+					break
+			}
+		}
+	}
 	
 	// MARK: - Custom Views
 	private var topView: UIView!
@@ -27,7 +68,7 @@ class AccountVC: UIViewController {
 	
 	private let navigationTable: UITableView = {
 		let tableView = UITableView()
-		//		tableView.backgroundColor = customBgColor
+		tableView.backgroundColor = customBgColor
 		tableView.bounces = false
 		tableView.translatesAutoresizingMaskIntoConstraints = false
 		tableView.register(UITableViewCell.self, forCellReuseIdentifier: navigationIdentifier)
@@ -41,6 +82,13 @@ class AccountVC: UIViewController {
 	}()
 	
 	// MARK: - View Controller functions
+	// Without this, navigationTable won't show a selected background before selection change, kinda confusing which one is currently selected when first enter this VC.
+	override func viewWillAppear(_ animated: Bool) {
+		let index = Self.subVCs.firstIndex(of: currentVC)!
+		let indexPath = IndexPath(row: index, section: 0)
+		navigationTable.selectRow(at: indexPath, animated: false, scrollPosition: .none)
+	}
+	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		view.backgroundColor = backgroundColor
@@ -58,6 +106,9 @@ class AccountVC: UIViewController {
 		view.addSubview(containerView)
 		
 		NSLayoutConstraint.activate([
+			// Leading position of backButtonView is special in accountsVC
+			backButtonView.leadingAnchor.constraint(equalTo: topView.leadingAnchor),
+			
 			navTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor),
 			navTitle.heightAnchor.constraint(equalTo: topView.heightAnchor),
 			navTitle.topAnchor.constraint(equalTo: topView.topAnchor),
@@ -92,12 +143,12 @@ class AccountVC: UIViewController {
 
 extension AccountVC: UITableViewDataSource, UITableViewDelegate {
 	func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-		return 4
+		return Self.subVCs.count
 	}
 	
 	func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 		let cell = tableView.dequeueReusableCell(withIdentifier: Self.navigationIdentifier, for: indexPath)
-		cell.textLabel!.text = navigationTexts[indexPath.row]
+		cell.textLabel!.text = Self.subVCs.map { $0.rawValue }[indexPath.row]
 		cell.textLabel!.textColor = .white
 		cell.backgroundColor = Self.customBgColor
 		
@@ -109,29 +160,9 @@ extension AccountVC: UITableViewDataSource, UITableViewDelegate {
 	}
 	
 	func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-		for vc in self.children  {
-			vc.removeFromParent()
-		}
-		
-		switch indexPath {
-			case [0, 0]:
-				break
-			case [0, 1]:
-				let productsVC = ProductsViewController()
-				self.addChild(productsVC)
-				self.containerView.addSubview(productsVC.view)
-				productsVC.view.frame = self.containerView.bounds
-				
-			case [0, 2]:
-				break
-			case [0, 3]:
-				Task {
-					let _ = await AuthAPI.logout()
-					self.navigationController?.popViewController(animated: true)
-				}
-			default:
-				break
-		}
-		
+		// When selection change, just change currentVC's value, then the property observer of currentVC will change sub viewController and view
+		currentVC = Self.subVCs[indexPath.row]
 	}
+	
+	
 }

@@ -9,33 +9,78 @@ import UIKit
 import PDFKit
 import AVKit
 
-class ChapterDetailVC: UIViewController {
+class ChapterDetailVC: UIViewController, UIEditMenuInteractionDelegate {
 	
 	// MARK: - Properties
 	var chapter: Chapter! {
 		didSet {
-			let url = chapter.pdfURL
+			let path = chapter.pdfURL.path
 			Task {
-				let result = await FileAPI.getCourseContent(path: url.path)
-				switch result {
-					case .success(let data):
-						self.pdfView.document = PDFDocument(data: data)
-					case .failure(let error):
-						if let error = error as? ClientError {
-							print(error.localizedDescription)
-							print("here")
+				let (data, response) = try await FileAPI.getCourseContent(path: path)
+				
+				switch response.statusCode {
+					case 401:
+						await MainActor.run {
+							let navVC = self.navigationController!
+							navVC.popViewController(animated: true)
+							let error = try! Decoder.isoDate.decode(ResponseError.self, from: data)
+
+							let cancel = UIAlertAction(title: "再看看", style: .default)
+							
+							let login = UIAlertAction(title: "去登录", style: .cancel) {  _ in
+								let authVC = AuthenticationVC()
+								navVC.pushIfNot(newVC: authVC)
+							}
+							error.present(on: navVC.topViewController!, title: "付费内容，请先登录", actions: [cancel, login])
 						}
-						let back = UIAlertAction(title: "返回", style: .cancel) { [unowned self] _ in
-							self.navigationController?.popViewController(animated: true)
+						
+					case 402:
+						await MainActor.run {
+							let navVC = self.navigationController!
+							navVC.popViewController(animated: true)
+							
+							let error = try! Decoder.isoDate.decode(ResponseError.self, from: data)
+							let cancel = UIAlertAction(title: "取消", style: .default)
+							let buy = UIAlertAction(title: "管理订阅", style: .cancel) { _ in
+								let accountsVC = AccountVC()
+								// AccountsVC has multiple subVCs, by default the main view a logged in user sees when getting into accountVC should be manage profile. But here let the user see managing subscription view makes more senese.
+								accountsVC.currentVC = .subscription
+								navVC.pushIfNot(newVC: accountsVC)
+							}
+							error.present(on: navVC.topViewController!, title: "付费内容", actions: [cancel, buy])
+							
 						}
-						error.present(on: self, title: "无法获取课程内容", actions: [back])
+					default:
+						guard response.statusCode == 200 else {
+							let error = try Decoder.isoDate.decode(ResponseError.self, from: data)
+							let cancel = UIAlertAction(title: "再看看", style: .default) { _ in
+								self.navigationController?.popViewController(animated: true)
+							}
+							error.present(on: self, title: "无法获取课程内容", actions: [cancel])
+							return
+						}
+				}
+				if let document = PDFDocument(data: data) {
+					pdfView.document = document
+					// Double click on pdfView will zoom-in/zoom-out. The following lines disable this behaviour. According to documentation, assigning these values will implicitly turn off autoScales, and allows scaleFactor to vary between these min / max scale factors. So these 2 should only be set after a pdf document is set for the view. In pdfView definition, autoScales is enabled, that's for getting the best scale factor at the first stage.
+					pdfView.minScaleFactor = pdfView.scaleFactor
+					pdfView.maxScaleFactor = pdfView.scaleFactor
+					// This disables long press for contextual menu, but still keeps clicking of a link to play video. Again, this should be set here since when view load, documentView is nil.
+					pdfView.documentView!.gestureRecognizers! = []
+					
+					if #available(iOS 16.0, *) {
+					}
+
+					// Creat thumbnails
+					for number in 0 ... document.pageCount - 1 {
+						let box = pdfView.displayBox
+						let image = pdfView.document!.page(at: number)!.thumbnail(of: .init(width: 500, height: 350), for: box)
+						thumbnails.append(image)
+					}
 				}
 			}
-			//			self.pdfView.setNeedsDisplay()
 		}
 	}
-	// This will hold the scaleFactor value for pdfView after it's set for the first time
-	private var scaleFactor: CGFloat!
 	
 	private let player: AVPlayer = AVPlayer()
 	// After video finished playing, try to play it again will give black screen with ongoing audio. Debug view hierarchy shows something wierd in AVPlayerViewController's subview. Solution for now is to create a new instance of AVPlayerViewController everytime user click to play a video, so it has to be instantiated inside the pdfViewWillClick delegate method.
@@ -44,6 +89,14 @@ class ChapterDetailVC: UIViewController {
 	private var thumbnails = [UIImage]() {
 		didSet {
 			thumbnailCollectionView.reloadData()
+			Task {
+				// Select the first cell, make it fully opaque
+				await MainActor.run {
+					thumbnailCollectionView.selectItem(at: [0, 0], animated: true, scrollPosition: .top)
+					thumbnailCollectionView.cellForItem(at: [0, 0])?.contentView.layer.opacity = 1
+
+				}
+			}
 		}
 	}
 	
@@ -62,8 +115,8 @@ class ChapterDetailVC: UIViewController {
 		pdfView.displayMode = .singlePage
 		pdfView.autoScales = true
 		pdfView.enableDataDetectors = true
-#warning("Disable selecting, editing, for pdfView")
-		
+
+		#warning("On iOS 16, ctrl + click can still select, copy text. Double click on page will zoom-in and out.")
 		pdfView.translatesAutoresizingMaskIntoConstraints = false
 		return pdfView
 	}()
@@ -79,20 +132,6 @@ class ChapterDetailVC: UIViewController {
 	}()
 	
 	// MARK: - Controller functions
-	
-	override func viewDidLayoutSubviews() {
-		super.viewDidLayoutSubviews()
-		
-		scaleFactor = pdfView.scaleFactor
-		// Setting min and max scaleFactor to a fixed value will prevent pdfView to zoom-in or out.
-		pdfView.minScaleFactor = scaleFactor
-		pdfView.maxScaleFactor = scaleFactor
-		//		pdfView.isUserInteractionEnabled = false	// This disable all user interactions including clicking on a link.
-		//		print(pdfView.document?.accessPermissions.rawValue)
-		//		print(pdfView.document?.permissionsStatus.rawValue)
-		
-	}
-	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		
@@ -110,15 +149,6 @@ class ChapterDetailVC: UIViewController {
 		thumbnailCollectionView.delegate = self
 		thumbnailCollectionView.dataSource = self
 		view.addSubview(thumbnailCollectionView)
-		
-		// Generate thumbnails manually, in case url of getting pdf document fails, don't force unwrap pdfView.document
-		if let document = pdfView.document {
-			for number in 0 ... document.pageCount - 1 {
-				let box = pdfView.displayBox
-				let image = pdfView.document!.page(at: number)!.thumbnail(of: .init(width: 500, height: 350), for: box)
-				thumbnails.append(image)
-			}
-		}
 		
 		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
 		
@@ -146,14 +176,6 @@ extension ChapterDetailVC: PDFViewDelegate {
 		// If the player is playing in picture in picture mode, there is a chance user could click the play button again to start another playback, make sure that doesn't happen.
 		//		guard player.currentItem == nil else { return }
 		
-		guard let senderURL = sender.document?.documentURL else { fatalError() }
-		// senderURL contains the pdf file name and extension in its path, so remove that.
-		let baseURL = senderURL.deletingLastPathComponent()
-		let path = url.path
-		
-		let finalURL = baseURL.appendingPathComponent(path)
-		//		let finalPath = finalURL.path.removingPercentEncoding ?? finalURL.path
-		
 		playerViewController = AVPlayerViewController()
 		playerViewController.delegate = self
 		playerViewController.showsTimecodes = true
@@ -163,7 +185,8 @@ extension ChapterDetailVC: PDFViewDelegate {
 		
 		// Disable picture in picture for now. pip still cause some issue
 		playerViewController.allowsPictureInPicturePlayback = false
-		player.replaceCurrentItem(with: .init(url: finalURL))
+		let videoURL = chapter.directoryURL.appendingPathComponent(url.path)
+		player.replaceCurrentItem(with: .init(url: videoURL))
 		playerViewController.player = player
 		
 		self.present(playerViewController, animated: true) { [unowned self] in
@@ -225,6 +248,8 @@ extension ChapterDetailVC: UICollectionViewDataSource, UICollectionViewDelegate,
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PDFThumbnailCell.identifier, for: indexPath) as! PDFThumbnailCell
 		cell.imageView.image = thumbnails[indexPath.item]
+		// Since opacity is changing during select and deselect, and we are reusing instead of creating	 new cells, opacity should be set here otherwise scrolling will cause bugs
+		cell.contentView.layer.opacity = (cell.isSelected) ? 1 : PDFThumbnailCell.opacity
 		return cell
 	}
 	
@@ -239,6 +264,12 @@ extension ChapterDetailVC: UICollectionViewDataSource, UICollectionViewDelegate,
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 		let page = pdfView.document!.page(at: indexPath.item)!
 		pdfView.go(to: page)
+		// By default, not selected cells are a little transparent
+		collectionView.cellForItem(at: indexPath)?.contentView.layer.opacity = 1
+		
 	}
-	
+
+	func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+		collectionView.cellForItem(at: indexPath)?.contentView.layer.opacity = PDFThumbnailCell.opacity
+	}
 }

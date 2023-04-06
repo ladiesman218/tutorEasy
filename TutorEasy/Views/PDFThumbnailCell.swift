@@ -9,6 +9,8 @@ import UIKit
 
 class PDFThumbnailCell: UICollectionViewCell {
 	static let identifier = "pdfThumbnailCell"
+	// Cells not selected will have a little transparency, selected will be fully opaque
+	static let opacity: Float = 0.7
 	var imageView: UIImageView!
 	
 	override init(frame: CGRect) {
