@@ -27,6 +27,10 @@ extension URLSession {
 		// When server stopped, reponse status code will be 502, when accessing a wrong endpoint, response code will be 404, with returned data of type ResponseError
 		let httpResponse = response as! HTTPURLResponse
 		
+		// In case server can not be connected, throw ResponseError that user can understand, instead of saying "The data couldn’t be read because it is missing." Here we exclude 500 on purpose, since .internalServerError aka 500 is manually thrown on server side.
+		if httpResponse.statusCode > 500 {
+			throw ResponseError(reason: "服务器错误，请检查设备网络，或联系\(adminEmail)")
+		}
 		return (data, httpResponse)
 	}
 		
@@ -39,8 +43,8 @@ extension URLSession {
 		}
 		
 		// In case server can not be connected, throw ResponseError that user can understand, instead of saying "The data couldn’t be read because it is missing."
-		if httpResponse.statusCode >= 500 {
-			throw ResponseError(reason: "服务器错误，请检查设备网络，或联系管理员\(adminEmail)")
+		if httpResponse.statusCode > 500 {
+			throw ResponseError(reason: "服务器错误，请检查设备网络，或联系\(adminEmail)")
 		}
 		// If everything works, return data with response, in case we need the response for future usage
 		return (data, httpResponse)
