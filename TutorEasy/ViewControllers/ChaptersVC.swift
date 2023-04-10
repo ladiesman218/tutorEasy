@@ -141,9 +141,10 @@ extension ChaptersVC: UICollectionViewDataSource, UICollectionViewDelegate, UICo
 	
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
-
 		cell.imageView.image = chapterImages[indexPath.item]
-		
+		if chapters[indexPath.item].isFree {
+			cell.imageView.drawTrail()
+		}
 		return cell
 	}
 	

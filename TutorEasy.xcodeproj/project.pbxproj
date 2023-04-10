@@ -19,7 +19,6 @@
 		B425EA4228D9B9FA003A865D /* Course.swift in Sources */ = {isa = PBXBuildFile; fileRef = B425EA4128D9B9FA003A865D /* Course.swift */; };
 		B42B2FAE29D687D00098C094 /* UILable + padding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B42B2FAD29D687D00098C094 /* UILable + padding.swift */; };
 		B42B2FB029D690D20098C094 /* ChaptersVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B42B2FAF29D690D20098C094 /* ChaptersVC.swift */; };
-		B4376C002907FD2000E17698 /* CourseCell orginal.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4376BFF2907FD2000E17698 /* CourseCell orginal.swift */; };
 		B4376C022908CA1D00E17698 /* CourseAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4376C012908CA1D00E17698 /* CourseAPI.swift */; };
 		B4376C04290D7FC500E17698 /* ProfileIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4376C03290D7FC500E17698 /* ProfileIconView.swift */; };
 		B4376C06290E1F2800E17698 /* CourseDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4376C05290E1F2800E17698 /* CourseDetailVC.swift */; };
@@ -69,7 +68,6 @@
 		B425EA4128D9B9FA003A865D /* Course.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Course.swift; sourceTree = "<group>"; };
 		B42B2FAD29D687D00098C094 /* UILable + padding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UILable + padding.swift"; sourceTree = "<group>"; };
 		B42B2FAF29D690D20098C094 /* ChaptersVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChaptersVC.swift; sourceTree = "<group>"; };
-		B4376BFF2907FD2000E17698 /* CourseCell orginal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CourseCell orginal.swift"; sourceTree = "<group>"; };
 		B4376C012908CA1D00E17698 /* CourseAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseAPI.swift; sourceTree = "<group>"; };
 		B4376C03290D7FC500E17698 /* ProfileIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileIconView.swift; sourceTree = "<group>"; };
 		B4376C05290E1F2800E17698 /* CourseDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseDetailVC.swift; sourceTree = "<group>"; };
@@ -159,7 +157,6 @@
 				B425EA3F28D314DE003A865D /* CourseCell.swift */,
 				B4376C09290FBBFF00E17698 /* ChapterCell.swift */,
 				B4CFC46C292921F700CB337A /* PDFThumbnailCell.swift */,
-				B4376BFF2907FD2000E17698 /* CourseCell orginal.swift */,
 				B4376C03290D7FC500E17698 /* ProfileIconView.swift */,
 			);
 			path = Views;
@@ -341,7 +338,6 @@
 				B45B71C22983DC1000E4C7E3 /* Error + present.swift in Sources */,
 				B4376C0A290FBBFF00E17698 /* ChapterCell.swift in Sources */,
 				B4CDED9A2917C000004B2F8E /* Chapter.swift in Sources */,
-				B4376C002907FD2000E17698 /* CourseCell orginal.swift in Sources */,
 				B45B71C82983DCEE00E4C7E3 /* UIView + createShadow.swift in Sources */,
 				B4BBAE2428F9C133004368F8 /* ViewController+DissmissKeyboard.swift in Sources */,
 				B4CFC46D292921F700CB337A /* PDFThumbnailCell.swift in Sources */,
