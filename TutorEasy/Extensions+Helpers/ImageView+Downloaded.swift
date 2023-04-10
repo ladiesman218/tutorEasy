@@ -39,6 +39,7 @@ extension UIImageView {
 			
 			// AttributedString
 			let paragraphStyle = NSMutableParagraphStyle()
+			// Horizontally center align the text
 			paragraphStyle.alignment = .center
 
 			let fontSize = rowHeight * 0.85
@@ -48,7 +49,6 @@ extension UIImageView {
 				.paragraphStyle: paragraphStyle,
 //				.baselineOffset: -(rowHeight - fontSize) / 2
 			]
-
 			let string = "免费"
 			let attributedString = NSAttributedString(string: string, attributes: attrs)
 
