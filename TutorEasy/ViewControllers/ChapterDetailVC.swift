@@ -185,7 +185,9 @@ extension ChapterDetailVC: PDFViewDelegate {
 		
 		// Disable picture in picture for now. pip still cause some issue
 		playerViewController.allowsPictureInPicturePlayback = false
-		let videoURL = chapter.directoryURL.appendingPathComponent(url.path)
+		
+		// In PDF file, relative path is used for video files(relative to chapter's directory url), so when accessing the real file, we need to modify that link path, prepend api end point and directory url first
+		let videoURL = FileAPI.contentEndPoint.appendingPathComponent(chapter.directoryURL.path).appendingPathComponent(url.path)
 		player.replaceCurrentItem(with: .init(url: videoURL))
 		playerViewController.player = player
 		
