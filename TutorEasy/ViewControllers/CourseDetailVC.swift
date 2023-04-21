@@ -161,10 +161,11 @@ extension CourseDetailVC: UITableViewDataSource, UITableViewDelegate {
 	}
 	
 	func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-		let stageURL = stages[indexPath.row].directoryURL
+		let stage = stages[indexPath.row]
 		let chaptersVC = ChaptersVC()
-		chaptersVC.stageURL = stageURL
+		chaptersVC.stageURL = stage.directoryURL
 		chaptersVC.courseName = course.name
+		chaptersVC.stageName = stage.name
 		navigationController?.pushIfNot(newVC: chaptersVC)
 	}
 	

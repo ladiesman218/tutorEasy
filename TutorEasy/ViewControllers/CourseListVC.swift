@@ -13,9 +13,11 @@ class CourseListVC: UIViewController {
 	}
 	
 	private var courseImages: [UIImage?] = .init(repeating: nil, count: placeholderForNumberOfCells) {
-		didSet {
-			collectionView.reloadData()
-		}
+		didSet { loaded = true }
+	}
+	
+	private var loaded = false {
+		didSet { collectionView.reloadData() }
 	}
 	
 	// MARK: - Custom subviews
@@ -26,6 +28,7 @@ class CourseListVC: UIViewController {
 		collectionView.layer.cornerRadius = 20
 		collectionView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
 		collectionView.contentInset = .init(top: 30, left: 30, bottom: 30, right: 30)
+		collectionView.register(SkeletonCollectionCell.self, forCellWithReuseIdentifier: SkeletonCollectionCell.identifier)
 		collectionView.register(CourseCell.self, forCellWithReuseIdentifier: CourseCell.identifier)
 		collectionView.translatesAutoresizingMaskIntoConstraints = false
 		return collectionView
@@ -83,10 +86,14 @@ extension CourseListVC: UICollectionViewDelegate, UICollectionViewDataSource, UI
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-		
-		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CourseCell.identifier, for: indexPath) as! CourseCell
-		cell.imageView.image = courseImages[indexPath.item]
-		return cell
+		if !loaded {
+			let cell = collectionView.dequeueReusableCell(withReuseIdentifier: SkeletonCollectionCell.identifier, for: indexPath) as! SkeletonCollectionCell
+			return cell
+		} else {
+			let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CourseCell.identifier, for: indexPath) as! CourseCell
+			cell.imageView.image = courseImages[indexPath.item]
+			return cell
+		}
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
@@ -108,5 +115,9 @@ extension CourseListVC: UICollectionViewDelegate, UICollectionViewDataSource, UI
 		let detailVC = CourseDetailVC()
 		detailVC.courseID = id
 		self.navigationController?.pushIfNot(newVC: detailVC)
+	}
+	
+	func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
+		return loaded
 	}
 }
