@@ -78,6 +78,8 @@ class ChapterCell: UICollectionViewCell {
 	override func prepareForReuse() {
 		super.prepareForReuse()
 		self.imageView.image = nil
+		
+		// Maybe create an optional dataTask to hold the task for fetching image data in the cell, give it a value when needed, then cancel the task and set it to nil here.
 		self.chapter = chapterPlaceHolder
 		self.loaded = false
 	}
