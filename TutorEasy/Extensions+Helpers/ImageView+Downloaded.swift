@@ -4,11 +4,12 @@ import UIKit
 // This is a hack from https://stackoverflow.com/questions/24231680/loading-downloading-image-from-url-on-swift
 extension UIImageView {
 	
-	func downloaded(from link: String, contentMode mode: ContentMode = .scaleAspectFit) {
+	func downloaded(from link: String, contentMode mode: ContentMode = .scaleAspectFit, addTrial: Bool = false) {
 		contentMode = contentMode
 		Task {
 			if let data = try? await FileAPI.publicGetImageData(path: link).get() {
 				self.image = UIImage(data: data)
+				if addTrial { drawTrail() }
 				self.setNeedsDisplay()
 			}
 		}

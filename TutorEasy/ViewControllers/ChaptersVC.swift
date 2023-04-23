@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SkeletonView
 
 class ChaptersVC: UIViewController {
 	// MARK: - Properties
@@ -15,21 +16,9 @@ class ChaptersVC: UIViewController {
 	
 	private var chapters: [Chapter] = .init(repeating: chapterPlaceHolder, count: placeholderForNumberOfCells) {
 		didSet {
-//			Task {
-//				let urls = chapters.map { $0.imageURL }
-//				chapterImages = await downloadImages(urls: urls)
-//			}
+			chaptersCollectionView.reloadData()
 		}
 	}
-	
-	private var chapterImages: [UIImage?] = .init(repeating: nil, count: placeholderForNumberOfCells)
-//	{
-//		didSet { loaded = true }
-//	}
-	
-//	private var loaded = false {
-//		didSet { chaptersCollectionView.reloadData() }
-//	}
 	
 	// MARK: - Custom subviews
 	private var topView: UIView!
@@ -41,7 +30,7 @@ class ChaptersVC: UIViewController {
 		courseTitle.translatesAutoresizingMaskIntoConstraints = false
 		courseTitle.textColor = .white
 		courseTitle.layer.backgroundColor = UIColor.systemYellow.cgColor
-
+		
 		return courseTitle
 	}()
 	
@@ -58,24 +47,19 @@ class ChaptersVC: UIViewController {
 		let layout = UICollectionViewFlowLayout()
 		let chaptersCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
 		chaptersCollectionView.translatesAutoresizingMaskIntoConstraints = false
-		chaptersCollectionView.register(SkeletonCollectionCell.self, forCellWithReuseIdentifier: SkeletonCollectionCell.identifier)
-//		chaptersCollectionView.register(ChapterCell.self, forCellWithReuseIdentifier: ChapterCell.identifier)
-//		chaptersCollectionView.contentInset = .init(top: 30, left: 30, bottom: 30, right: 30)
-//		chaptersCollectionView.layer.cornerRadius = 20
-//		chaptersCollectionView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
-//		chaptersCollectionView.backgroundColor = .systemGray5
+		chaptersCollectionView.register(ChapterCell.self, forCellWithReuseIdentifier: ChapterCell.identifier)
+		chaptersCollectionView.contentInset = .init(top: 30, left: 30, bottom: 30, right: 30)
+		chaptersCollectionView.layer.cornerRadius = 20
+		chaptersCollectionView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
+		chaptersCollectionView.backgroundColor = .systemGray5
 		return chaptersCollectionView
 	}()
 	
 	// MARK: - Controller functions
-	override func viewWillAppear(_ animated: Bool) {
-		super.viewWillAppear(animated)
-		chaptersCollectionView.alpha = 1
-	}
 	override func viewDidLoad() {
-        super.viewDidLoad()
-//		loadStage()
-        
+		super.viewDidLoad()
+		loadStage()
+		
 		view.backgroundColor = backgroundColor
 		topView = configTopView(bgColor: UIColor.clear)
 		
@@ -118,8 +102,8 @@ class ChaptersVC: UIViewController {
 			chaptersCollectionView.trailingAnchor.constraint(equalTo: iconView.trailingAnchor),
 			chaptersCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
 		])
-    }
-
+	}
+	
 	func loadStage() {
 		Task {
 			let result = await CourseAPI.getStage(path: stageURL.path)
@@ -134,31 +118,29 @@ class ChaptersVC: UIViewController {
 			}
 		}
 	}
+	
 }
 
-extension ChaptersVC: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
+extension ChaptersVC: SkeletonCollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
+
+	func collectionSkeletonView(_ skeletonView: UICollectionView, cellIdentifierForItemAt indexPath: IndexPath) -> SkeletonView.ReusableCellIdentifier {
+		return ChapterCell.identifier
+	}
+	
+	func collectionSkeletonView(_ skeletonView: UICollectionView, prepareCellForSkeleton cell: UICollectionViewCell, at indexPath: IndexPath) {
+		
+	}
+	
 	func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
 		return chapters.count
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 
-		#warning("不显示SkeletonCollectionCell, 切换dark light theme会显示")
-// 能正确dequeue到SkeletonCollectionCell，加了imageView背景色能看到。不加背景色cell就不显示，也没动画。如果把该vc做成第一个dequeue SkeletonCollectionCell的，也不显示动画，所以不是动画需要结束问题
-
-//		if !loaded {
-			let cell = collectionView.dequeueReusableCell(withReuseIdentifier: SkeletonCollectionCell.identifier, for: indexPath) as! SkeletonCollectionCell
+		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
+		cell.chapter = chapters[indexPath.item]
 		
-//		print(cell.layer.animationKeys())
-			return cell
-//		} else {
-//			let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
-//			cell.imageView.image = chapterImages[indexPath.item]
-//			if chapters[indexPath.item].isFree {
-//				cell.imageView.drawTrail()
-//			}
-//			return cell
-//		}
+		return cell
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
@@ -174,6 +156,10 @@ extension ChaptersVC: UICollectionViewDataSource, UICollectionViewDelegate, UICo
 		let width = totalWidth / 4 - 15 // Accounts for the item spacing, also add extra 5 to allow shadow to be fully displayed.
 		return .init(width: width, height: width)
 	}
+	
+//	func scrollViewDidScroll(_ scrollView: UIScrollView) {
+//		print(chaptersCollectionView.visibleCells)
+//	}
 	
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 		let chapterDetailVC = ChapterDetailVC()

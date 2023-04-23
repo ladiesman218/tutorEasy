@@ -24,7 +24,14 @@ class CourseCell: UICollectionViewCell {
     
     var descriptionLabel: UILabel!
     var priceLabel: UILabel!
-    
+	var course: Course? {
+		didSet {
+			print(course?.imageURL)
+			if let course = course, let imageURL = course.imageURL {
+				imageView.downloaded(from: imageURL.path)
+			}
+		}
+	}
     override init(frame: CGRect) {
         super.init(frame: frame)
         //                contentView.layer.borderWidth = 1

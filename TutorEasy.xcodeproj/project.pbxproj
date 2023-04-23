@@ -40,6 +40,7 @@
 		B4BBAE2228F99398004368F8 /* AccountVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BBAE2128F99398004368F8 /* AccountVC.swift */; };
 		B4BBAE2428F9C133004368F8 /* ViewController+DissmissKeyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BBAE2328F9C133004368F8 /* ViewController+DissmissKeyboard.swift */; };
 		B4C6CAF429F0D81800988034 /* SkeletonCells.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C6CAF329F0D81800988034 /* SkeletonCells.swift */; };
+		B4C6CAF729F2D34D00988034 /* SkeletonView in Frameworks */ = {isa = PBXBuildFile; productRef = B4C6CAF629F2D34D00988034 /* SkeletonView */; };
 		B4CDED9A2917C000004B2F8E /* Chapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CDED992917C000004B2F8E /* Chapter.swift */; };
 		B4CDED9C2917F01A004B2F8E /* FileAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CDED9B2917F01A004B2F8E /* FileAPI.swift */; };
 		B4CFC46D292921F700CB337A /* PDFThumbnailCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CFC46C292921F700CB337A /* PDFThumbnailCell.swift */; };
@@ -107,6 +108,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B4C6CAF729F2D34D00988034 /* SkeletonView in Frameworks */,
 				B44AD57E293C5C7500598D5A /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -262,6 +264,9 @@
 			dependencies = (
 			);
 			name = TutorEasy;
+			packageProductDependencies = (
+				B4C6CAF629F2D34D00988034 /* SkeletonView */,
+			);
 			productName = TutorEasy;
 			productReference = B402DD82286440DB000EEF40 /* TutorEasy.app */;
 			productType = "com.apple.product-type.application";
@@ -290,6 +295,9 @@
 				Base,
 			);
 			mainGroup = B402DD79286440DB000EEF40;
+			packageReferences = (
+				B4C6CAF529F2D34D00988034 /* XCRemoteSwiftPackageReference "SkeletonView" */,
+			);
 			productRefGroup = B402DD83286440DB000EEF40 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -584,6 +592,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		B4C6CAF529F2D34D00988034 /* XCRemoteSwiftPackageReference "SkeletonView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Juanpe/SkeletonView.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B4C6CAF629F2D34D00988034 /* SkeletonView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B4C6CAF529F2D34D00988034 /* XCRemoteSwiftPackageReference "SkeletonView" */;
+			productName = SkeletonView;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = B402DD7A286440DB000EEF40 /* Project object */;
 }
