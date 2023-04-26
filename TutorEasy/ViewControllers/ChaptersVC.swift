@@ -60,12 +60,10 @@ class ChaptersVC: UIViewController {
 		super.viewDidLoad()
 		loadStage()
 		
-		view.backgroundColor = backgroundColor
-		topView = configTopView(bgColor: UIColor.clear)
+		view.backgroundColor = UIColor.systemBackground
+		topView = configTopView()
 		
 		iconView.layer.backgroundColor = UIColor.clear.cgColor
-		let tap = UITapGestureRecognizer(target: self, action: #selector(UIViewController.profileIconClicked))
-		iconView.addGestureRecognizer(tap)
 		topView.addSubview(iconView)
 		
 		backButtonView = setUpGoBackButton(in: topView)
@@ -84,6 +82,8 @@ class ChaptersVC: UIViewController {
 		chaptersCollectionView.delegate = self
 		
 		NSLayoutConstraint.activate([
+			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+
 			courseTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor),
 			courseTitle.topAnchor.constraint(equalTo: topView.topAnchor),
 			courseTitle.bottomAnchor.constraint(equalTo: topView.bottomAnchor),
@@ -106,15 +106,13 @@ class ChaptersVC: UIViewController {
 	
 	func loadStage() {
 		Task {
-			let result = await CourseAPI.getStage(path: stageURL.path)
-			switch result {
-				case .success(let stage):
-					self.chapters = stage.chapters
-				case .failure(let error):
-					let goBack = UIAlertAction(title: "返回", style: .cancel) { [unowned self] _ in
-						self.navigationController?.popViewController(animated: true)
-					}
-					error.present(on: self, title: "无法获取小节列表", actions: [goBack])
+			do {
+				self.chapters = try await CourseAPI.getStage(path: stageURL.path).chapters
+			} catch {
+				let goBack = UIAlertAction(title: "返回", style: .cancel) { [unowned self] _ in
+					self.navigationController?.popViewController(animated: true)
+				}
+				error.present(on: self, title: "无法获取小节列表", actions: [goBack])
 			}
 		}
 	}

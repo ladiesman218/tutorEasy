@@ -36,28 +36,28 @@ class CourseListVC: UIViewController {
 	
 	private var topView: UIView!
 	
-	private var iconView: ProfileIconView! = .init(frame: .zero, extraInfo: true)
+	private var iconView: ProfileIconView = .init(frame: .zero, extraInfo: true)
 	
 	// MARK: - Controller functions
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		view.backgroundColor = backgroundColor
+		view.backgroundColor = UIColor.systemBackground
 		
 		view.addSubview(collectionView)
 		collectionView.dataSource = self
 		collectionView.delegate = self
 		
-		topView = configTopView(bgColor: UIColor.clear)
-		
-		let tap = UITapGestureRecognizer(target: self, action: #selector(UIViewController.profileIconClicked))
-		iconView.addGestureRecognizer(tap)
+		topView = configTopView()
+
 		topView.addSubview(iconView)
 		
 		NSLayoutConstraint.activate([
+            topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+			
 			iconView.heightAnchor.constraint(equalTo: topView.heightAnchor, multiplier: 0.95),
 			iconView.centerYAnchor.constraint(equalTo: topView.centerYAnchor),
 			iconView.widthAnchor.constraint(equalTo: topView.widthAnchor),
-			iconView.leadingAnchor.constraint(equalTo: topView.leadingAnchor, constant: 20),
+			iconView.leadingAnchor.constraint(equalTo: topView.leadingAnchor),
 			
 			collectionView.leadingAnchor.constraint(equalTo: iconView.leadingAnchor),
 			collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant:  -20),
@@ -68,12 +68,10 @@ class CourseListVC: UIViewController {
 	
 	func loadCourses() {
 		Task {
-			let result = await CourseAPI.getAllCourses()
-			switch result {
-				case .success(let courses):
-					self.courses = courses
-				case .failure(let error):
-					error.present(on: self, title: "无法获取课程列表", actions: [])
+			do {
+				self.courses = try await CourseAPI.getAllCourses()
+			} catch {
+				error.present(on: self, title: "无法获取课程列表", actions: [])
 			}
 		}
 	}

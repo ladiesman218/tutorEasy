@@ -71,13 +71,9 @@ class CourseDetailVC: UIViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		loadCourse()
+		view.backgroundColor = .systemBackground
+		topView = configTopView()
 		
-		view.backgroundColor = backgroundColor
-		topView = configTopView(bgColor: UIColor.clear)
-		
-		iconView.layer.backgroundColor = UIColor.clear.cgColor
-		let tap = UITapGestureRecognizer(target: self, action: #selector(UIViewController.profileIconClicked))
-		iconView.addGestureRecognizer(tap)
 		topView.addSubview(iconView)
 		
 		backButtonView = setUpGoBackButton(in: topView)
@@ -93,6 +89,8 @@ class CourseDetailVC: UIViewController {
 		stageTableView.contentSize = .init(width: stageTableView.frame.width, height: stageTableView.contentSize.height)
 		
 		NSLayoutConstraint.activate([
+			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+
 			courseTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor),
 			courseTitle.topAnchor.constraint(equalTo: topView.topAnchor),
 			courseTitle.bottomAnchor.constraint(equalTo: topView.bottomAnchor),
@@ -111,15 +109,13 @@ class CourseDetailVC: UIViewController {
 	
 	private func loadCourse() {
 		Task {
-			let result = await CourseAPI.getCourse(id: courseID)
-			switch result {
-				case .success(let course):
-					self.course = course
-				case .failure(let error):
-					let goBack = UIAlertAction(title: "返回", style: .cancel) { [unowned self] _ in
-						self.navigationController?.popViewController(animated: true)
-					}
-					error.present(on: self, title: "无法获取课程", actions: [goBack])
+			do {
+				self.course = try await CourseAPI.getCourse(id: courseID)
+			} catch {
+				let goBack = UIAlertAction(title: "返回", style: .cancel) { [unowned self] _ in
+					self.navigationController?.popViewController(animated: true)
+				}
+				error.present(on: self, title: "无法获取课程", actions: [goBack])
 			}
 		}
 	}

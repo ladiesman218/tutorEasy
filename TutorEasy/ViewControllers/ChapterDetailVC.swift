@@ -16,68 +16,49 @@ class ChapterDetailVC: UIViewController, UIEditMenuInteractionDelegate {
 		didSet {
 			let path = chapter.pdfURL.path
 			Task {
-				let (data, response) = try await FileAPI.getCourseContent(path: path)
-				
-				switch response.statusCode {
-					case 401:
-						await MainActor.run {
-							let navVC = self.navigationController!
-							navVC.popViewController(animated: true)
-							let error = try! Decoder.isoDate.decode(ResponseError.self, from: data)
-
-							let cancel = UIAlertAction(title: "再看看", style: .default)
-							
-							let login = UIAlertAction(title: "去登录", style: .cancel) {  _ in
-								let authVC = AuthenticationVC()
-								navVC.pushIfNot(newVC: authVC)
-							}
-							error.present(on: navVC.topViewController!, title: "付费内容，请先登录", actions: [cancel, login])
-						}
+				do {
+					let (data, response) = try await FileAPI.getCourseContent(path: path, for: chapter)
+					if let document = PDFDocument(data: data) {
+						pdfView.document = document
+						// Double click on pdfView will zoom-in/zoom-out. The following lines disable this behaviour. According to documentation, assigning these values will implicitly turn off autoScales, and allows scaleFactor to vary between these min / max scale factors. So these 2 should only be set after a pdf document is set for the view. In pdfView definition, autoScales is enabled, that's for getting the best scale factor at the first stage.
+						pdfView.minScaleFactor = pdfView.scaleFactor
+						pdfView.maxScaleFactor = pdfView.scaleFactor
+						// This disables long press for contextual menu, but still keeps clicking of a link to play video. Again, this should be set here since when view load, documentView is nil.
+						pdfView.documentView!.gestureRecognizers! = []
 						
-					case 402:
-						await MainActor.run {
-							let navVC = self.navigationController!
-							navVC.popViewController(animated: true)
-							
-							let error = try! Decoder.isoDate.decode(ResponseError.self, from: data)
-							let cancel = UIAlertAction(title: "取消", style: .default)
-							let buy = UIAlertAction(title: "管理订阅", style: .cancel) { _ in
-								let accountsVC = AccountVC()
-								// AccountsVC has multiple subVCs, by default the main view a logged in user sees when getting into accountVC should be manage profile. But here let the user see managing subscription view makes more senese.
-								accountsVC.currentVC = .subscription
-								navVC.pushIfNot(newVC: accountsVC)
-							}
-							error.present(on: navVC.topViewController!, title: "付费内容", actions: [cancel, buy])
-							
+						if #available(iOS 16.0, *) {
 						}
-					default:
-						guard response.statusCode == 200 else {
-							let error = try Decoder.isoDate.decode(ResponseError.self, from: data)
-							let cancel = UIAlertAction(title: "再看看", style: .default) { _ in
-								self.navigationController?.popViewController(animated: true)
-							}
-							error.present(on: self, title: "无法获取课程内容", actions: [cancel])
-							return
+
+						// Creat thumbnails
+						for number in 0 ... document.pageCount - 1 {
+							let box = pdfView.displayBox
+							let image = pdfView.document!.page(at: number)!.thumbnail(of: .init(width: 500, height: 350), for: box)
+							thumbnails.append(image)
 						}
-				}
-				if let document = PDFDocument(data: data) {
-					pdfView.document = document
-					// Double click on pdfView will zoom-in/zoom-out. The following lines disable this behaviour. According to documentation, assigning these values will implicitly turn off autoScales, and allows scaleFactor to vary between these min / max scale factors. So these 2 should only be set after a pdf document is set for the view. In pdfView definition, autoScales is enabled, that's for getting the best scale factor at the first stage.
-					pdfView.minScaleFactor = pdfView.scaleFactor
-					pdfView.maxScaleFactor = pdfView.scaleFactor
-					// This disables long press for contextual menu, but still keeps clicking of a link to play video. Again, this should be set here since when view load, documentView is nil.
-					pdfView.documentView!.gestureRecognizers! = []
-					
-					if #available(iOS 16.0, *) {
 					}
 
-					// Creat thumbnails
-					for number in 0 ... document.pageCount - 1 {
-						let box = pdfView.displayBox
-						let image = pdfView.document!.page(at: number)!.thumbnail(of: .init(width: 500, height: 350), for: box)
-						thumbnails.append(image)
+				} catch {
+					let navVC = self.navigationController!
+					navVC.popViewController(animated: true)
+					
+					let cancel = UIAlertAction(title: "再看看", style: .default)
+
+					if error.localizedDescription.contains("请先购买") {
+						let subscription = UIAlertAction(title: "管理订阅", style: .destructive) { _ in
+							let accountsVC = AccountVC()
+							accountsVC.currentVC = .subscription
+							navVC.pushIfNot(newVC: accountsVC)
+						}
+						error.present(on: navVC.topViewController!, title: "付费内容，无访问权限", actions: [subscription, cancel])
 					}
+					
+					let login = UIAlertAction(title: "去登录", style: .destructive) {  _ in
+						let authVC = AuthenticationVC()
+						navVC.pushIfNot(newVC: authVC)
+					}
+					error.present(on: navVC.topViewController!, title: "付费内容，无访问权限", actions: [login, cancel])
 				}
+				
 			}
 		}
 	}
@@ -106,7 +87,7 @@ class ChapterDetailVC: UIViewController, UIEditMenuInteractionDelegate {
 	private var chapterTitle: UILabel = {
 		let chapterTitle = UILabel()
 		chapterTitle.translatesAutoresizingMaskIntoConstraints = false
-		chapterTitle.textColor = .white
+		chapterTitle.textColor = .orange
 		return chapterTitle
 	}()
 	
@@ -116,7 +97,7 @@ class ChapterDetailVC: UIViewController, UIEditMenuInteractionDelegate {
 		pdfView.autoScales = true
 		pdfView.enableDataDetectors = true
 
-		#warning("On iOS 16, ctrl + click can still select, copy text. Double click on page will zoom-in and out.")
+		#warning("On iOS 16, ctrl + click can still select, copy text. Command + a will select all, Shift + command + A will trigger context menu")
 		pdfView.translatesAutoresizingMaskIntoConstraints = false
 		return pdfView
 	}()
@@ -124,7 +105,6 @@ class ChapterDetailVC: UIViewController, UIEditMenuInteractionDelegate {
 	let thumbnailCollectionView: UICollectionView = {
 		let layout = UICollectionViewFlowLayout()
 		let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
-		collectionView.backgroundColor = backgroundColor
 		collectionView.translatesAutoresizingMaskIntoConstraints = false
 		collectionView.register(PDFThumbnailCell.self, forCellWithReuseIdentifier: PDFThumbnailCell.identifier)
 		
@@ -135,8 +115,8 @@ class ChapterDetailVC: UIViewController, UIEditMenuInteractionDelegate {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		
-		view.backgroundColor = backgroundColor
-		topView = configTopView(bgColor: .orange)
+		view.backgroundColor = .systemBackground
+		topView = configTopView()
 		backButtonView = setUpGoBackButton(in: topView)
 		
 		chapterTitle.text = chapter.name
@@ -153,6 +133,8 @@ class ChapterDetailVC: UIViewController, UIEditMenuInteractionDelegate {
 		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
 		
 		NSLayoutConstraint.activate([
+			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+
 			chapterTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor, constant: topViewHeight * 0.7),
 			chapterTitle.trailingAnchor.constraint(equalTo: topView.trailingAnchor, constant: -topViewHeight * 2),
 			chapterTitle.topAnchor.constraint(equalTo: topView.topAnchor),

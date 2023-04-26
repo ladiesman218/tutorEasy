@@ -12,6 +12,7 @@ class ChapterCell: UICollectionViewCell {
 	static let identifier = "chapterCollectionViewCell"
 	var imageView = UIImageView()
 	
+	var dataTask: Task<(), Error>?
 	var loaded = false {
 		didSet {
 			if loaded == true {
@@ -34,16 +35,18 @@ class ChapterCell: UICollectionViewCell {
 				return
 			}
 			
-			Task {
-				if let data = try? await FileAPI.publicGetImageData(path: imageURL.path).get() {
-					let image = UIImage(data: data)
-					imageView.image = image
+//			Task {
+				self.dataTask = Task {
+					if let image = try? await FileAPI.publicGetImageData(path: imageURL.path) {
+						imageView.image = image
+					}
 				}
+			
 				if chapter.isFree {
 					imageView.drawTrail()
 				}
 				loaded = true
-			}
+//			}
 		}
 	}
 	
@@ -80,6 +83,8 @@ class ChapterCell: UICollectionViewCell {
 		self.imageView.image = nil
 		
 		// Maybe create an optional dataTask to hold the task for fetching image data in the cell, give it a value when needed, then cancel the task and set it to nil here.
+		dataTask?.cancel()
+		dataTask = nil
 		self.chapter = chapterPlaceHolder
 		self.loaded = false
 	}

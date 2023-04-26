@@ -60,27 +60,18 @@ class LoginViewController: UIViewController {
         }
         
 		Task {
-			let result = await AuthAPI.login(username: username, password: password)
-			switch result {
-				case .success():
-					self.navigationController?.popViewController(animated: true)
-				case .failure(let error):
-					error.present(on: self, title: "登录失败", actions: [])
+			do {
+				try await AuthAPI.login(username: username, password: password)
+				self.navigationController?.popViewController(animated: true)
+			} catch {
+				error.present(on: self, title: "登录失败", actions: [])
 			}
 		}
-//        AuthAPI.login(username: username, password: password) { result in
-//            switch result {
-//            case .success:
-//                // If login is successful, pop to previous VC in navigation stack
-//                self.backButtonClicked()//navigationController?.popViewController(animated: true)
-//            case .failure(let reason):
-//                MessagePresenter.showMessage(title: "登录失败", message: "\(reason)", on: self, actions: [])
-//            }
-//        }
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
+		view.backgroundColor = .systemBackground
         
         view.addSubview(loginNameTextField)
         loginNameTextField.becomeFirstResponder()

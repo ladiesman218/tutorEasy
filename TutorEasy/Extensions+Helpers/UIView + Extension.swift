@@ -18,5 +18,15 @@ extension UIView {
 		// Generating shadows dynamically is expensive, because iOS has to draw the shadow around the exact shape of your view's contents. If you can, set the shadowPath property to a specific value so that iOS doesn't need to calculate transparency dynamically. Value 20 comes from the cornerRadius value of CourseCell's contentView
 		self.layer.shadowPath = UIBezierPath(roundedRect: self.bounds, cornerRadius: dimension * cornerRadiusMultiplier).cgPath
 	}
+	
+	func findViewController() -> UIViewController? {
+		if let nextResponder = self.next as? UIViewController {
+			return nextResponder
+		} else if let nextResponder = self.next as? UIView {
+			return nextResponder.findViewController()
+		} else {
+			return nil
+		}
+	}
 }
 

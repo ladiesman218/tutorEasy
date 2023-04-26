@@ -26,7 +26,6 @@ class CourseCell: UICollectionViewCell {
     var priceLabel: UILabel!
 	var course: Course? {
 		didSet {
-			print(course?.imageURL)
 			if let course = course, let imageURL = course.imageURL {
 				imageView.downloaded(from: imageURL.path)
 			}

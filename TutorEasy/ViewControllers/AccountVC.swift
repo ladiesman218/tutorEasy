@@ -83,7 +83,7 @@ class AccountVC: UIViewController {
 	
 	// MARK: - View Controller functions
 	// Without this, navigationTable won't show a selected background before selection change, kinda confusing which one is currently selected when first enter this VC.
-	override func viewWillAppear(_ animated: Bool) {
+	override func viewDidAppear(_ animated: Bool) {
 		let index = Self.subVCs.firstIndex(of: currentVC)!
 		let indexPath = IndexPath(row: index, section: 0)
 		navigationTable.selectRow(at: indexPath, animated: false, scrollPosition: .none)
@@ -91,9 +91,8 @@ class AccountVC: UIViewController {
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		view.backgroundColor = backgroundColor
-		
-		topView = configTopView(bgColor: Self.customBgColor)
+		view.backgroundColor = Self.customBgColor
+		topView = configTopView()
 		backButtonView = setUpGoBackButton(in: topView)
 		
 		view.addSubview(navTitle)
@@ -107,6 +106,8 @@ class AccountVC: UIViewController {
 		
 		NSLayoutConstraint.activate([
 			// Leading position of backButtonView is special in accountsVC
+			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+
 			backButtonView.leadingAnchor.constraint(equalTo: topView.leadingAnchor),
 			
 			navTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor),
@@ -129,13 +130,8 @@ class AccountVC: UIViewController {
 	
 	@objc func logout() {
 		Task {
-			let result = await AuthAPI.logout()
-			do {
-				try result.get()
-				self.navigationController?.popViewController(animated: true)
-			} catch {
-				error.present(on: self, title: "登出错误", actions: [])
-			}
+			await AuthAPI.logout()
+			self.navigationController?.popViewController(animated: true)
 		}
 	}
 	

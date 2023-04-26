@@ -7,8 +7,8 @@ extension UIImageView {
 	func downloaded(from link: String, contentMode mode: ContentMode = .scaleAspectFit, addTrial: Bool = false) {
 		contentMode = contentMode
 		Task {
-			if let data = try? await FileAPI.publicGetImageData(path: link).get() {
-				self.image = UIImage(data: data)
+			if let image = try? await FileAPI.publicGetImageData(path: link) {
+				self.image = image
 				if addTrial { drawTrail() }
 				self.setNeedsDisplay()
 			}
@@ -61,14 +61,14 @@ extension UIImageView {
 }
 
 func downloadImages(urls: [URL?]) async -> [UIImage?] {
-	return await withTaskGroup(of: (Int, Data?).self, body: { group in
+	return await withTaskGroup(of: (Int, UIImage?).self, body: { group in
 		var images: [UIImage?] = .init(repeating: nil, count: urls.count)
 
 		for (index, url) in urls.enumerated() {
 			group.addTask {
 				if let url = url {
-					let data = try? await FileAPI.publicGetImageData(path: url.path).get()
-					return (index, data)
+					let image = try? await FileAPI.publicGetImageData(path: url.path)
+					return (index, image)
 				}
 				return (index, nil)
 			}
@@ -76,8 +76,8 @@ func downloadImages(urls: [URL?]) async -> [UIImage?] {
 		}
 		
 		for await result in group {
-			if let data = result.1 {
-				images[result.0] = UIImage(data: data)
+			if let image = result.1 {
+				images[result.0] = image
 			}
 		}
 		return images

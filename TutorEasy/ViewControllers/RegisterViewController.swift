@@ -66,7 +66,8 @@ class RegisterViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+		view.backgroundColor = .systemBackground
+
         view.addSubview(registrationEmailTextField)
         view.addSubview(usernameTextField)
         view.addSubview(passwordTextField)
@@ -123,9 +124,9 @@ class RegisterViewController: UIViewController {
         
 		Task {
 			do {
-				let _ = try await AuthAPI.register(input: registerInput).get()
+				try await AuthAPI.register(input: registerInput)
 				// Here means registration process is successful, then we go login the user
-				let _ = try await AuthAPI.login(username: registerInput.username, password: registerInput.password1).get()
+				try await AuthAPI.login(username: registerInput.username, password: registerInput.password1)
 				self.backButtonClicked()
 			} catch {
 				error.present(on: self, title: "注册失败", actions: [])

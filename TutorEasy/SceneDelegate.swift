@@ -31,7 +31,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		window.makeKeyAndVisible()
 		
 		Task {
-			AuthAPI.userInfo = try? await AuthAPI.getPublicUserFromToken().get()
+			AuthAPI.userInfo = try? await AuthAPI.getPublicUserFromToken()
 			// Only push a new authenticationVC when the current top vc is not of type authentication VC
 			if AuthAPI.userInfo == nil {
 				let authenticationVC = AuthenticationVC()

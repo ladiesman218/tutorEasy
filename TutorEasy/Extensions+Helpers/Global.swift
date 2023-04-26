@@ -8,7 +8,7 @@
 import UIKit
 
 //let serverURL = URL(string: "http://localhost:8080")!     //localhost
-let serverURL = URL(string: "https://d4ed-2408-822a-1c16-8030-a420-3b90-18f6-3713.ngrok-free.app")!     //ngrok
+let serverURL = URL(string: "https://e293-39-153-186-230.ngrok-free.app")!     //ngrok
 //let serverURL = URL(string: "http://0.0.0.0:8080")!     // docker production environment
 
 let baseURL = serverURL.appendingPathComponent("api")
@@ -36,7 +36,6 @@ let loginChanged: Notification.Name = .init(rawValue: "login-status-changed")
 
 let borderColor: CGColor = UIColor.systemGray.cgColor
 let textColor = UIColor.systemBlue
-let backgroundColor = UIColor.systemBackground
 let placeholderForNumberOfCells = 20
 
 let cornerRadiusMultiplier = 0.1

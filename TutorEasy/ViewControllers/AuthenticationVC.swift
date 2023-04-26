@@ -15,7 +15,6 @@ class AuthenticationVC: UIViewController {
         view.layer.cornerRadius = 10
         view.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = backgroundColor
         return view
     }()
     
@@ -89,12 +88,8 @@ class AuthenticationVC: UIViewController {
 
             containerView.leadingAnchor.constraint(greaterThanOrEqualToSystemSpacingAfter: view.safeAreaLayoutGuide.leadingAnchor, multiplier: 15),
             containerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.4),
-            view.centerXAnchor.constraint(equalToSystemSpacingAfter: containerView.trailingAnchor, multiplier: 1),
-
-//            containerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 250),
             shorterConstraint,
             containerView.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 20),
-//            containerView.topAnchor.constraint(lessThanOrEqualToSystemSpacingBelow: view.safeAreaLayoutGuide.topAnchor, multiplier: 40),
             
             loginViewButton.bottomAnchor.constraint(equalTo: containerView.topAnchor),
             loginViewButton.heightAnchor.constraint(equalToConstant: 40),

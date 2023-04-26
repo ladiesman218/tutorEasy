@@ -8,19 +8,28 @@
 import UIKit
 
 extension UIViewController {
-    
-//    let topViewHeight = view.frame.height * 0.1
+	
+	func dismissKeyboard() {
+		let tap: UITapGestureRecognizer = UITapGestureRecognizer( target: self, action: #selector(UIViewController.dismissKeyboardTouchOutside))
+		tap.cancelsTouchesInView = false
+		view.addGestureRecognizer(tap)
+	}
+	
+	@objc private func dismissKeyboardTouchOutside() {
+		view.endEditing(true)
+	}
+	
     var topViewHeight: CGFloat {
         view.frame.height * 0.1
     }
-    func configTopView(bgColor: UIColor) -> UIView {
+	
+	// A container for goBack button, profile icon, etc
+    func configTopView() -> UIView {
         let topView = UIView()
-        topView.backgroundColor = bgColor
         view.addSubview(topView)
         topView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             topView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             topView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             topView.heightAnchor.constraint(equalToConstant: topViewHeight)
         ])
@@ -32,12 +41,12 @@ extension UIViewController {
         
         let imageView = UIImageView(image: image)
         imageView.tintColor = .gray
-        imageView.backgroundColor = UIColor(white: 1, alpha: 0.6)
+//        imageView.backgroundColor = UIColor(white: 1, alpha: 0.6)
         imageView.translatesAutoresizingMaskIntoConstraints = false
         superView.addSubview(imageView)
         
         NSLayoutConstraint.activate([
-			imageView.leadingAnchor.constraint(equalTo: superView.leadingAnchor, constant: 20),
+			imageView.leadingAnchor.constraint(equalTo: superView.leadingAnchor),
             imageView.topAnchor.constraint(equalTo: superView.topAnchor),
             imageView.bottomAnchor.constraint(equalTo: superView.bottomAnchor),
             imageView.widthAnchor.constraint(equalTo: imageView.heightAnchor),
@@ -72,27 +81,16 @@ extension UIViewController {
         imageView.isUserInteractionEnabled = true   // By default, isUserInteractionEnabled is set to false for UIImageView
         return imageView
     }
-    
-    @objc func profileIconClicked() {
-		let destinationVC: UIViewController = (AuthAPI.userInfo != nil) ? AccountVC() : AuthenticationVC()
-		if let accountsVC = destinationVC as? AccountVC {
-			// When a logged in user click profileIcon, go to manage profile view by default
-			accountsVC.currentVC = .profile
-			self.navigationController?.pushIfNot(newVC: destinationVC, animated: true)
-		} else {
-			self.navigationController?.pushIfNot(newVC: destinationVC, animated: true)
+	
+	/// This function configure the behaviour of the back button.
+	/// - Parameter sender: The sender of this @objc function. You should subclass a UIControl class with custom properties here. Despite we have accepted an optional CustomTapGestureRecognizer as parameter and default to nil, when adding this function as selector for a UIButton(in AuthenticationVC for closeButton), the sender will still be presented and of type UIButton... the reason is hard to understand but that's the fact. Therefore when we try to read sender.animated value in backButtonClicked, app will crash since a UIButton doesn't have an property named 'animated'. So we have to subclass UIButton, downbelow as CustomButton, and created closeButton from it.
+	@objc func backButtonClicked(sender: CustomTapGestureRecognizer? = nil) {
+		guard let animated = sender?.animated else {
+			self.navigationController?.popViewController(animated: true)
+			return
 		}
-    }
-    
-    /// This function configure the behaviour of the back button.
-    /// - Parameter sender: The sender of this @objc function. You should subclass a UIControl class with custom properties here. Despite we have accepted an optional CustomTapGestureRecognizer as parameter and default to nil, when adding this function as selector for a UIButton(in AuthenticationVC for closeButton), the sender will still be presented and of type UIButton... the reason is hard to understand but that's the fact. Therefore when we try to read sender.animated value in backButtonClicked, app will crash since a UIButton doesn't have an property named 'animated'. So we have to subclass UIButton, downbelow as CustomButton, and created closeButton from it.
-    @objc func backButtonClicked(sender: CustomTapGestureRecognizer? = nil) {
-        guard let animated = sender?.animated else {
-            self.navigationController?.popViewController(animated: true)
-            return
-        }
-        self.navigationController?.popViewController(animated: animated)
-    }
+		self.navigationController?.popViewController(animated: animated)
+	}
 }
 
 class CustomTapGestureRecognizer: UITapGestureRecognizer {

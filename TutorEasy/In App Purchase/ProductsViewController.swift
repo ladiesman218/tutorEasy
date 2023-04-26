@@ -65,7 +65,8 @@ class ProductsViewController: UIViewController {
 		
 		Task {
 			do {
-				let (data, _) = try await URLSession.shared.requestWithToken(url: url)
+				#warning("check the logic, when cached is used?")
+				let (data, _) = try await cachedSession.requestWithToken(from: url)
 				let identifiers = try JSONDecoder().decode([String].self, from: data)
 				request = SKProductsRequest(productIdentifiers: Set(identifiers))
 				request.delegate = self
@@ -126,7 +127,7 @@ extension ProductsViewController: UITableViewDataSource, UITableViewDelegate {
 	@objc func purchaseTapped(sender: UIButton) {
 		
 		Task {
-			guard let userInfo = try? await AuthAPI.getPublicUserFromToken().get() else {
+			guard let userInfo = try? await AuthAPI.getPublicUserFromToken() else {
 				// Dispite whether token is nil or not, as long as userInfo can not be get from server, we logout the user(by setting token to nil to make sure), this also pushes user back to authVC)
 				AuthAPI.tokenValue = nil
 				let cancel = UIAlertAction(title: "再看看", style: .cancel)
