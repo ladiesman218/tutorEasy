@@ -13,7 +13,6 @@ class ChapterCell: UICollectionViewCell {
 	var imageView: UIImageView = {
 		let imageView = UIImageView()
 		imageView.clipsToBounds = true
-		imageView.backgroundColor = UIColor.blue
 		imageView.isSkeletonable = true
 		return imageView
 	}()
@@ -23,26 +22,29 @@ class ChapterCell: UICollectionViewCell {
 	
 	var chapter: Chapter = chapterPlaceHolder {
 		didSet {
+			// Do nothing until real chapter info has been got from server and set to cell. Otherwise, when placeholder chapter is set for the cell, its imageURL is nil and imageView will display a solid background color first, then when real chapter is set, it will start skeleton animation. We want the skeleton animation to show first, and stop when image is got, or never gonna be set.
+			guard chapter.name != chapterPlaceHolder.name else { return }
 			
 			guard let url = chapter.imageURL else {
-//				imageView.backgroundColor = UIColor.blue
+				imageView.backgroundColor = UIColor.blue
 				if chapter.isFree { imageView.drawTrail() }
+				imageView.stopSkeletonAnimation()
+				imageView.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(1))
 				return
 			}
-			#warning("lack of a background color sometimes")
+			
 			self.imageTask = Task {
-				imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos), animation: nil, transition: .crossDissolve(1))
+				//				try await Task.sleep(nanoseconds: 4_000_000_000)
 				if let image = try? await FileAPI.publicGetImageData(path: url.path).resizedImage(with: imageView.bounds.size) {
+					try Task.checkCancellation()
 					imageView.image = image
 				} else {
-//					imageView.backgroundColor = UIColor.blue
-					if chapter.isFree { imageView.drawTrail() }
-
+					try Task.checkCancellation()
+					imageView.backgroundColor = UIColor.blue
 				}
+				if chapter.isFree { imageView.drawTrail() }
 				imageView.stopSkeletonAnimation()
 				imageView.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(0.25))
-//				if imageView.image == nil { imageView.backgroundColor = UIColor.blue }
-//				if chapter.isFree { imageView.drawTrail() }
 			}
 		}
 	}
@@ -50,8 +52,8 @@ class ChapterCell: UICollectionViewCell {
 	override init(frame: CGRect) {
 		super.init(frame: frame)
 		
-		//		imageView.layer.backgroundColor = UIColor.blue.cgColor
 		self.isSkeletonable = true
+		imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos), animation: nil, transition: .crossDissolve(1))
 		
 		imageView.layer.cornerRadius = contentView.bounds.size.width * cornerRadiusMultiplier
 		
@@ -78,12 +80,10 @@ class ChapterCell: UICollectionViewCell {
 	override func prepareForReuse() {
 		super.prepareForReuse()
 		
-		// Maybe create an optional dataTask to hold the task for fetching image data in the cell, give it a value when needed, then cancel the task and set it to nil here.
 		imageTask?.cancel()
 		imageTask = nil
-		self.chapter = chapterPlaceHolder
 		self.imageView.image = nil
-
-		//		self.loaded = false
+		self.imageView.backgroundColor = nil
+		imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos), animation: nil, transition: .crossDissolve(1))
 	}
 }

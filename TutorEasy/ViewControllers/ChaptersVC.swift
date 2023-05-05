@@ -58,12 +58,9 @@ class ChaptersVC: UIViewController {
 	}()
 	
 	// MARK: - Controller functions
-	override func viewWillAppear(_ animated: Bool) {
-		loadStage()
-	}
-	
 	override func viewDidLoad() {
 		super.viewDidLoad()
+		loadStage()
 		
 		view.backgroundColor = UIColor.systemBackground
 		topView = configTopView()
@@ -141,7 +138,6 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, UICollectionViewDelegate
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
-		
 		cell.chapter = chapters[indexPath.item]
 		return cell
 	}

@@ -16,7 +16,7 @@ struct FileAPI {
 		// Generate http url scheme
 		let url = publicImageEndPoint.appendingPathComponent(path, isDirectory: false)
 //		URLCache.shared.removeAllCachedResponses()
-//		print(URLCache.shared.currentDiskUsage / 1024 /1024)
+//		print(URLCache.shared.currentDiskUsage / 1024 / 1024)
 //		print(URLCache.shared.currentMemoryUsage / 1024 / 1024)
 		
 		
@@ -35,7 +35,6 @@ struct FileAPI {
 		let url = contentEndPoint.appendingPathComponent(path, isDirectory: false)
 		var request = URLRequest(url: url)
 		request.addValue("Bearer \(AuthAPI.tokenValue ?? "")", forHTTPHeaderField: "Authorization")
-		print(cachedSession.configuration.urlCache?.cachedResponse(for: request) == nil)
 		// For cached response, server will return "no-cache" for Cache-Control header, hence later requests will go to server first, only use cached data if user token validation has passed and server returns 304 not modified.
 		return try await cachedSession.dataAndResponse(for: request)
 	}
