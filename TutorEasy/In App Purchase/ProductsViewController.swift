@@ -62,15 +62,17 @@ class ProductsViewController: UIViewController {
 		
 	func fetchProducts() {
 		let url = baseURL.appendingPathComponent("iap")
-		
+		var request = URLRequest(url: url)
+		request.addValue("Bearer \(AuthAPI.tokenValue ?? "")", forHTTPHeaderField: "Authorization")
+
 		Task {
 			do {
 				#warning("check the logic, when cached is used?")
-				let (data, _) = try await cachedSession.requestWithToken(from: url)
+				let (data, _) = try await cachedSession.dataAndResponse(for: request)
 				let identifiers = try JSONDecoder().decode([String].self, from: data)
-				request = SKProductsRequest(productIdentifiers: Set(identifiers))
-				request.delegate = self
-				request.start()
+				self.request = SKProductsRequest(productIdentifiers: Set(identifiers))
+				self.request.delegate = self
+				self.request.start()
 				
 			} catch {
 				error.present(on: self, title: "无法获取可供订阅的课程信息", actions: [])

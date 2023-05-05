@@ -1,37 +1,42 @@
 import UIKit
+import SkeletonView
 
-
-// This is a hack from https://stackoverflow.com/questions/24231680/loading-downloading-image-from-url-on-swift
 extension UIImageView {
-	
-	func downloaded(from link: String, contentMode mode: ContentMode = .scaleAspectFit, addTrial: Bool = false) {
+		
+	func downloaded(from link: String?, contentMode mode: ContentMode = .scaleAspectFit) {
 		contentMode = contentMode
-		Task {
-			if let image = try? await FileAPI.publicGetImageData(path: link) {
-				self.image = image
-				if addTrial { drawTrail() }
+		
+		if let link = link {
+			Task {
+				self.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .amethyst), animation: nil, transition: .crossDissolve(1))
+				if let image = try? await FileAPI.publicGetImageData(path: link) {
+					await MainActor.run {
+						self.image = image
+					}
+				}
+
+				self.stopSkeletonAnimation()
+				self.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(1))
 				self.setNeedsDisplay()
 			}
 		}
 	}
-
+	
 	func drawTrail() {
 		let originalImage: UIImage? = self.image
 		let size = self.bounds.size
-
+		
 		let renderer = UIGraphicsImageRenderer(size: size)
-
+		
 		let img = renderer.image { ctx in
 			// draw the orginal image if there is one
 			originalImage?.draw(in: .init(origin: .zero, size: size))
-			
-			// Rotate the drawing context, this rotate from the origin(0, 0) point
+			// Rotate the drawing context, this rotates from the origin(0, 0) point
 			let rotation = Double.pi / Double(-4)
 			ctx.cgContext.rotate(by: rotation)
 			// Move drawing context left by one half of width, and down by whole height
 			ctx.cgContext.translateBy(x: -size.width / 2, y: size.height)
-
-
+			
 			// background of the string
 			ctx.cgContext.setFillColor(UIColor.systemYellow.cgColor)
 			let rowHeight = size.height / 4
@@ -42,28 +47,29 @@ extension UIImageView {
 			let paragraphStyle = NSMutableParagraphStyle()
 			// Horizontally center align the text
 			paragraphStyle.alignment = .center
-
+			
 			let fontSize = rowHeight * 0.85
 			let attrs: [NSAttributedString.Key: Any] = [
 				.font: UIFont.systemFont(ofSize: fontSize),
 				.foregroundColor: UIColor.white,
 				.paragraphStyle: paragraphStyle,
-//				.baselineOffset: -(rowHeight - fontSize) / 2
+				//				.baselineOffset: -(rowHeight - fontSize) / 2
 			]
 			let string = "免费"
 			let attributedString = NSAttributedString(string: string, attributes: attrs)
-
+			
 			attributedString.draw(with: extraRect, options: .usesLineFragmentOrigin, context: nil)
 		}
 		self.image = img
+		
 	}
-
+	
 }
 
 func downloadImages(urls: [URL?]) async -> [UIImage?] {
 	return await withTaskGroup(of: (Int, UIImage?).self, body: { group in
 		var images: [UIImage?] = .init(repeating: nil, count: urls.count)
-
+		
 		for (index, url) in urls.enumerated() {
 			group.addTask {
 				if let url = url {

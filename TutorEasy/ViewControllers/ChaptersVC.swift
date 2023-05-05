@@ -17,8 +17,10 @@ class ChaptersVC: UIViewController {
 	private var chapters: [Chapter] = .init(repeating: chapterPlaceHolder, count: placeholderForNumberOfCells) {
 		didSet {
 			chaptersCollectionView.reloadData()
+//			print(chapters.map { $0.imageURL?.path} )
 		}
 	}
+
 	
 	// MARK: - Custom subviews
 	private var topView: UIView!
@@ -56,9 +58,12 @@ class ChaptersVC: UIViewController {
 	}()
 	
 	// MARK: - Controller functions
+	override func viewWillAppear(_ animated: Bool) {
+		loadStage()
+	}
+	
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		loadStage()
 		
 		view.backgroundColor = UIColor.systemBackground
 		topView = configTopView()
@@ -136,8 +141,8 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, UICollectionViewDelegate
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
-		cell.chapter = chapters[indexPath.item]
 		
+		cell.chapter = chapters[indexPath.item]
 		return cell
 	}
 	
@@ -155,15 +160,19 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, UICollectionViewDelegate
 		return .init(width: width, height: width)
 	}
 	
-//	func scrollViewDidScroll(_ scrollView: UIScrollView) {
-//		print(chaptersCollectionView.visibleCells)
-//	}
-	
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+		let cell = collectionView.cellForItem(at: indexPath) as! ChapterCell
+
 		let chapterDetailVC = ChapterDetailVC()
 		let chapter = chapters[indexPath.item]
 		chapterDetailVC.chapter = chapter
 		navigationController?.pushIfNot(newVC: chapterDetailVC)
 	}
 	
+	func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
+		if let cell = collectionView.cellForItem(at: indexPath) as? ChapterCell {
+			return !cell.imageView.sk.isSkeletonActive
+		}
+		return false
+	}
 }

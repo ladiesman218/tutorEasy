@@ -143,8 +143,11 @@ struct AuthAPI {
 	
 	static func fetchValidOrders() async throws {
 		let url = baseURL.appendingPathComponent("order").appendingPathComponent("valid")
+		var request = URLRequest(url: url)
 		
-		let (data, _) = try await cachedSession.requestWithToken(from: url)
+		request.addValue("Bearer \(tokenValue ?? "")", forHTTPHeaderField: "Authorization")
+
+		let (data, _) = try await cachedSession.dataAndResponse(for: request)
 		let orders = try Decoder.isoDate.decode([Order].self, from: data)
 		Self.orders = orders
 	}

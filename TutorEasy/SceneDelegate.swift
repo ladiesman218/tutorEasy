@@ -22,7 +22,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		
 		// Setup destination VC
 		let courseListVC = CourseListVC()
-		courseListVC.loadCourses()
 		
 		let navVC = UINavigationController(rootViewController: courseListVC)
 		navVC.isNavigationBarHidden = true

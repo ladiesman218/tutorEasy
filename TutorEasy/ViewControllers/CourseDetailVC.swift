@@ -65,12 +65,12 @@ class CourseDetailVC: UIViewController {
 	
 	// When coming back from a previous VC, clear selection otherwise former selected item still shows different background color.
 	override func viewWillAppear(_ animated: Bool) {
+		loadCourse()
 		stageTableView.selectRow(at: nil, animated: false, scrollPosition: .top)
 	}
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		loadCourse()
 		view.backgroundColor = .systemBackground
 		topView = configTopView()
 		

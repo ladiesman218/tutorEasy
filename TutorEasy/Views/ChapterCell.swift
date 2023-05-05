@@ -10,55 +10,52 @@ import SkeletonView
 
 class ChapterCell: UICollectionViewCell {
 	static let identifier = "chapterCollectionViewCell"
-	var imageView = UIImageView()
+	var imageView: UIImageView = {
+		let imageView = UIImageView()
+		imageView.clipsToBounds = true
+		imageView.backgroundColor = UIColor.blue
+		imageView.isSkeletonable = true
+		return imageView
+	}()
 	
-	var dataTask: Task<(), Error>?
-	var loaded = false {
-		didSet {
-			if loaded == true {
-				contentView.stopSkeletonAnimation()
-				contentView.hideSkeleton(reloadDataAfter: true, transition: .crossDissolve(1))
-			} else {
-				contentView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .amethyst), animation: nil, transition: .crossDissolve(1))
-			}
-		}
-	}
+	// For task cancellation. When cell is off screen, there is no need to download the image so cancel the task.
+	var imageTask: Task<(), Error>? = nil
 	
-	var chapter = chapterPlaceHolder {
+	var chapter: Chapter = chapterPlaceHolder {
 		didSet {
-			guard chapter.name != "" else { return }
-			guard let imageURL = chapter.imageURL else {
-				if chapter.isFree {
-					imageView.drawTrail()
-				}
-				loaded = true
+			
+			guard let url = chapter.imageURL else {
+//				imageView.backgroundColor = UIColor.blue
+				if chapter.isFree { imageView.drawTrail() }
 				return
 			}
-			
-//			Task {
-				self.dataTask = Task {
-					if let image = try? await FileAPI.publicGetImageData(path: imageURL.path) {
-						imageView.image = image
-					}
+			#warning("lack of a background color sometimes")
+			self.imageTask = Task {
+				imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos), animation: nil, transition: .crossDissolve(1))
+				if let image = try? await FileAPI.publicGetImageData(path: url.path).resizedImage(with: imageView.bounds.size) {
+					imageView.image = image
+				} else {
+//					imageView.backgroundColor = UIColor.blue
+					if chapter.isFree { imageView.drawTrail() }
+
 				}
-			
-				if chapter.isFree {
-					imageView.drawTrail()
-				}
-				loaded = true
-//			}
+				imageView.stopSkeletonAnimation()
+				imageView.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(0.25))
+//				if imageView.image == nil { imageView.backgroundColor = UIColor.blue }
+//				if chapter.isFree { imageView.drawTrail() }
+			}
 		}
 	}
 	
 	override init(frame: CGRect) {
 		super.init(frame: frame)
 		
-		contentView.isSkeletonable = true
-		contentView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .amethyst), animation: nil, transition: .crossDissolve(1))
+		//		imageView.layer.backgroundColor = UIColor.blue.cgColor
+		self.isSkeletonable = true
 		
-		contentView.layer.backgroundColor = UIColor.blue.cgColor
+		imageView.layer.cornerRadius = contentView.bounds.size.width * cornerRadiusMultiplier
+		
 		contentView.layer.cornerRadius = contentView.bounds.size.width * cornerRadiusMultiplier
-		
 		contentView.clipsToBounds = true
 		
 		contentView.addSubview(imageView)
@@ -80,12 +77,13 @@ class ChapterCell: UICollectionViewCell {
 	
 	override func prepareForReuse() {
 		super.prepareForReuse()
-		self.imageView.image = nil
 		
 		// Maybe create an optional dataTask to hold the task for fetching image data in the cell, give it a value when needed, then cancel the task and set it to nil here.
-		dataTask?.cancel()
-		dataTask = nil
+		imageTask?.cancel()
+		imageTask = nil
 		self.chapter = chapterPlaceHolder
-		self.loaded = false
+		self.imageView.image = nil
+
+		//		self.loaded = false
 	}
 }

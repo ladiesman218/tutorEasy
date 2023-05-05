@@ -34,10 +34,6 @@ extension URLSession {
 	/// - Parameter request: The URLRequest for receiving data and response.
 	/// - Returns: Data and the response, only if non error is thrown.
 	public func dataAndResponse(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-		if let cachedResponse = self.configuration.urlCache?.cachedResponse(for: request) {
-			print("Using cached response for \(String(describing: request.url!))")
-			return (cachedResponse.data, cachedResponse.response as! HTTPURLResponse)
-		}
 		
 		let (data, response) = try await data(for: request)
 		
@@ -54,23 +50,19 @@ extension URLSession {
 			throw ResponseError(reason: "服务器错误，请检查设备网络，或联系\(adminEmail)")
 		}
 		
-		// Init and store the response's cache
-		let cachedResponse = CachedURLResponse(response: response, data: data)
-		self.configuration.urlCache?.storeCachedResponse(cachedResponse, for: request)
-		
 		// If everything works, return data with response, in case we need the response for future usage.
 		return (data, httpResponse)
 	}
 		
-	public func requestWithToken(for request : URLRequest) async throws -> (Data, HTTPURLResponse) {
-		// AuthAPI.validateToken() is called from an unCachedSession, so it's guaranteed to validate from server side instead of using cachedResponse. If token validates successfully, nothing returns, so we can safely return cached data for the actual request later on. If validation fails, it throws errors indicate either the user hasn't logged in or the login has expired(new token for the user has been saved on server db, maybe due to same account logged in on another device), so we can redirect user to loginVC.
-		try await AuthAPI.validateToken()
-		// Since we have made sure token is validate, it's ok to return cachedResponse. Notice we still need to attach token in header, since on server side, some APIs are limited to authenticated user, and those APIs SHOULD NOT depend on token validation process called above. AuthAPI.validateToken() is called only because the follwing dataAndResponse(for: request) may return cachedReponse, we need to make sure user's credential is still valid since last time a successful cache was saved.
-		var request = request
-		request.addValue("Bearer \(AuthAPI.tokenValue ?? "")", forHTTPHeaderField: "Authorization")
-
-		return try await dataAndResponse(for: request)
-	}
+//	public func requestWithToken(for request : URLRequest) async throws -> (Data, HTTPURLResponse) {
+//		// AuthAPI.validateToken() is called from an unCachedSession, so it's guaranteed to validate from server side instead of using cachedResponse. If token validates successfully, nothing returns, so we can safely return cached data for the actual request later on. If validation fails, it throws errors indicate either the user hasn't logged in or the login has expired(new token for the user has been saved on server db, maybe due to same account logged in on another device), so we can redirect user to loginVC.
+//		try await AuthAPI.validateToken()
+//		// Since we have made sure token is validate, it's ok to return cachedResponse. Notice we still need to attach token in header, since on server side, some APIs are limited to authenticated user, and those APIs SHOULD NOT depend on token validation process called above. AuthAPI.validateToken() is called only because the follwing dataAndResponse(for: request) may return cachedReponse, we need to make sure user's credential is still valid since last time a successful cache was saved.
+//		var request = request
+//		request.addValue("Bearer \(AuthAPI.tokenValue ?? "")", forHTTPHeaderField: "Authorization")
+//
+//		return try await dataAndResponse(for: request)
+//	}
 	
 	public func dataAndResponse(from url: URL) async throws -> (Data, HTTPURLResponse) {
 		// For files, server response urls with file scheme, replace the url with a http scheme, or the force casting of response to httpResponse will fail
@@ -79,12 +71,12 @@ extension URLSession {
 		return try await dataAndResponse(for: request)
 	}
 	
-	public func requestWithToken(from url: URL) async throws -> (Data, HTTPURLResponse) {
-		try await AuthAPI.validateToken()
-		// For files, server response urls with file scheme, replace the url with a http scheme, or the force casting of response to httpResponse will fail
-		var request = URLRequest(url: url)
-		request.addValue("Bearer \(AuthAPI.tokenValue ?? "")", forHTTPHeaderField: "Authorization")
-
-		return try await dataAndResponse(for: request)
-	}
+//	public func requestWithToken(from url: URL) async throws -> (Data, HTTPURLResponse) {
+//		try await AuthAPI.validateToken()
+//		// For files, server response urls with file scheme, replace the url with a http scheme, or the force casting of response to httpResponse will fail
+//		var request = URLRequest(url: url)
+//		request.addValue("Bearer \(AuthAPI.tokenValue ?? "")", forHTTPHeaderField: "Authorization")
+//
+//		return try await dataAndResponse(for: request)
+//	}
 }

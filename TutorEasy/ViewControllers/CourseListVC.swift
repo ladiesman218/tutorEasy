@@ -39,6 +39,10 @@ class CourseListVC: UIViewController {
 	private var iconView: ProfileIconView = .init(frame: .zero, extraInfo: true)
 	
 	// MARK: - Controller functions
+	override func viewWillAppear(_ animated: Bool) {
+		loadCourses()
+	}
+	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		view.backgroundColor = UIColor.systemBackground

@@ -17,7 +17,7 @@ class ChapterDetailVC: UIViewController, UIEditMenuInteractionDelegate {
 			let path = chapter.pdfURL.path
 			Task {
 				do {
-					let (data, response) = try await FileAPI.getCourseContent(path: path, for: chapter)
+					let (data, _) = try await FileAPI.getCourseContent(path: path, for: chapter)
 					if let document = PDFDocument(data: data) {
 						pdfView.document = document
 						// Double click on pdfView will zoom-in/zoom-out. The following lines disable this behaviour. According to documentation, assigning these values will implicitly turn off autoScales, and allows scaleFactor to vary between these min / max scale factors. So these 2 should only be set after a pdf document is set for the view. In pdfView definition, autoScales is enabled, that's for getting the best scale factor at the first stage.
