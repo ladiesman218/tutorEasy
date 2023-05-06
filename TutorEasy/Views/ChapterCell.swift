@@ -29,12 +29,11 @@ class ChapterCell: UICollectionViewCell {
 				imageView.backgroundColor = UIColor.blue
 				if chapter.isFree { imageView.drawTrail() }
 				imageView.stopSkeletonAnimation()
-				imageView.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(1))
+				imageView.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(0.25))
 				return
 			}
 			
 			self.imageTask = Task {
-				//				try await Task.sleep(nanoseconds: 4_000_000_000)
 				if let image = try? await FileAPI.publicGetImageData(path: url.path).resizedImage(with: imageView.bounds.size) {
 					try Task.checkCancellation()
 					imageView.image = image
@@ -84,6 +83,6 @@ class ChapterCell: UICollectionViewCell {
 		imageTask = nil
 		self.imageView.image = nil
 		self.imageView.backgroundColor = nil
-		imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos), animation: nil, transition: .crossDissolve(1))
+		imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos), animation: nil, transition: .crossDissolve(0))
 	}
 }

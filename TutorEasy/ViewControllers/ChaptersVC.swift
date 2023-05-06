@@ -17,10 +17,8 @@ class ChaptersVC: UIViewController {
 	private var chapters: [Chapter] = .init(repeating: chapterPlaceHolder, count: placeholderForNumberOfCells) {
 		didSet {
 			chaptersCollectionView.reloadData()
-//			print(chapters.map { $0.imageURL?.path} )
 		}
 	}
-
 	
 	// MARK: - Custom subviews
 	private var topView: UIView!
@@ -85,7 +83,7 @@ class ChaptersVC: UIViewController {
 		
 		NSLayoutConstraint.activate([
 			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-
+			
 			courseTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor),
 			courseTitle.topAnchor.constraint(equalTo: topView.topAnchor),
 			courseTitle.bottomAnchor.constraint(equalTo: topView.bottomAnchor),
@@ -122,7 +120,7 @@ class ChaptersVC: UIViewController {
 }
 
 extension ChaptersVC: SkeletonCollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
-
+	
 	func collectionSkeletonView(_ skeletonView: UICollectionView, cellIdentifierForItemAt indexPath: IndexPath) -> SkeletonView.ReusableCellIdentifier {
 		return ChapterCell.identifier
 	}
@@ -136,7 +134,7 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, UICollectionViewDelegate
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-
+		
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
 		cell.chapter = chapters[indexPath.item]
 		return cell
@@ -157,8 +155,6 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, UICollectionViewDelegate
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-		let cell = collectionView.cellForItem(at: indexPath) as! ChapterCell
-
 		let chapterDetailVC = ChapterDetailVC()
 		let chapter = chapters[indexPath.item]
 		chapterDetailVC.chapter = chapter
