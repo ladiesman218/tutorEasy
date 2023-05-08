@@ -12,10 +12,39 @@ class ChapterCell: UICollectionViewCell {
 	static let identifier = "chapterCollectionViewCell"
 	var imageView: UIImageView = {
 		let imageView = UIImageView()
-		imageView.clipsToBounds = true
 		imageView.isSkeletonable = true
 		return imageView
 	}()
+	
+	var titleLabel: UILabel = {
+		let label = UILabel()
+		label.isSkeletonable = true
+		return label
+	}()
+	
+	var isLoading: Bool = true {
+		didSet {
+			switch isLoading {
+				case true:
+					// Ajust titleLabel display accordingly
+					contentView.addSubview(titleLabel)
+					
+					// Start skeletonView animation
+					imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonBaseColor), animation: animation, transition: .crossDissolve(0))
+					titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonBaseColor), animation: animation, transition: .crossDissolve(0))
+				case false:
+					// Ajust titleLabel display accordingly
+					titleLabel.removeFromSuperview()
+					// Add trail if it's free
+					if chapter.isFree { imageView.drawTrail() }
+					// Stop animation and hide skeletonView
+					contentView.stopSkeletonAnimation()
+					contentView.hideSkeleton(reloadDataAfter: true, transition: .none)
+			}
+		}
+	}
+	
+	let animation = GradientDirection.topLeftBottomRight.slidingAnimation()
 	
 	// For task cancellation. When cell is off screen, there is no need to download the image so cancel the task.
 	var imageTask: Task<(), Error>? = nil
@@ -27,39 +56,38 @@ class ChapterCell: UICollectionViewCell {
 			
 			guard let url = chapter.imageURL else {
 				imageView.backgroundColor = UIColor.blue
-				if chapter.isFree { imageView.drawTrail() }
-				imageView.stopSkeletonAnimation()
-				imageView.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(0.25))
+				isLoading = false
 				return
 			}
-			
+
+			// skeletonview will still be displayed for a short period of time. That's because when prepareForReuse, we set isLoading to true which displays skeletonView. Then setting a chapter for the cell in ChaptersVC takes some time. Awaitng for server response is not the main reason here cause we've tried to set image from cachedResponse in the beginning of chapter's property observer, it still doesn't avoid showing of skeletonview.
 			self.imageTask = Task {
-				if let image = try? await FileAPI.publicGetImageData(path: url.path).resizedImage(with: imageView.bounds.size) {
-					try Task.checkCancellation()
+				
+//				try await Task.sleep(nanoseconds: 3_000_000_000)
+				let image = try? await FileAPI.publicGetImageData(path: url.path).resizedImage(with: imageView.bounds.size)
+				
+				try Task.checkCancellation()
+				
+				if let image = image {
 					imageView.image = image
 				} else {
-					try Task.checkCancellation()
-					imageView.backgroundColor = UIColor.blue
+					imageView.backgroundColor = .blue
 				}
-				if chapter.isFree { imageView.drawTrail() }
-				imageView.stopSkeletonAnimation()
-				imageView.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(0.25))
+
+				isLoading = false
 			}
 		}
 	}
 	
 	override init(frame: CGRect) {
 		super.init(frame: frame)
-		
-		self.isSkeletonable = true
-		imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos), animation: nil, transition: .crossDissolve(1))
-		
-		imageView.layer.cornerRadius = contentView.bounds.size.width * cornerRadiusMultiplier
+		contentView.isSkeletonable = true
 		
 		contentView.layer.cornerRadius = contentView.bounds.size.width * cornerRadiusMultiplier
 		contentView.clipsToBounds = true
 		
 		contentView.addSubview(imageView)
+		contentView.addSubview(titleLabel)
 		self.createShadow()
 		
 		imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -83,6 +111,7 @@ class ChapterCell: UICollectionViewCell {
 		imageTask = nil
 		self.imageView.image = nil
 		self.imageView.backgroundColor = nil
-		imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos), animation: nil, transition: .crossDissolve(0))
+		
+		isLoading = true
 	}
 }

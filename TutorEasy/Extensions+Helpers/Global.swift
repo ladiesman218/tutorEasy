@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SkeletonView
 
 //let serverURL = URL(string: "http://localhost:8080")!     //localhost
 let serverURL = URL(string: "https://f31f-1-28-241-205.ngrok-free.app")!     //ngrok
@@ -59,3 +60,5 @@ enum Encoder {
 let chapterPlaceHolder = Chapter(directoryURL: URL(fileURLWithPath: ""), name: "", isFree: false, pdfURL: URL(fileURLWithPath: ""), imageURL: nil)
 let stagePlaceHolder = Stage(directoryURL: URL(fileURLWithPath: "/"), name: "", imageURL: nil, description: "", chapters: [chapterPlaceHolder] )
 let coursePlaceHolder = Course(id: UUID(), name: "", description: "", price: 1, stages: [stagePlaceHolder], imageURL: nil, annuallyIAPIdentifier: "")
+
+let skeletonBaseColor = UIColor.asbestos
