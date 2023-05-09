@@ -55,14 +55,23 @@ class ChapterCell: UICollectionViewCell {
 			guard chapter.name != chapterPlaceHolder.name else { return }
 			
 			guard let url = chapter.imageURL else {
-				imageView.backgroundColor = UIColor.blue
+				imageView.backgroundColor = .blue
 				isLoading = false
 				return
 			}
 
-			// skeletonview will still be displayed for a short period of time. That's because when prepareForReuse, we set isLoading to true which displays skeletonView. Then setting a chapter for the cell in ChaptersVC takes some time. Awaitng for server response is not the main reason here cause we've tried to set image from cachedResponse in the beginning of chapter's property observer, it still doesn't avoid showing of skeletonview.
+			#warning("try to replace the manually serve cache implemention with stale-while-revalidate")
+			#warning("cache response data for resized image, not the original ones")
+			#warning("Tweaking lable hide/display between skeletonView and after load")
 			self.imageTask = Task {
 				
+				// If a cachedResponse is found, serve the image from it and stop skeleton animation
+				let cachedURL = FileAPI.publicImageEndPoint.appendingPathComponent(url.path)
+				let request = URLRequest(url: cachedURL)
+				if let cachedResponse = cachedSession.configuration.urlCache?.cachedResponse(for: request) {
+					imageView.image = UIImage(data: cachedResponse.data)?.resizedImage(with: imageView.bounds.size)
+					isLoading = false
+				}
 //				try await Task.sleep(nanoseconds: 3_000_000_000)
 				let image = try? await FileAPI.publicGetImageData(path: url.path).resizedImage(with: imageView.bounds.size)
 				
