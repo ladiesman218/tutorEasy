@@ -126,10 +126,6 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, UICollectionViewDelegate
 		return ChapterCell.identifier
 	}
 	
-	func collectionSkeletonView(_ skeletonView: UICollectionView, prepareCellForSkeleton cell: UICollectionViewCell, at indexPath: IndexPath) {
-		
-	}
-	
 	func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
 		return chapters.count
 	}

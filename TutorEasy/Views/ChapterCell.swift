@@ -26,7 +26,7 @@ class ChapterCell: UICollectionViewCell {
 		didSet {
 			switch isLoading {
 				case true:
-					// Ajust titleLabel display accordingly
+					#warning("Ajust titleLabel display accordingly")
 					contentView.addSubview(titleLabel)
 					
 					// Start skeletonView animation
@@ -59,10 +59,10 @@ class ChapterCell: UICollectionViewCell {
 				isLoading = false
 				return
 			}
-
-			#warning("try to replace the manually serve cache implemention with stale-while-revalidate")
-			#warning("cache response data for resized image, not the original ones")
-			#warning("Tweaking lable hide/display between skeletonView and after load")
+			
+#warning("try to replace the manually serve cache implemention with stale-while-revalidate")
+#warning("cache response data for resized image, not the original ones")
+#warning("Tweaking lable hide/display between skeletonView and after load")
 			self.imageTask = Task {
 				
 				// If a cachedResponse is found, serve the image from it and stop skeleton animation
@@ -72,7 +72,7 @@ class ChapterCell: UICollectionViewCell {
 					imageView.image = UIImage(data: cachedResponse.data)?.resizedImage(with: imageView.bounds.size)
 					isLoading = false
 				}
-//				try await Task.sleep(nanoseconds: 3_000_000_000)
+				//				try await Task.sleep(nanoseconds: 3_000_000_000)
 				let image = try? await FileAPI.publicGetImageData(path: url.path).resizedImage(with: imageView.bounds.size)
 				
 				try Task.checkCancellation()
@@ -82,7 +82,7 @@ class ChapterCell: UICollectionViewCell {
 				} else {
 					imageView.backgroundColor = .blue
 				}
-
+				
 				isLoading = false
 			}
 		}
