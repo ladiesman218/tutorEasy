@@ -22,17 +22,13 @@ class ChapterDetailVC: UIViewController {
 		didSet {
 			pdfView.document = chapterPDF
 			
-			pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
-			// Double click on pdfView will zoom-in/zoom-out. The following lines disable this behaviour. According to documentation, assigning these values will implicitly turn off autoScales, and allows scaleFactor to vary between these min / max scale factors. So these 2 should only be set after a pdf document is set for the view.
-			pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
-			pdfView.maxScaleFactor = pdfView.scaleFactorForSizeToFit
-			
-#warning("On iOS 16, ctrl + click can still select, copy text. Command + a will select all, Shift + command + A will trigger context menu")
+			#warning("On iOS 16, ctrl + click can still select, copy text. Command + a will select all, Shift + command + A will trigger context menu")
 			if #available(iOS 16, *) {
 				pdfView.isInMarkupMode = true
 			}
-			// This disables long press for contextual menu, but still keeps clicking of a link to play video. Again, this should be set here since when view load, documentView is nil.
+			
 			NotificationCenter.default.addObserver(self, selector: #selector(pageChanged), name: .PDFViewPageChanged, object: nil)
+			
 			// Creat thumbnails
 			for number in 0 ... chapterPDF.pageCount - 1 {
 				let box = pdfView.displayBox
@@ -57,15 +53,13 @@ class ChapterDetailVC: UIViewController {
 				fullTop.isActive = true
 				fullThumb.isActive = true
 			}
-			#warning("Changing topview and collectionview's position may create a better animation.")
+			
 			UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseOut, animations:{ [unowned self] in
 				self.view.layoutIfNeeded()
-				thumbnailCollectionView.layoutIfNeeded()
-
-				pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
 				
-				pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
-				pdfView.maxScaleFactor = pdfView.scaleFactorForSizeToFit
+				if !isFullScreen { setSelectedCell() }
+				// Resize to fit.
+				pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
 			})
 		}
 	}
@@ -144,14 +138,10 @@ class ChapterDetailVC: UIViewController {
 	var pdfView: PDFView = {
 		let pdfView = PDFView()
 		
-		pdfView.displayMode = .singlePage
-		pdfView.displaysPageBreaks = true
 		// Configure PDFView to be one page at a time, while keep the ability to scroll up and down a page directly.
 		pdfView.usePageViewController(true)
 		
-		pdfView.layer.zPosition = .greatestFiniteMagnitude
 		pdfView.enableDataDetectors = false		// Does't seem to affect anything?
-
 		
 		pdfView.translatesAutoresizingMaskIntoConstraints = false
 		return pdfView
@@ -242,6 +232,10 @@ class ChapterDetailVC: UIViewController {
 		// Seems like when PDFPage is changed, long press gesture will be added again to the view. So Call this here to disable the gesture
 		recursivelyDisableLongPress(view: pdfView)
 		
+		setSelectedCell()
+	}
+	
+	func setSelectedCell() {
 		guard let labelString = pdfView.currentPage?.label, let labelInt = Int(labelString) else { return }
 		let index = labelInt - 1
 		
@@ -323,7 +317,7 @@ extension ChapterDetailVC: UICollectionViewDataSource, UICollectionViewDelegate,
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PDFThumbnailCell.identifier, for: indexPath) as! PDFThumbnailCell
 		cell.imageView.image = thumbnails[indexPath.item]
-		// Since opacity is changing during select and deselect, and we are reusing instead of creating	 new cells, opacity should be set here otherwise scrolling will cause bugs
+		// Since opacity is changing during select and deselect, and we are reusing instead of creating new cells, opacity should be set here otherwise scrolling will cause visual bugs
 		cell.contentView.layer.opacity = (cell.isSelected) ? 1 : PDFThumbnailCell.opacity
 		return cell
 	}
