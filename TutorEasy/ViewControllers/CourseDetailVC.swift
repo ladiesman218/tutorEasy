@@ -45,7 +45,7 @@ class CourseDetailVC: UIViewController {
 		courseTitle.textColor = .white
 		courseTitle.layer.backgroundColor = UIColor.systemYellow.cgColor
 		courseTitle.layer.maskedCorners = [.layerMaxXMaxYCorner, .layerMaxXMinYCorner]
-
+		
 		return courseTitle
 	}()
 	
@@ -58,7 +58,7 @@ class CourseDetailVC: UIViewController {
 		stageTableView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
 		stageTableView.contentInset = .init(top: 15, left: 0, bottom: 0, right: 0)
 		stageTableView.backgroundColor = .systemGray5
-//		stageTableView.bounces = false
+		//		stageTableView.bounces = false
 		return stageTableView
 	}()
 	// MARK: - Controller functions
@@ -90,7 +90,8 @@ class CourseDetailVC: UIViewController {
 		
 		NSLayoutConstraint.activate([
 			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-
+			topView.heightAnchor.constraint(equalToConstant: topViewHeight),
+			
 			courseTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor),
 			courseTitle.topAnchor.constraint(equalTo: topView.topAnchor),
 			courseTitle.bottomAnchor.constraint(equalTo: topView.bottomAnchor),
@@ -136,7 +137,7 @@ extension CourseDetailVC: UITableViewDataSource, UITableViewDelegate {
 		
 		cell.textLabel!.text = stages[indexPath.row].name
 		cell.textLabel?.font = cell.textLabel?.font.withSize(cellHeight / 7)
-
+		
 		cell.imageView?.layer.cornerRadius = tableView.layer.cornerRadius
 		cell.imageView?.clipsToBounds = true
 		cell.imageView?.image = stageImages[indexPath.row]

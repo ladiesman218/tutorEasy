@@ -9,56 +9,111 @@ import UIKit
 import PDFKit
 import AVKit
 
-class ChapterDetailVC: UIViewController, UIEditMenuInteractionDelegate {
+class ChapterDetailVC: UIViewController {
 	
 	// MARK: - Properties
+	var fullTop: NSLayoutConstraint!
+	var noTop: NSLayoutConstraint!
+	var fullThumb: NSLayoutConstraint!
+	var noThumb: NSLayoutConstraint!
+		
+	// When chapter's pdf file is got from server, set this variable's value to that file, this will trigger property observer to do its things
+	var chapterPDF = PDFDocument() {
+		didSet {
+			pdfView.document = chapterPDF
+			
+			pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
+			// Double click on pdfView will zoom-in/zoom-out. The following lines disable this behaviour. According to documentation, assigning these values will implicitly turn off autoScales, and allows scaleFactor to vary between these min / max scale factors. So these 2 should only be set after a pdf document is set for the view.
+			pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
+			pdfView.maxScaleFactor = pdfView.scaleFactorForSizeToFit
+			
+#warning("On iOS 16, ctrl + click can still select, copy text. Command + a will select all, Shift + command + A will trigger context menu")
+			if #available(iOS 16, *) {
+				pdfView.isInMarkupMode = true
+			}
+			// This disables long press for contextual menu, but still keeps clicking of a link to play video. Again, this should be set here since when view load, documentView is nil.
+			NotificationCenter.default.addObserver(self, selector: #selector(pageChanged), name: .PDFViewPageChanged, object: nil)
+			// Creat thumbnails
+			for number in 0 ... chapterPDF.pageCount - 1 {
+				let box = pdfView.displayBox
+				let image = pdfView.document!.page(at: number)!.thumbnail(of: .init(width: 500, height: 350), for: box)
+				thumbnails.append(image)
+			}
+		}
+	}
+	
+	var isFullScreen: Bool = false {
+		didSet {
+			if isFullScreen {
+				fullTop.isActive = false
+				fullThumb.isActive = false
+				
+				noTop.isActive = true
+				noThumb.isActive = true
+			} else {
+				noTop.isActive = false
+				noThumb.isActive = false
+				
+				fullTop.isActive = true
+				fullThumb.isActive = true
+			}
+			#warning("Changing topview and collectionview's position may create a better animation.")
+			UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseOut, animations:{ [unowned self] in
+				self.view.layoutIfNeeded()
+				thumbnailCollectionView.layoutIfNeeded()
+
+				pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
+				
+				pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
+				pdfView.maxScaleFactor = pdfView.scaleFactorForSizeToFit
+			})
+		}
+	}
+	
 	var chapter: Chapter! {
 		didSet {
 			let path = chapter.pdfURL.path
 			Task {
-				do {
-					let (data, _) = try await FileAPI.getCourseContent(path: path, for: chapter)
-					if let document = PDFDocument(data: data) {
-						pdfView.document = document
-						// Double click on pdfView will zoom-in/zoom-out. The following lines disable this behaviour. According to documentation, assigning these values will implicitly turn off autoScales, and allows scaleFactor to vary between these min / max scale factors. So these 2 should only be set after a pdf document is set for the view. In pdfView definition, autoScales is enabled, that's for getting the best scale factor at the first stage.
-						pdfView.minScaleFactor = pdfView.scaleFactor
-						pdfView.maxScaleFactor = pdfView.scaleFactor
-						// This disables long press for contextual menu, but still keeps clicking of a link to play video. Again, this should be set here since when view load, documentView is nil.
-						pdfView.documentView!.gestureRecognizers! = []
-						
-						if #available(iOS 16.0, *) {
+				let (data, response) = try await FileAPI.getCourseContent(path: path)
+				lazy var navVC = self.navigationController!
+				lazy var cancel = UIAlertAction(title: "再看看", style: .default)
+				switch response.statusCode {
+					case 200:
+						let document = PDFDocument(data: data)!
+						chapterPDF = document
+					case 400:
+						// Bad request, indicates something wrong on server end
+						navVC.popViewController(animated: true)
+						MessagePresenter.showMessage(title: "未知错误", message: "请联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [])
+					case 401:
+						navVC.popViewController(animated: true)
+						let login = UIAlertAction(title: "去登录", style: .destructive) {  _ in
+							let authVC = AuthenticationVC()
+							navVC.pushIfNot(newVC: authVC)
 						}
-
-						// Creat thumbnails
-						for number in 0 ... document.pageCount - 1 {
-							let box = pdfView.displayBox
-							let image = pdfView.document!.page(at: number)!.thumbnail(of: .init(width: 500, height: 350), for: box)
-							thumbnails.append(image)
-						}
-					}
-
-				} catch {
-					let navVC = self.navigationController!
-					navVC.popViewController(animated: true)
-					
-					let cancel = UIAlertAction(title: "再看看", style: .default)
-
-					if error.localizedDescription.contains("请先购买") {
+						MessagePresenter.showMessage(title: "付费内容，无访问权限", message: "点击\"去登录\"可注册或登录账号", on: navVC.topViewController!, actions: [login, cancel])
+					case 402:
+						// Indicates user hasn't bought the course
+						navVC.popViewController(animated: true)
+						let message = try Decoder.isoDate.decode(ResponseError.self, from: data).reason
 						let subscription = UIAlertAction(title: "管理订阅", style: .destructive) { _ in
 							let accountsVC = AccountVC()
 							accountsVC.currentVC = .subscription
 							navVC.pushIfNot(newVC: accountsVC)
 						}
-						error.present(on: navVC.topViewController!, title: "付费内容，无访问权限", actions: [subscription, cancel])
-					}
-					
-					let login = UIAlertAction(title: "去登录", style: .destructive) {  _ in
-						let authVC = AuthenticationVC()
-						navVC.pushIfNot(newVC: authVC)
-					}
-					error.present(on: navVC.topViewController!, title: "付费内容，无访问权限", actions: [login, cancel])
+						MessagePresenter.showMessage(title: "付费内容，无访问权限", message: message, on: navVC.topViewController!, actions: [subscription, cancel])
+					case 404:
+						// Not found, 2 possible reasons with 404 status, one for course name not found or course not published, another for course pdf file doesn't exist on server. The only possible way to legitimately get the 1st possiblity is we did something wrong in our code, so here we show message to user to indicate the 2nd reason.
+						navVC.popViewController(animated: true)
+						let message = try Decoder.isoDate.decode(ResponseError.self, from: data).reason
+						MessagePresenter.showMessage(title: message, message: "请联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [])
+					case 500...599:
+						// Service un-reachable, either client end doesn't have a network connection, or server is down
+						navVC.popViewController(animated: true)
+						MessagePresenter.showMessage(title: "服务器无响应", message: "请检查设备网络，或联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [])
+					default:
+						break
 				}
-				
 			}
 		}
 	}
@@ -70,14 +125,9 @@ class ChapterDetailVC: UIViewController, UIEditMenuInteractionDelegate {
 	private var thumbnails = [UIImage]() {
 		didSet {
 			thumbnailCollectionView.reloadData()
-			Task {
-				// Select the first cell, make it fully opaque
-				await MainActor.run {
-					thumbnailCollectionView.selectItem(at: [0, 0], animated: true, scrollPosition: .top)
-					thumbnailCollectionView.cellForItem(at: [0, 0])?.contentView.layer.opacity = 1
-
-				}
-			}
+			// Select the first cell, make it fully opaque
+			thumbnailCollectionView.selectItem(at: [0, 0], animated: true, scrollPosition: .top)
+			thumbnailCollectionView.cellForItem(at: [0, 0])?.contentView.layer.opacity = 1
 		}
 	}
 	
@@ -93,11 +143,16 @@ class ChapterDetailVC: UIViewController, UIEditMenuInteractionDelegate {
 	
 	var pdfView: PDFView = {
 		let pdfView = PDFView()
+		
 		pdfView.displayMode = .singlePage
-		pdfView.autoScales = true
-		pdfView.enableDataDetectors = true
+		pdfView.displaysPageBreaks = true
+		// Configure PDFView to be one page at a time, while keep the ability to scroll up and down a page directly.
+		pdfView.usePageViewController(true)
+		
+		pdfView.layer.zPosition = .greatestFiniteMagnitude
+		pdfView.enableDataDetectors = false		// Does't seem to affect anything?
 
-		#warning("On iOS 16, ctrl + click can still select, copy text. Command + a will select all, Shift + command + A will trigger context menu")
+		
 		pdfView.translatesAutoresizingMaskIntoConstraints = false
 		return pdfView
 	}()
@@ -109,6 +164,15 @@ class ChapterDetailVC: UIViewController, UIEditMenuInteractionDelegate {
 		collectionView.register(PDFThumbnailCell.self, forCellWithReuseIdentifier: PDFThumbnailCell.identifier)
 		
 		return collectionView
+	}()
+	
+	let fullScreenButton: UIButton = {
+		let button = UIButton()
+		let symbolConfig = UIImage.SymbolConfiguration(pointSize: 40, weight: .bold, scale: .large)
+		let image = UIImage(systemName: "arrow.up.left.and.arrow.down.right.circle.fill", withConfiguration: symbolConfig)
+		button.setImage(image, for: .normal)
+		button.translatesAutoresizingMaskIntoConstraints = false
+		return button
 	}()
 	
 	// MARK: - Controller functions
@@ -125,16 +189,30 @@ class ChapterDetailVC: UIViewController, UIEditMenuInteractionDelegate {
 		
 		pdfView.delegate = self
 		view.addSubview(pdfView)
+		fullScreenButton.addTarget(self, action: #selector(toggleFullScreen), for: .touchUpInside)
+		pdfView.addSubview(fullScreenButton)
 		
 		thumbnailCollectionView.delegate = self
 		thumbnailCollectionView.dataSource = self
 		view.addSubview(thumbnailCollectionView)
 		
-		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
+		fullTop = topView.heightAnchor.constraint(equalToConstant: topViewHeight)
+		noTop = topView.heightAnchor.constraint(equalToConstant: 0)
+		fullThumb = thumbnailCollectionView.widthAnchor.constraint(equalToConstant: view.frame.size.width * 0.2)
+		noThumb = thumbnailCollectionView.widthAnchor.constraint(equalToConstant: 0)
+
+		// Manually set to avoid unnecessary animations
+		if isFullScreen {
+			noTop.isActive = true
+			noThumb.isActive = true
+		} else {
+			fullTop.isActive = true
+			fullThumb.isActive = true
+		}
 		
 		NSLayoutConstraint.activate([
 			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-
+			
 			chapterTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor, constant: topViewHeight * 0.7),
 			chapterTitle.trailingAnchor.constraint(equalTo: topView.trailingAnchor, constant: -topViewHeight * 2),
 			chapterTitle.topAnchor.constraint(equalTo: topView.topAnchor),
@@ -143,13 +221,43 @@ class ChapterDetailVC: UIViewController, UIEditMenuInteractionDelegate {
 			thumbnailCollectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
 			thumbnailCollectionView.topAnchor.constraint(equalTo: topView.bottomAnchor, constant: 20),
 			thumbnailCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-			thumbnailCollectionView.widthAnchor.constraint(equalToConstant: view.frame.size.width * 0.2),
 			
 			pdfView.leadingAnchor.constraint(equalTo: thumbnailCollectionView.trailingAnchor),
 			pdfView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 			pdfView.topAnchor.constraint(equalTo: thumbnailCollectionView.topAnchor),
 			pdfView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+			
+			fullScreenButton.widthAnchor.constraint(equalToConstant: 50),
+			fullScreenButton.heightAnchor.constraint(equalTo: fullScreenButton.widthAnchor),
+			fullScreenButton.trailingAnchor.constraint(equalTo: pdfView.trailingAnchor, constant: -30),
+			fullScreenButton.topAnchor.constraint(equalTo: pdfView.topAnchor, constant: 30)
 		])
+	}
+
+	@objc func toggleFullScreen() {
+		isFullScreen.toggle()
+	}
+	
+	@objc func pageChanged() {
+		// Seems like when PDFPage is changed, long press gesture will be added again to the view. So Call this here to disable the gesture
+		recursivelyDisableLongPress(view: pdfView)
+		
+		guard let labelString = pdfView.currentPage?.label, let labelInt = Int(labelString) else { return }
+		let index = labelInt - 1
+		
+		// Clear selection
+		for indexPath in thumbnailCollectionView.indexPathsForVisibleItems {
+			thumbnailCollectionView.deselectItem(at: indexPath, animated: false)
+		}
+		// By default, un-selected cells are a little transparent
+		thumbnailCollectionView.visibleCells.forEach {
+			$0.contentView.layer.opacity = PDFThumbnailCell.opacity
+		}
+		
+		// Select item
+		thumbnailCollectionView.cellForItem(at: [0, index])?.contentView.layer.opacity = 1
+		// Make it fully opaque
+		thumbnailCollectionView.selectItem(at: [0, index], animated: true, scrollPosition: .centeredVertically)
 	}
 }
 
@@ -172,6 +280,8 @@ extension ChapterDetailVC: PDFViewDelegate {
 		let videoURL = FileAPI.contentEndPoint.appendingPathComponent(chapter.directoryURL.path).appendingPathComponent(url.path)
 		player.replaceCurrentItem(with: .init(url: videoURL))
 		playerViewController.player = player
+		
+		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
 		
 		self.present(playerViewController, animated: true) { [unowned self] in
 			playerViewController.player?.play()
@@ -201,28 +311,9 @@ extension ChapterDetailVC: AVPlayerViewControllerDelegate {
 				playerViewController.dismiss(animated: false)
 			}
 		}
-		//		DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [unowned self] in
-		//			playerViewController.dismiss(animated: false)
-		//		}
 	}
 	
 }
-
-// create an extension of AVPlayerViewController
-//extension AVPlayerViewController {
-//	// override 'viewWillDisappear'
-//	open override func viewWillDisappear(_ animated: Bool) {
-//		super.viewWillDisappear(animated)
-//		// now, check that this ViewController is dismissing
-//		if self.isBeingDismissed == false {
-//			return
-//		}
-//
-//		player?.replaceCurrentItem(with: nil)
-//		// and then , post a simple notification and observe & handle it, where & when you need to.....
-////		NotificationCenter.default.post(name: .kAVPlayerViewControllerDismissingNotification, object: nil)
-//	}
-//}
 
 extension ChapterDetailVC: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
 	func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -248,12 +339,5 @@ extension ChapterDetailVC: UICollectionViewDataSource, UICollectionViewDelegate,
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 		let page = pdfView.document!.page(at: indexPath.item)!
 		pdfView.go(to: page)
-		// By default, not selected cells are a little transparent
-		collectionView.cellForItem(at: indexPath)?.contentView.layer.opacity = 1
-		
-	}
-
-	func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-		collectionView.cellForItem(at: indexPath)?.contentView.layer.opacity = PDFThumbnailCell.opacity
 	}
 }

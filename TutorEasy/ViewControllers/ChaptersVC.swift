@@ -83,6 +83,7 @@ class ChaptersVC: UIViewController {
 		
 		NSLayoutConstraint.activate([
 			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+			topView.heightAnchor.constraint(equalToConstant: topViewHeight),
 			
 			courseTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor),
 			courseTitle.topAnchor.constraint(equalTo: topView.topAnchor),

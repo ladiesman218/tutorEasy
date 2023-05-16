@@ -9,8 +9,8 @@ import UIKit
 import SkeletonView
 
 //let serverURL = URL(string: "http://localhost:8080")!     //localhost
-let serverURL = URL(string: "https://f31f-1-28-241-205.ngrok-free.app")!     //ngrok
-//let serverURL = URL(string: "http://0.0.0.0:8080")!     // docker production environment
+let serverURL = URL(string: "https://0cb9-1-28-219-76.ngrok-free.app")!     //ngrok
+																			//let serverURL = URL(string: "http://0.0.0.0:8080")!     // docker production environment
 
 let baseURL = serverURL.appendingPathComponent("api")
 

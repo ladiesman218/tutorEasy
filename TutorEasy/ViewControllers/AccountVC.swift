@@ -29,7 +29,7 @@ class AccountVC: UIViewController {
 			containerView.subviews.forEach {
 				$0.removeFromSuperview()
 			}
-
+			
 			// Add new viewController and its view accordingly.
 			switch currentVC {
 				case .profile:
@@ -107,7 +107,8 @@ class AccountVC: UIViewController {
 		NSLayoutConstraint.activate([
 			// Leading position of backButtonView is special in accountsVC
 			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-
+			topView.heightAnchor.constraint(equalToConstant: topViewHeight),
+			
 			backButtonView.leadingAnchor.constraint(equalTo: topView.leadingAnchor),
 			
 			navTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor),

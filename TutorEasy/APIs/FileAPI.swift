@@ -15,7 +15,7 @@ struct FileAPI {
 	static func publicGetImageData(path: String) async throws -> UIImage {
 		// Generate http url scheme
 		let url = publicImageEndPoint.appendingPathComponent(path, isDirectory: false)
-//		URLCache.shared.removeAllCachedResponses()
+		URLCache.shared.removeAllCachedResponses()
 //		print(URLCache.shared.currentDiskUsage / 1024 / 1024)
 //		print(URLCache.shared.currentMemoryUsage / 1024 / 1024)
 		
@@ -30,12 +30,16 @@ struct FileAPI {
 		
 	}
 	
-	static func getCourseContent(path: String, for chapter: Chapter) async throws -> (Data, HTTPURLResponse) {
+	// This doesn't call URLSession extension's dataAndReponse, cause in that method we've converted all error to ResponseError, hence lost the HTTPURLResponse's status code, we need the status code to handle errors easier when calling getCourseContent()
+	static func getCourseContent(path: String) async throws -> (Data, HTTPURLResponse) {
 		// Generate http url scheme
 		let url = contentEndPoint.appendingPathComponent(path, isDirectory: false)
 		var request = URLRequest(url: url)
 		request.addValue("Bearer \(AuthAPI.tokenValue ?? "")", forHTTPHeaderField: "Authorization")
 		// For cached response, server will return "no-cache" for Cache-Control header, hence later requests will go to server first, only use cached data if user token validation has passed and server returns 304 not modified.
-		return try await cachedSession.dataAndResponse(for: request)
+		let (data, response) = try await cachedSession.data(for: request)
+		let urlResponse = response as! HTTPURLResponse
+		
+		return (data, urlResponse)
 	}
 }
