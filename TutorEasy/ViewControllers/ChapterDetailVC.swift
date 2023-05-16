@@ -16,13 +16,13 @@ class ChapterDetailVC: UIViewController {
 	var noTop: NSLayoutConstraint!
 	var fullThumb: NSLayoutConstraint!
 	var noThumb: NSLayoutConstraint!
-		
+	
 	// When chapter's pdf file is got from server, set this variable's value to that file, this will trigger property observer to do its things
 	var chapterPDF = PDFDocument() {
 		didSet {
 			pdfView.document = chapterPDF
 			
-			#warning("On iOS 16, ctrl + click can still select, copy text. Command + a will select all, Shift + command + A will trigger context menu")
+#warning("On iOS 16, ctrl + click can still select, copy text. Command + a will select all, Shift + command + A will trigger context menu")
 			if #available(iOS 16, *) {
 				pdfView.isInMarkupMode = true
 			}
@@ -57,10 +57,12 @@ class ChapterDetailVC: UIViewController {
 			UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseOut, animations:{ [unowned self] in
 				self.view.layoutIfNeeded()
 				
-				if !isFullScreen { setSelectedCell() }
 				// Resize to fit.
 				pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
 			})
+			
+			// This has to be called after collectionView is already on screen, otherwise it won't work.
+			if !isFullScreen { setSelectedCell() }
 		}
 	}
 	
@@ -190,7 +192,7 @@ class ChapterDetailVC: UIViewController {
 		noTop = topView.heightAnchor.constraint(equalToConstant: 0)
 		fullThumb = thumbnailCollectionView.widthAnchor.constraint(equalToConstant: view.frame.size.width * 0.2)
 		noThumb = thumbnailCollectionView.widthAnchor.constraint(equalToConstant: 0)
-
+		
 		// Manually set to avoid unnecessary animations
 		if isFullScreen {
 			noTop.isActive = true
@@ -223,7 +225,7 @@ class ChapterDetailVC: UIViewController {
 			fullScreenButton.topAnchor.constraint(equalTo: pdfView.topAnchor, constant: 30)
 		])
 	}
-
+	
 	@objc func toggleFullScreen() {
 		isFullScreen.toggle()
 	}
@@ -231,8 +233,7 @@ class ChapterDetailVC: UIViewController {
 	@objc func pageChanged() {
 		// Seems like when PDFPage is changed, long press gesture will be added again to the view. So Call this here to disable the gesture
 		recursivelyDisableLongPress(view: pdfView)
-		
-		setSelectedCell()
+		if !isFullScreen { setSelectedCell() }
 	}
 	
 	func setSelectedCell() {
