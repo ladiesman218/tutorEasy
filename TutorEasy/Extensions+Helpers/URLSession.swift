@@ -22,8 +22,7 @@ var cachedSession: URLSession = {
 	
 	// For default sessions, the default value for configuration.urlCache is the shared URL cache object. No need to set that manually
 	let configuration = URLSessionConfiguration.default
-	#warning("delete this")
-	configuration.urlCache = nil
+	
 	// .useProtocolCachePolicy is default🌚
 	configuration.requestCachePolicy = .useProtocolCachePolicy
 	let session = URLSession(configuration: configuration)

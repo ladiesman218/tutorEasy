@@ -21,15 +21,22 @@ struct FileAPI {
 	
 	// Pass in size enables the ability to resize the image inside this function, and saves the resized image data for the response cache, which in most cases are smaller than the actual image returned from server hence saves some caching space.
 	static func publicGetImageData(request: URLRequest, size: CGSize) async throws -> UIImage {
-		// print(URLCache.shared.currentDiskUsage / 1024 / 1024)
-		// print(URLCache.shared.currentMemoryUsage / 1024 / 1024)
+//		cachedSession.configuration.urlCache?.removeAllCachedResponses()
+//		 print(URLCache.shared.currentDiskUsage / 1024 / 1024)
+//		 print(URLCache.shared.currentMemoryUsage / 1024 / 1024)
 		// If a cached response exists, server will respond 304 not modified for the request, cached data will be used for the image. Nothing needs to be done on client side, other than create the data task in cachedSession.
 		let (data, response) = try await cachedSession.dataAndResponse(for: request)
 		guard let image = UIImage(data: data) else {
 			cachedSession.configuration.urlCache?.removeCachedResponse(for: request)
 			throw ResponseError(reason: "图片文件损坏，请联系管理员\(adminEmail)")
 		}
-		
+
+		// It's possible the image is returned from cache, if so, check if it's size is equal to the passed in parameter. If it's equal, return the image and bail out. If not, resize the image, save it's data in cache for the request.
+		guard image.size != size else {
+			return image
+		}
+
+		// In case resize fails, return original image
 		guard let resizedImage = image.resizedImage(with: size) else {
 			return image
 		}
@@ -38,7 +45,6 @@ struct FileAPI {
 		guard let resizedData = resizedImage.jpegData(compressionQuality: 1.0) else {
 			return resizedImage
 		}
-		
 		// If cached data is not equal to resizedData, save it to cache.
 		if let cachedData = cachedSession.configuration.urlCache?.cachedResponse(for: request)?.data, cachedData != resizedData {
 //			print("before: \(cachedSession.configuration.urlCache?.cachedResponse(for: request)?.data.count)")
