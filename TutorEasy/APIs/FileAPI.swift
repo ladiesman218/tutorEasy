@@ -12,10 +12,50 @@ struct FileAPI {
 	static let publicImageEndPoint = baseURL.appendingPathComponent("image")
 	static let contentEndPoint = baseURL.appendingPathComponent("content")
 	
+	static func convertToImageRequest(url: URL) -> URLRequest {
+		let path = url.path
+		let url = publicImageEndPoint.appendingPathComponent(path, isDirectory: false)
+		let request = URLRequest(url: url)
+		return request
+	}
+	
+	// Pass in size enables the ability to resize the image inside this function, and saves the resized image data for the response cache, which in most cases are smaller than the actual image returned from server hence saves some caching space.
+	static func publicGetImageData(request: URLRequest, size: CGSize) async throws -> UIImage {
+		// print(URLCache.shared.currentDiskUsage / 1024 / 1024)
+		// print(URLCache.shared.currentMemoryUsage / 1024 / 1024)
+		// If a cached response exists, server will respond 304 not modified for the request, cached data will be used for the image. Nothing needs to be done on client side, other than create the data task in cachedSession.
+		let (data, response) = try await cachedSession.dataAndResponse(for: request)
+		guard let image = UIImage(data: data) else {
+			cachedSession.configuration.urlCache?.removeCachedResponse(for: request)
+			throw ResponseError(reason: "图片文件损坏，请联系管理员\(adminEmail)")
+		}
+		
+		guard let resizedImage = image.resizedImage(with: size) else {
+			return image
+		}
+		
+		// Conver data to resized image data, save space for storing cachedResponse. In case this fails, return the origin image. At this stage, request has been saved to cache already.
+		guard let resizedData = resizedImage.jpegData(compressionQuality: 1.0) else {
+			return resizedImage
+		}
+		
+		// If cached data is not equal to resizedData, save it to cache.
+		if let cachedData = cachedSession.configuration.urlCache?.cachedResponse(for: request)?.data, cachedData != resizedData {
+//			print("before: \(cachedSession.configuration.urlCache?.cachedResponse(for: request)?.data.count)")
+			cachedSession.configuration.urlCache?.removeCachedResponse(for: request)
+			let cachedResponse = CachedURLResponse(response: response, data: resizedData)
+			cachedSession.configuration.urlCache?.storeCachedResponse(cachedResponse, for: request)
+//			print("after: \(cachedSession.configuration.urlCache?.cachedResponse(for: request)?.data.count)")
+
+		}
+		
+		return resizedImage
+	}
+	
+	#warning("The following method is no longer needed")
 	static func publicGetImageData(path: String) async throws -> UIImage {
 		// Generate http url scheme
 		let url = publicImageEndPoint.appendingPathComponent(path, isDirectory: false)
-		URLCache.shared.removeAllCachedResponses()
 //		print(URLCache.shared.currentDiskUsage / 1024 / 1024)
 //		print(URLCache.shared.currentMemoryUsage / 1024 / 1024)
 		

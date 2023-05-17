@@ -8,7 +8,7 @@
 import UIKit
 import PDFKit
 import AVKit
-
+#warning("Loading chapter pdf should enable skeletonView")
 class ChapterDetailVC: UIViewController {
 	
 	// MARK: - Properties
