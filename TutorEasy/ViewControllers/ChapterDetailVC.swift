@@ -22,6 +22,18 @@ class ChapterDetailVC: UIViewController {
 		didSet {
 			pdfView.document = chapterPDF
 			
+			// Add functionality for double tapping to toggle full screen
+			let doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(toggleFullScreen))
+			doubleTapGesture.numberOfTapsRequired = 2
+			pdfView.addGestureRecognizer(doubleTapGesture)
+			
+			// When first page is displayed, manually trigger function calls in pageChanged()
+			#warning("doesn't work on ios 13")
+			pdfView.recursivelyDisableLongPress(view: pdfView)
+//			drawPlayButton()
+
+//						pdfView.enableDataDetectors = false		// Does't seem to affect anything?
+			
 #warning("On iOS 16, ctrl + click can still select, copy text. Command + a will select all, Shift + command + A will trigger context menu")
 			if #available(iOS 16, *) {
 				pdfView.isInMarkupMode = true
@@ -56,9 +68,6 @@ class ChapterDetailVC: UIViewController {
 			
 			UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseOut, animations:{ [unowned self] in
 				self.view.layoutIfNeeded()
-				
-				// Resize to fit.
-				pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
 			})
 			
 			// This has to be called after collectionView is already on screen, otherwise it won't work.
@@ -143,7 +152,7 @@ class ChapterDetailVC: UIViewController {
 		// Configure PDFView to be one page at a time, while keep the ability to scroll up and down a page directly.
 		pdfView.usePageViewController(true)
 		
-		pdfView.enableDataDetectors = false		// Does't seem to affect anything?
+		//		pdfView.enableDataDetectors = true		// Does't seem to affect anything?
 		
 		pdfView.translatesAutoresizingMaskIntoConstraints = false
 		return pdfView
@@ -154,20 +163,19 @@ class ChapterDetailVC: UIViewController {
 		let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
 		collectionView.translatesAutoresizingMaskIntoConstraints = false
 		collectionView.register(PDFThumbnailCell.self, forCellWithReuseIdentifier: PDFThumbnailCell.identifier)
-		
+		collectionView.backgroundColor = UIColor.systemBackground
 		return collectionView
 	}()
 	
-	let fullScreenButton: UIButton = {
-		let button = UIButton()
-		let symbolConfig = UIImage.SymbolConfiguration(pointSize: 40, weight: .bold, scale: .large)
-		let image = UIImage(systemName: "arrow.up.left.and.arrow.down.right.circle.fill", withConfiguration: symbolConfig)
-		button.setImage(image, for: .normal)
-		button.translatesAutoresizingMaskIntoConstraints = false
-		return button
-	}()
-	
 	// MARK: - Controller functions
+	override func viewDidLayoutSubviews() {
+		print("layout subviews")
+		// viewDidLayoutSubviews will be called both when full screen is toggled, and after the chapterPdf was set and the first page was displayed on screen, so this is the only place to set scale factor and disable zooming by set min/max scale factor to the same value.
+		pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
+		pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
+		pdfView.maxScaleFactor = pdfView.scaleFactorForSizeToFit
+	}
+
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		
@@ -181,8 +189,6 @@ class ChapterDetailVC: UIViewController {
 		
 		pdfView.delegate = self
 		view.addSubview(pdfView)
-		fullScreenButton.addTarget(self, action: #selector(toggleFullScreen), for: .touchUpInside)
-		pdfView.addSubview(fullScreenButton)
 		
 		thumbnailCollectionView.delegate = self
 		thumbnailCollectionView.dataSource = self
@@ -218,11 +224,6 @@ class ChapterDetailVC: UIViewController {
 			pdfView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 			pdfView.topAnchor.constraint(equalTo: thumbnailCollectionView.topAnchor),
 			pdfView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-			
-			fullScreenButton.widthAnchor.constraint(equalToConstant: 50),
-			fullScreenButton.heightAnchor.constraint(equalTo: fullScreenButton.widthAnchor),
-			fullScreenButton.trailingAnchor.constraint(equalTo: pdfView.trailingAnchor, constant: -30),
-			fullScreenButton.topAnchor.constraint(equalTo: pdfView.topAnchor, constant: 30)
 		])
 	}
 	
@@ -231,11 +232,16 @@ class ChapterDetailVC: UIViewController {
 	}
 	
 	@objc func pageChanged() {
+		
 		// Seems like when PDFPage is changed, long press gesture will be added again to the view. So Call this here to disable the gesture
-		recursivelyDisableLongPress(view: pdfView)
+		pdfView.recursivelyDisableLongPress(view: pdfView)
+		// When not in full screen mode, selected cell in collection view should be changed everytime page is changed
 		if !isFullScreen { setSelectedCell() }
+		// This function checks if a play button should be added, and will draw it if it should
+		drawPlayButton()
 	}
 	
+	// When scrolling to change pdf page, change opacity for thumbnail collection view cells
 	func setSelectedCell() {
 		guard let labelString = pdfView.currentPage?.label, let labelInt = Int(labelString) else { return }
 		let index = labelInt - 1
@@ -254,14 +260,53 @@ class ChapterDetailVC: UIViewController {
 		// Make it fully opaque
 		thumbnailCollectionView.selectItem(at: [0, index], animated: true, scrollPosition: .centeredVertically)
 	}
+	
+	func drawPlayButton() {
+		// All possible file extension for video used in pdf goes here
+		let videoExtension = ["mp4"]
+		
+		// Make sure current page contains annotations, otherwise bail out
+		guard let annotations = pdfView.currentPage?.annotations else { return }
+		// Make sure video annotations haven't been added, otherwise bail. This avoid adding same play buttons multiple times.
+		guard !annotations.contains(where: {$0.isKind(of: VideoAnnotation.self)} ) else {
+			return
+		}
+		
+		// Loop through all annotations on current page that contains an actionable url, which the url itself contains one of path extensions defined in videoExtension array.
+		for annotation in annotations {
+			guard let action = annotation.action as? PDFActionURL else { continue }
+			guard let url = action.url else { continue }
+			
+			// The link's extension has to be contained by videoExtension array, which means it's a link for a video file
+			guard videoExtension.contains(url.pathExtension) else { continue }
+			
+			// Initialize a VideoAnnotation, add it to current page
+			let size = CGFloat(integerLiteral: 80)
+			let bounds = CGRect(x: annotation.bounds.minX + 20, y: annotation.bounds.minY + 20, width: size, height: size)
+			let videoAnnotation = VideoAnnotation(bounds: bounds, properties: ["/A": action])
+			pdfView.currentPage?.addAnnotation(videoAnnotation)
+		}
+	}
 }
 
 extension ChapterDetailVC: PDFViewDelegate {
 	func pdfViewWillClick(onLink sender: PDFView, with url: URL) {
 		// If the player is playing in picture in picture mode, there is a chance user could click the play button again to start another playback, make sure that doesn't happen.
 		//		guard player.currentItem == nil else { return }
-		
 		playerViewController = AVPlayerViewController()
+//		print(UIInterfaceOrientationMask.allButUpsideDown.rawValue)
+//		print(UIInterfaceOrientationMask.portrait.rawValue)
+//
+//		print(UIInterfaceOrientationMask.landscape.rawValue)
+//
+//		print(UIInterfaceOrientationMask.all.rawValue)
+//
+//		print(UIInterfaceOrientationMask.all.rawValue)
+
+		
+		playerViewController.preferredInterfaceOrientationForPresentation
+		print(playerViewController.supportedInterfaceOrientations.rawValue)
+		print(playerViewController.preferredInterfaceOrientationForPresentation.rawValue)
 		playerViewController.delegate = self
 		playerViewController.showsTimecodes = true
 		if #available(iOS 16.0, *) {
@@ -276,6 +321,7 @@ extension ChapterDetailVC: PDFViewDelegate {
 		player.replaceCurrentItem(with: .init(url: videoURL))
 		playerViewController.player = player
 		
+//		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AV, object: <#T##Any?#>)
 		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
 		
 		self.present(playerViewController, animated: true) { [unowned self] in
@@ -303,7 +349,7 @@ extension ChapterDetailVC: AVPlayerViewControllerDelegate {
 		Task {
 			try await Task.sleep(nanoseconds: 3_000_000)
 			await MainActor.run {
-				playerViewController.dismiss(animated: false)
+				playerViewController.dismiss(animated: true)
 			}
 		}
 	}
@@ -334,5 +380,10 @@ extension ChapterDetailVC: UICollectionViewDataSource, UICollectionViewDelegate,
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 		let page = pdfView.document!.page(at: indexPath.item)!
 		pdfView.go(to: page)
+	}
+}
+class MyAVPlayer: AVPlayerViewController {
+	override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
+		return .landscapeLeft
 	}
 }

@@ -92,20 +92,6 @@ extension UIViewController {
 		}
 		self.navigationController?.popViewController(animated: animated)
 	}
-	
-	func recursivelyDisableLongPress(view: UIView) {
-		for rec in view.subviews.compactMap({$0.gestureRecognizers}).flatMap({$0}) {
-			if rec is UILongPressGestureRecognizer {
-				rec.isEnabled = false
-			}
-		}
-		
-		for view in view.subviews {
-			if !view.subviews.isEmpty {
-				recursivelyDisableLongPress(view: view)
-			}
-		}
-	}
 }
 
 class CustomTapGestureRecognizer: UITapGestureRecognizer {
