@@ -22,31 +22,31 @@ class ChapterDetailVC: UIViewController {
 		didSet {
 			pdfView.document = chapterPDF
 			
-			// Add functionality for double tapping to toggle full screen
-			let doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(toggleFullScreen))
-			doubleTapGesture.numberOfTapsRequired = 2
-			pdfView.addGestureRecognizer(doubleTapGesture)
-			
-			// When first page is displayed, manually trigger function calls in pageChanged()
-			#warning("doesn't work on ios 13")
-			pdfView.recursivelyDisableLongPress(view: pdfView)
-//			drawPlayButton()
-
-//						pdfView.enableDataDetectors = false		// Does't seem to affect anything?
-			
-#warning("On iOS 16, ctrl + click can still select, copy text. Command + a will select all, Shift + command + A will trigger context menu")
-			if #available(iOS 16, *) {
-				pdfView.isInMarkupMode = true
-			}
-			
-			NotificationCenter.default.addObserver(self, selector: #selector(pageChanged), name: .PDFViewPageChanged, object: nil)
-			
 			// Creat thumbnails
 			for number in 0 ... chapterPDF.pageCount - 1 {
 				let box = pdfView.displayBox
 				let image = pdfView.document!.page(at: number)!.thumbnail(of: .init(width: 500, height: 350), for: box)
 				thumbnails.append(image)
 			}
+			
+			// Add functionality for double tapping to toggle full screen
+			let doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(toggleFullScreen))
+			doubleTapGesture.numberOfTapsRequired = 2
+			pdfView.addGestureRecognizer(doubleTapGesture)
+			
+			drawPlayButton()
+			recursivelyDisableSelection(view: view)
+			
+#warning("On iOS 16, ctrl + click can still select, copy text. Command + a will select all, Shift + command + A will trigger context menu")
+			if #available(iOS 16, *) {
+				pdfView.isInMarkupMode = true
+			}
+			
+			// Call changeSelectedCell when PDFViewVisiblePagesChanged doesn't work as expected, scrolling position won't be right, so call it when PDFViewPageChanged.
+			NotificationCenter.default.addObserver(self, selector: #selector(changeSelectedCell), name: .PDFViewPageChanged, object: nil)
+			
+			// Disbale text selection should be called when PDFViewVisiblePagesChanged, when calling in PDFViewPageChanged it fails sometime.
+			NotificationCenter.default.addObserver(self, selector: #selector(pageChanged), name: .PDFViewVisiblePagesChanged, object: nil)
 		}
 	}
 	
@@ -71,7 +71,7 @@ class ChapterDetailVC: UIViewController {
 			})
 			
 			// This has to be called after collectionView is already on screen, otherwise it won't work.
-			if !isFullScreen { setSelectedCell() }
+			if !isFullScreen { changeSelectedCell() }
 		}
 	}
 	
@@ -149,7 +149,7 @@ class ChapterDetailVC: UIViewController {
 	var pdfView: PDFView = {
 		let pdfView = PDFView()
 		
-		// Configure PDFView to be one page at a time, while keep the ability to scroll up and down a page directly.
+		// Configure PDFView to display one page at a time, while keep the ability to scroll up and down on the pdfView itself.
 		pdfView.usePageViewController(true)
 		
 		//		pdfView.enableDataDetectors = true		// Does't seem to affect anything?
@@ -170,12 +170,13 @@ class ChapterDetailVC: UIViewController {
 	// MARK: - Controller functions
 	override func viewDidLayoutSubviews() {
 		print("layout subviews")
+		print(pdfView.currentPage)
 		// viewDidLayoutSubviews will be called both when full screen is toggled, and after the chapterPdf was set and the first page was displayed on screen, so this is the only place to set scale factor and disable zooming by set min/max scale factor to the same value.
 		pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
 		pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
 		pdfView.maxScaleFactor = pdfView.scaleFactorForSizeToFit
 	}
-
+	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		
@@ -232,17 +233,15 @@ class ChapterDetailVC: UIViewController {
 	}
 	
 	@objc func pageChanged() {
-		
-		// Seems like when PDFPage is changed, long press gesture will be added again to the view. So Call this here to disable the gesture
-		pdfView.recursivelyDisableLongPress(view: pdfView)
-		// When not in full screen mode, selected cell in collection view should be changed everytime page is changed
-		if !isFullScreen { setSelectedCell() }
 		// This function checks if a play button should be added, and will draw it if it should
 		drawPlayButton()
+		
+		// Seems like when PDFPage is changed, long press gesture will be added again to the view. So Call this here to disable the gesture
+		recursivelyDisableSelection(view: pdfView)
 	}
 	
-	// When scrolling to change pdf page, change opacity for thumbnail collection view cells
-	func setSelectedCell() {
+	// When scrolling on pdfView to change pdf page, change opacity for thumbnail collection view cells accordingly. This should be called only when not in full screen mode, otherwise it does nothing.
+	@objc func changeSelectedCell() {
 		guard let labelString = pdfView.currentPage?.label, let labelInt = Int(labelString) else { return }
 		let index = labelInt - 1
 		
@@ -255,9 +254,9 @@ class ChapterDetailVC: UIViewController {
 			$0.contentView.layer.opacity = PDFThumbnailCell.opacity
 		}
 		
-		// Select item
-		thumbnailCollectionView.cellForItem(at: [0, index])?.contentView.layer.opacity = 1
 		// Make it fully opaque
+		thumbnailCollectionView.cellForItem(at: [0, index])?.contentView.layer.opacity = 1
+		// Select item
 		thumbnailCollectionView.selectItem(at: [0, index], animated: true, scrollPosition: .centeredVertically)
 	}
 	
@@ -294,15 +293,15 @@ extension ChapterDetailVC: PDFViewDelegate {
 		// If the player is playing in picture in picture mode, there is a chance user could click the play button again to start another playback, make sure that doesn't happen.
 		//		guard player.currentItem == nil else { return }
 		playerViewController = AVPlayerViewController()
-//		print(UIInterfaceOrientationMask.allButUpsideDown.rawValue)
-//		print(UIInterfaceOrientationMask.portrait.rawValue)
-//
-//		print(UIInterfaceOrientationMask.landscape.rawValue)
-//
-//		print(UIInterfaceOrientationMask.all.rawValue)
-//
-//		print(UIInterfaceOrientationMask.all.rawValue)
-
+		//		print(UIInterfaceOrientationMask.allButUpsideDown.rawValue)
+		//		print(UIInterfaceOrientationMask.portrait.rawValue)
+		//
+		//		print(UIInterfaceOrientationMask.landscape.rawValue)
+		//
+		//		print(UIInterfaceOrientationMask.all.rawValue)
+		//
+		//		print(UIInterfaceOrientationMask.all.rawValue)
+		
 		
 		playerViewController.preferredInterfaceOrientationForPresentation
 		print(playerViewController.supportedInterfaceOrientations.rawValue)
@@ -321,7 +320,7 @@ extension ChapterDetailVC: PDFViewDelegate {
 		player.replaceCurrentItem(with: .init(url: videoURL))
 		playerViewController.player = player
 		
-//		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AV, object: <#T##Any?#>)
+		//		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AV, object: <#T##Any?#>)
 		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
 		
 		self.present(playerViewController, animated: true) { [unowned self] in

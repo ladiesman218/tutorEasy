@@ -92,6 +92,31 @@ extension UIViewController {
 		}
 		self.navigationController?.popViewController(animated: animated)
 	}
+	
+	/// Disables text selection for the given PDFView.
+	///
+	/// Double tap and "tap then drag" won't enable selection on iOS16, but for iOS13 it will, so it is needed for disabling these behaviors for iOS13.
+	/// - Warning: Call this method AFTER PDFView's document is set, otherwise it won't work.
+	/// - Warning: If you enabled [usePageViewController()](https://developer.apple.com/documentation/pdfkit/pdfview/2877501-usepageviewcontroller) for your PDFView, it seems when scrolling to change current page, gestures will be added again. A reasonable thought would be adding an observer for PDFViewPageChanged message, I tried, it only works sometimes. A better notification message to listen to is PDFViewVisiblePagesChanged, this way it always works. Again, observer should be added after PDFView's document has been set otherwise it won't work.
+	/// - Parameter view: The instance of PDFView you need to disable text selection
+	func recursivelyDisableSelection(view: UIView) {
+		
+		// Get all recognizers for the PDFView's subviews. Here we are ignoring the recognizers for the PDFView itself, since we know from testing that not the reason for the mess.
+		for rec in view.subviews.compactMap({$0.gestureRecognizers}).flatMap({$0}) {
+			// UITapAndAHalfRecognizer is for a gesture like "tap first, then tap again and drag", this gesture also enable's text selection
+			if rec is UILongPressGestureRecognizer || type(of: rec).description() == "UITapAndAHalfRecognizer" {
+				rec.isEnabled = false
+			}
+		}
+		
+		// For all subviews, if they do have subview in itself, disable the above 2 gestures as well.
+		for view in view.subviews {
+			if !view.subviews.isEmpty {
+				recursivelyDisableSelection(view: view)
+			}
+		}
+	}
+
 }
 
 class CustomTapGestureRecognizer: UITapGestureRecognizer {
