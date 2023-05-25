@@ -36,11 +36,3 @@ class VideoAnnotation: PDFAnnotation {
 		UIGraphicsPopContext()
 	}
 }
-//extension PDFAnnotation {
-//	func drawPlayIcon() {
-//		guard self.type == "Link" else { return }
-//		let action = self.action as! PDFActionURL
-//		self.page?.addAnnotation(<#T##annotation: PDFAnnotation##PDFAnnotation#>)
-//
-//	}
-//}

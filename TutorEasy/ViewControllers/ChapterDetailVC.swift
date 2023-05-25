@@ -35,7 +35,7 @@ class ChapterDetailVC: UIViewController {
 			pdfView.addGestureRecognizer(doubleTapGesture)
 			
 			drawPlayButton()
-			recursivelyDisableSelection(view: view)
+			recursivelyDisableSelection(view: pdfView)
 			
 #warning("On iOS 16, ctrl + click can still select, copy text. Command + a will select all, Shift + command + A will trigger context menu")
 			if #available(iOS 16, *) {
@@ -290,19 +290,6 @@ extension ChapterDetailVC: PDFViewDelegate {
 		// If the player is playing in picture in picture mode, there is a chance user could click the play button again to start another playback, make sure that doesn't happen.
 		//		guard player.currentItem == nil else { return }
 		playerViewController = AVPlayerViewController()
-		//		print(UIInterfaceOrientationMask.allButUpsideDown.rawValue)
-		//		print(UIInterfaceOrientationMask.portrait.rawValue)
-		//
-		//		print(UIInterfaceOrientationMask.landscape.rawValue)
-		//
-		//		print(UIInterfaceOrientationMask.all.rawValue)
-		//
-		//		print(UIInterfaceOrientationMask.all.rawValue)
-		
-		
-		playerViewController.preferredInterfaceOrientationForPresentation
-		print(playerViewController.supportedInterfaceOrientations.rawValue)
-		print(playerViewController.preferredInterfaceOrientationForPresentation.rawValue)
 		playerViewController.delegate = self
 		playerViewController.showsTimecodes = true
 		if #available(iOS 16.0, *) {
@@ -376,10 +363,5 @@ extension ChapterDetailVC: UICollectionViewDataSource, UICollectionViewDelegate,
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 		let page = pdfView.document!.page(at: indexPath.item)!
 		pdfView.go(to: page)
-	}
-}
-class MyAVPlayer: AVPlayerViewController {
-	override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
-		return .landscapeLeft
 	}
 }
