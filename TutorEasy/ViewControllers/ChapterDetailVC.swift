@@ -42,8 +42,9 @@ class ChapterDetailVC: UIViewController {
 				pdfView.isInMarkupMode = true
 			}
 			
-			// Call changeSelectedCell when PDFViewVisiblePagesChanged doesn't work as expected, scrolling position won't be right, so call it when PDFViewPageChanged.
+			// Call changeSelectedCell and drawPlayButton when PDFViewVisiblePagesChanged doesn't work as expected, scrolling position won't be right and playbutton won't be added sometimes, so call it when PDFViewPageChanged.
 			NotificationCenter.default.addObserver(self, selector: #selector(changeSelectedCell), name: .PDFViewPageChanged, object: nil)
+			NotificationCenter.default.addObserver(self, selector: #selector(drawPlayButton), name: .PDFViewPageChanged, object: nil)
 			
 			// Disbale text selection should be called when PDFViewVisiblePagesChanged, when calling in PDFViewPageChanged it fails sometime.
 			NotificationCenter.default.addObserver(self, selector: #selector(pageChanged), name: .PDFViewVisiblePagesChanged, object: nil)
@@ -169,8 +170,6 @@ class ChapterDetailVC: UIViewController {
 	
 	// MARK: - Controller functions
 	override func viewDidLayoutSubviews() {
-		print("layout subviews")
-		print(pdfView.currentPage)
 		// viewDidLayoutSubviews will be called both when full screen is toggled, and after the chapterPdf was set and the first page was displayed on screen, so this is the only place to set scale factor and disable zooming by set min/max scale factor to the same value.
 		pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
 		pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
@@ -233,9 +232,6 @@ class ChapterDetailVC: UIViewController {
 	}
 	
 	@objc func pageChanged() {
-		// This function checks if a play button should be added, and will draw it if it should
-		drawPlayButton()
-		
 		// Seems like when PDFPage is changed, long press gesture will be added again to the view. So Call this here to disable the gesture
 		recursivelyDisableSelection(view: pdfView)
 	}
@@ -260,7 +256,8 @@ class ChapterDetailVC: UIViewController {
 		thumbnailCollectionView.selectItem(at: [0, index], animated: true, scrollPosition: .centeredVertically)
 	}
 	
-	func drawPlayButton() {
+	// This function checks if a play button should be added, and will draw it if it should.
+	@objc func drawPlayButton() {
 		// All possible file extension for video used in pdf goes here
 		let videoExtension = ["mp4"]
 		
