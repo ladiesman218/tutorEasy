@@ -10,9 +10,9 @@ import PDFKit
 class VideoAnnotation: PDFAnnotation {
 
 	convenience init(bounds: CGRect, properties: [AnyHashable : Any]?) {
-		// bounds parameter is required in init function, but we will be copying properties when init the instance, and 
+		// bounds parameter is required in the default init function, but we will be copying properties when initializing, so define a convenience init function
 		self.init(bounds: bounds, forType: PDFAnnotationSubtype.link, withProperties: properties)
-		// For some wierd reasons, custom annotation won't be displayed without a border lineWidth greater than 0
+		// For some wierd reasons, custom annotation won't be displayed without a border lineWidth greater than 0.
 		let border = PDFBorder()
 		border.lineWidth = 0.0001
 		self.border = border

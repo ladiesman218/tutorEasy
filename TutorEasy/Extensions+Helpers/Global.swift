@@ -8,9 +8,9 @@
 import UIKit
 import SkeletonView
 
-//let serverURL = URL(string: "http://localhost:8080")!     //localhost
-let serverURL = URL(string: "https://975b-1-28-219-13.ngrok-free.app")!     //ngrok
-//let serverURL = URL(string: "http://0.0.0.0:8080")!     // docker production environment
+let serverURL = URL(string: "http://localhost:8080")!     //localhost and docker production environment
+//let serverURL = URL(string: "https://app.douwone.xyz")!		// Gigsgigs
+//let serverURL = URL(string: "https://6551-1-28-216-153.ngrok-free.app")!     //ngrok
 
 let baseURL = serverURL.appendingPathComponent("api")
 
@@ -57,7 +57,7 @@ enum Encoder {
 	}
 }
 
-let chapterPlaceHolder = Chapter(directoryURL: URL(fileURLWithPath: ""), name: "", isFree: false, pdfURL: URL(fileURLWithPath: ""), imageURL: nil)
+let chapterPlaceHolder = Chapter(directoryURL: URL(fileURLWithPath: ""), name: "", isFree: false, pdfURL: URL(fileURLWithPath: ""), bInstructionURL: nil, teachingPlanURL: nil, imageURL: nil)
 let stagePlaceHolder = Stage(directoryURL: URL(fileURLWithPath: "/"), name: "", imageURL: nil, description: "", chapters: [chapterPlaceHolder] )
 let coursePlaceHolder = Course(id: UUID(), name: "", description: "", price: 1, stages: [stagePlaceHolder], imageURL: nil, annuallyIAPIdentifier: "")
 

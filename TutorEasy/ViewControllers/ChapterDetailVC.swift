@@ -12,15 +12,17 @@ import AVKit
 class ChapterDetailVC: UIViewController {
 	
 	// MARK: - Properties
-	var fullTop: NSLayoutConstraint!
-	var noTop: NSLayoutConstraint!
-	var fullThumb: NSLayoutConstraint!
-	var noThumb: NSLayoutConstraint!
+	private var fullTop: NSLayoutConstraint!
+	private var noTop: NSLayoutConstraint!
+	private var fullThumb: NSLayoutConstraint!
+	private var noThumb: NSLayoutConstraint!
 	
 	// When chapter's pdf file is got from server, set this variable's value to that file, this will trigger property observer to do its things
-	var chapterPDF = PDFDocument() {
+	private var chapterPDF = PDFDocument() {
 		didSet {
 			pdfView.document = chapterPDF
+
+			pdfView.setDisPlayMode()
 			
 			// Creat thumbnails
 			for number in 0 ... chapterPDF.pageCount - 1 {
@@ -34,7 +36,7 @@ class ChapterDetailVC: UIViewController {
 			doubleTapGesture.numberOfTapsRequired = 2
 			pdfView.addGestureRecognizer(doubleTapGesture)
 			
-			drawPlayButton()
+			pdfView.drawPlayButton()
 			recursivelyDisableSelection(view: pdfView)
 			
 #warning("On iOS 16, ctrl + click can still select, copy text. Command + a will select all, Shift + command + A will trigger context menu")
@@ -51,7 +53,7 @@ class ChapterDetailVC: UIViewController {
 		}
 	}
 	
-	var isFullScreen: Bool = false {
+	private var isFullScreen: Bool = false {
 		didSet {
 			if isFullScreen {
 				fullTop.isActive = false
@@ -68,7 +70,10 @@ class ChapterDetailVC: UIViewController {
 			}
 			
 			UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseOut, animations:{ [unowned self] in
-				self.view.layoutIfNeeded()
+				// layoutIfNeeded is for animation, here we animate layout changes, so changes has to be effect before animation starts
+				view.layoutIfNeeded()
+				// setNeedsLayout is for triggering pdf auto resize, when usePageViewController, viewDidLayoutSubViews will be called automatically when isFullScreen changed, hence handling the resize. This is only needed when displayMode is set to .singlePageContinuous, which means pdf page is in vertical mode.
+				view.setNeedsLayout()
 			})
 			
 			// This has to be called after collectionView is already on screen, otherwise it won't work.
@@ -140,26 +145,28 @@ class ChapterDetailVC: UIViewController {
 	// MARK: - Custom subviews
 	private var topView: UIView!
 	private var backButtonView: UIView!
-	private var chapterTitle: UILabel = {
+	private let teachingPlanButton: ChapterButton = ChapterButton(image: .init(named: "教案.png")!, titleText: "教案", fontSize: 10)
+	
+	private let buildingInstructionButton: ChapterButton = ChapterButton(image: .init(named: "搭建说明.png")!, titleText: "搭建说明", fontSize: 10)
+	
+	private let chapterTitle: UILabel = {
 		let chapterTitle = UILabel()
 		chapterTitle.translatesAutoresizingMaskIntoConstraints = false
-		chapterTitle.textColor = .orange
+		chapterTitle.textColor = .white
 		return chapterTitle
 	}()
 	
-	var pdfView: PDFView = {
+	private let pdfView: PDFView = {
 		let pdfView = PDFView()
 		
-		// Configure PDFView to display one page at a time, while keep the ability to scroll up and down on the pdfView itself.
-		pdfView.usePageViewController(true)
-		
+		pdfView.layer.cornerRadius = 10
 		//		pdfView.enableDataDetectors = true		// Does't seem to affect anything?
 		
 		pdfView.translatesAutoresizingMaskIntoConstraints = false
 		return pdfView
 	}()
 	
-	let thumbnailCollectionView: UICollectionView = {
+	private let thumbnailCollectionView: UICollectionView = {
 		let layout = UICollectionViewFlowLayout()
 		let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
 		collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -181,10 +188,21 @@ class ChapterDetailVC: UIViewController {
 		
 		view.backgroundColor = .systemBackground
 		topView = configTopView()
+		topView.backgroundColor = .orange
 		backButtonView = setUpGoBackButton(in: topView)
 		
+		teachingPlanButton.isEnabled = chapter.teachingPlanURL != nil
+		teachingPlanButton.tag = 0
+		teachingPlanButton.addTarget(self, action: #selector(goToPDF), for: .touchUpInside)
+		topView.addSubview(teachingPlanButton)
+
+		buildingInstructionButton.isEnabled = chapter.bInstructionURL != nil
+		buildingInstructionButton.tag = 1
+		buildingInstructionButton.addTarget(self, action: #selector(goToPDF), for: .touchUpInside)
+		topView.addSubview(buildingInstructionButton)
+		
 		chapterTitle.text = chapter.name
-		chapterTitle.font = chapterTitle.font.withSize(topViewHeight / 2)
+		chapterTitle.font = chapterTitle.font.withSize(Self.topViewHeight / 2)
 		topView.addSubview(chapterTitle)
 		
 		pdfView.delegate = self
@@ -194,7 +212,7 @@ class ChapterDetailVC: UIViewController {
 		thumbnailCollectionView.dataSource = self
 		view.addSubview(thumbnailCollectionView)
 		
-		fullTop = topView.heightAnchor.constraint(equalToConstant: topViewHeight)
+		fullTop = topView.heightAnchor.constraint(equalToConstant: Self.topViewHeight)
 		noTop = topView.heightAnchor.constraint(equalToConstant: 0)
 		fullThumb = thumbnailCollectionView.widthAnchor.constraint(equalToConstant: view.frame.size.width * 0.2)
 		noThumb = thumbnailCollectionView.widthAnchor.constraint(equalToConstant: 0)
@@ -211,13 +229,23 @@ class ChapterDetailVC: UIViewController {
 		NSLayoutConstraint.activate([
 			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
 			
-			chapterTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor, constant: topViewHeight * 0.7),
-			chapterTitle.trailingAnchor.constraint(equalTo: topView.trailingAnchor, constant: -topViewHeight * 2),
+			teachingPlanButton.trailingAnchor.constraint(equalTo: topView.trailingAnchor, constant: 0),
+			teachingPlanButton.topAnchor.constraint(equalTo: topView.topAnchor),
+			teachingPlanButton.bottomAnchor.constraint(equalTo: topView.bottomAnchor),
+			teachingPlanButton.widthAnchor.constraint(equalToConstant: teachingPlanButton.width),
+			
+			buildingInstructionButton.trailingAnchor.constraint(equalTo: teachingPlanButton.leadingAnchor),
+			buildingInstructionButton.topAnchor.constraint(equalTo: topView.topAnchor),
+			buildingInstructionButton.bottomAnchor.constraint(equalTo: topView.bottomAnchor),
+			buildingInstructionButton.widthAnchor.constraint(equalToConstant: buildingInstructionButton.width),
+			
+			chapterTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor, constant: Self.topViewHeight * 0.2),
+			chapterTitle.trailingAnchor.constraint(equalTo: topView.trailingAnchor, constant: -Self.topViewHeight * 2),
 			chapterTitle.topAnchor.constraint(equalTo: topView.topAnchor),
 			chapterTitle.bottomAnchor.constraint(equalTo: topView.bottomAnchor),
 			
 			thumbnailCollectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-			thumbnailCollectionView.topAnchor.constraint(equalTo: topView.bottomAnchor, constant: 20),
+			thumbnailCollectionView.topAnchor.constraint(equalTo: topView.bottomAnchor, constant: 10),
 			thumbnailCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 			
 			pdfView.leadingAnchor.constraint(equalTo: thumbnailCollectionView.trailingAnchor),
@@ -225,6 +253,9 @@ class ChapterDetailVC: UIViewController {
 			pdfView.topAnchor.constraint(equalTo: thumbnailCollectionView.topAnchor),
 			pdfView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 		])
+		// These 2 functions should be called after constraints have been set, coz centerVertically() needs button's frame to have been set, to actually work.
+		teachingPlanButton.centerVertically()
+		buildingInstructionButton.centerVertically()
 	}
 	
 	@objc func toggleFullScreen() {
@@ -256,32 +287,20 @@ class ChapterDetailVC: UIViewController {
 		thumbnailCollectionView.selectItem(at: [0, index], animated: true, scrollPosition: .centeredVertically)
 	}
 	
-	// This function checks if a play button should be added, and will draw it if it should.
-	@objc func drawPlayButton() {
-		// All possible file extension for video used in pdf goes here
-		let videoExtension = ["mp4"]
 		
-		// Make sure current page contains annotations, otherwise bail out
-		guard let annotations = pdfView.currentPage?.annotations else { return }
-		// Make sure video annotations haven't been added, otherwise bail. This avoid adding same play buttons multiple times.
-		guard !annotations.contains(where: {$0.isKind(of: VideoAnnotation.self)} ) else {
-			return
-		}
+	@objc func goToPDF(sender: UIButton) {
+		let pdfVC = PDFViewController()
 		
-		// Loop through all annotations on current page that contains an actionable url, which the url itself contains one of path extensions defined in videoExtension array.
-		for annotation in annotations {
-			guard let action = annotation.action as? PDFActionURL else { continue }
-			guard let url = action.url else { continue }
-			
-			// The link's extension has to be contained by videoExtension array, which means it's a link for a video file
-			guard videoExtension.contains(url.pathExtension) else { continue }
-			
-			// Initialize a VideoAnnotation, add it to current page
-			let size = CGFloat(integerLiteral: 80)
-			let bounds = CGRect(x: annotation.bounds.minX + 20, y: annotation.bounds.minY + 20, width: size, height: size)
-			let videoAnnotation = VideoAnnotation(bounds: bounds, properties: ["/A": action])
-			pdfView.currentPage?.addAnnotation(videoAnnotation)
+		if sender.tag == 0 {
+			// Teaching plan
+			guard let url = chapter.teachingPlanURL else { return }
+			pdfVC.url = url
+		} else if sender.tag == 1 {
+			// Building instruction
+			guard let url = chapter.bInstructionURL else { return }
+			pdfVC.url = url
 		}
+		self.navigationController?.pushIfNot(newVC: pdfVC)
 	}
 }
 
@@ -290,11 +309,12 @@ extension ChapterDetailVC: PDFViewDelegate {
 		// If the player is playing in picture in picture mode, there is a chance user could click the play button again to start another playback, make sure that doesn't happen.
 		//		guard player.currentItem == nil else { return }
 		playerViewController = AVPlayerViewController()
+		playerViewController.entersFullScreenWhenPlaybackBegins = true
 		playerViewController.delegate = self
 		playerViewController.showsTimecodes = true
-		if #available(iOS 16.0, *) {
-			playerViewController.allowsVideoFrameAnalysis = true
-		}
+		//		if #available(iOS 16.0, *) {
+		//			playerViewController.allowsVideoFrameAnalysis = true
+		//		}
 		
 		// Disable picture in picture for now. pip still cause some issue
 		playerViewController.allowsPictureInPicturePlayback = false

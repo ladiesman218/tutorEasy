@@ -57,7 +57,7 @@ class CourseListVC: UIViewController {
 		
 		NSLayoutConstraint.activate([
 			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-			topView.heightAnchor.constraint(equalToConstant: topViewHeight),
+			topView.heightAnchor.constraint(equalToConstant: Self.topViewHeight),
 			
 			iconView.heightAnchor.constraint(equalTo: topView.heightAnchor, multiplier: 0.95),
 			iconView.centerYAnchor.constraint(equalTo: topView.centerYAnchor),

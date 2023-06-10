@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import PDFKit
 
 extension UIViewController {
 	
@@ -19,12 +20,13 @@ extension UIViewController {
 		view.endEditing(true)
 	}
 	
-	var topViewHeight: CGFloat {
-		view.frame.height * 0.1
+	static var topViewHeight: CGFloat {
+		return UIScreen.main.bounds.height * 0.1
 	}
 	
 	// A container for goBack button, profile icon, etc
 	// Leading and height anchors are varied between different vcs, needed to be set manually.
+	// In fact only VC wherein topView's height will change is ChapterDetailVC, when full screen is toggled, topView's height could change between UIViewController's topViewHeight(custom computed property defined in its extension) and 0. We can constraint height to topViewHeight here and remove all height constraint settings in other VCs, but in ChapterDetailVC when toggling full screen mode, it generated warning messages in console says can't satisfy constraints at the same time, things will work but the console messages are annoying, so we make height anchor not fixed.
 	func configTopView() -> UIView {
 		let topView = UIView()
 		view.addSubview(topView)
@@ -93,7 +95,7 @@ extension UIViewController {
 		self.navigationController?.popViewController(animated: animated)
 	}
 	
-	/// Disables text selection for the given PDFView.
+	/// Disables double tap(text selection) for the given PDFView.
 	///
 	/// Double tap and "tap then drag" won't enable selection on iOS16, but for iOS13 it will, so it is needed for disabling these behaviors for iOS13.
 	/// - Warning: Call this method AFTER PDFView's document is set, otherwise it won't work.
@@ -101,7 +103,7 @@ extension UIViewController {
 	/// - Parameter view: The instance of PDFView you need to disable text selection
 	func recursivelyDisableSelection(view: UIView) {
 		
-		// Get all recognizers for the PDFView's subviews. Here we are ignoring the recognizers for the PDFView itself, since we know from testing that not the reason for the mess.
+		// Get all recognizers for the PDFView's subviews. Here we are ignoring the recognizers for the PDFView itself, since we know from testing that's not the reason for the mess.
 		for rec in view.subviews.compactMap({$0.gestureRecognizers}).flatMap({$0}) {
 			// UITapAndAHalfRecognizer is for a gesture like "tap first, then tap again and drag", this gesture also enable's text selection
 			if rec is UILongPressGestureRecognizer || type(of: rec).description() == "UITapAndAHalfRecognizer" {
@@ -115,6 +117,14 @@ extension UIViewController {
 				recursivelyDisableSelection(view: view)
 			}
 		}
+	}
+	
+	// Find PDFView in view's subviews, then call its drawPlayButton. Essentially a wrapper so we can call the function directly in different view controllers.
+	@objc func drawPlayButton() {
+		guard let pdfView = view.subviews.first(where: { view in
+			view is PDFView
+		}) as? PDFView else { return }
+		pdfView.drawPlayButton()
 	}
 
 }

@@ -68,7 +68,7 @@ class ChaptersVC: UIViewController {
 		
 		backButtonView = setUpGoBackButton(in: topView)
 		
-		courseTitle.font = courseTitle.font.withSize(topViewHeight / 2)
+		courseTitle.font = courseTitle.font.withSize(Self.topViewHeight / 2)
 		courseTitle.text = courseName
 		topView.addSubview(courseTitle)
 		
@@ -83,7 +83,7 @@ class ChaptersVC: UIViewController {
 		
 		NSLayoutConstraint.activate([
 			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-			topView.heightAnchor.constraint(equalToConstant: topViewHeight),
+			topView.heightAnchor.constraint(equalToConstant: Self.topViewHeight),
 			
 			courseTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor),
 			courseTitle.topAnchor.constraint(equalTo: topView.topAnchor),

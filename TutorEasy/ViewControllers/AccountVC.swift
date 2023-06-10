@@ -96,7 +96,7 @@ class AccountVC: UIViewController {
 		backButtonView = setUpGoBackButton(in: topView)
 		
 		view.addSubview(navTitle)
-		navTitle.font = navTitle.font.withSize(topViewHeight / 2)
+		navTitle.font = navTitle.font.withSize(Self.topViewHeight / 2)
 		
 		view.addSubview(navigationTable)
 		navigationTable.dataSource = self
@@ -107,7 +107,7 @@ class AccountVC: UIViewController {
 		NSLayoutConstraint.activate([
 			// Leading position of backButtonView is special in accountsVC
 			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-			topView.heightAnchor.constraint(equalToConstant: topViewHeight),
+			topView.heightAnchor.constraint(equalToConstant: Self.topViewHeight),
 			
 			backButtonView.leadingAnchor.constraint(equalTo: topView.leadingAnchor),
 			

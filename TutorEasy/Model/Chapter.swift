@@ -12,5 +12,7 @@ struct Chapter: Codable {
     let name: String
 	let isFree: Bool
     let pdfURL: URL
-    let imageURL: URL?
+	let bInstructionURL: URL?
+	let teachingPlanURL: URL?
+	let imageURL: URL?
 }
