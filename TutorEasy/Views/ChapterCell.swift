@@ -37,6 +37,9 @@ class ChapterCell: UICollectionViewCell {
 				case false:
 					// Ajust titleLabel display accordingly
 //					titleLabel.removeFromSuperview()
+					
+					// Draw chapter name on the imageView
+					imageView.drawName(name: chapter.name)
 					// Add trail if it's free
 					if chapter.isFree { imageView.drawTrail() }
 					// Stop animation and hide skeletonView
