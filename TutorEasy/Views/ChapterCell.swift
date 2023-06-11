@@ -21,8 +21,10 @@ class ChapterCell: UICollectionViewCell {
 		label.textAlignment = .center
 		// Names longer than 2 lines will be tructated
 		label.numberOfLines = 2
+		// Longer label text will be displayed in smaller font size, no less than minimumScaleFactor's value
 		label.adjustsFontSizeToFitWidth = true
 		label.minimumScaleFactor = 0.9
+		
 		label.isSkeletonable = true
 		label.backgroundColor = .systemYellow
 		label.textColor = .white
