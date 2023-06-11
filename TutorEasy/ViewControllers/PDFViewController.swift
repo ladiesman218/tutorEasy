@@ -46,7 +46,7 @@ class PDFViewController: UIViewController {
 		button.animated = true
 		button.layer.cornerRadius = 10
 		button.backgroundColor = .gray.withAlphaComponent(0.3)
-//		button.layer.zPosition = 1
+
         button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
 		button.translatesAutoresizingMaskIntoConstraints = false
 		return button

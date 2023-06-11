@@ -18,7 +18,14 @@ class ChapterCell: UICollectionViewCell {
 	
 	var titleLabel: UILabel = {
 		let label = UILabel()
+		label.textAlignment = .center
+		// Names longer than 2 lines will be tructated
+		label.numberOfLines = 2
+		label.adjustsFontSizeToFitWidth = true
+		label.minimumScaleFactor = 0.9
 		label.isSkeletonable = true
+		label.backgroundColor = .systemYellow
+		label.textColor = .white
 		return label
 	}()
 	
@@ -39,7 +46,7 @@ class ChapterCell: UICollectionViewCell {
 //					titleLabel.removeFromSuperview()
 					
 					// Draw chapter name on the imageView
-					imageView.drawName(name: chapter.name)
+//					imageView.drawName(name: chapter.name)
 					// Add trail if it's free
 					if chapter.isFree { imageView.drawTrail() }
 					// Stop animation and hide skeletonView
@@ -80,7 +87,7 @@ class ChapterCell: UICollectionViewCell {
 //				}
 				//				try await Task.sleep(nanoseconds: 3_000_000_000)
 				let image = try? await FileAPI.publicGetImageData(request: request, size: imageView.bounds.size)
-								
+				titleLabel.text = chapter.name
 				if let image = image {
 					try Task.checkCancellation()
 					imageView.image = image
@@ -106,12 +113,18 @@ class ChapterCell: UICollectionViewCell {
 		self.createShadow()
 		
 		imageView.translatesAutoresizingMaskIntoConstraints = false
+		titleLabel.translatesAutoresizingMaskIntoConstraints = false
 		
 		NSLayoutConstraint.activate([
 			imageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
 			imageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
 			imageView.topAnchor.constraint(equalTo: contentView.topAnchor),
-			imageView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+			imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor),
+			
+			titleLabel.leadingAnchor.constraint(equalTo: imageView.leadingAnchor),
+			titleLabel.trailingAnchor.constraint(equalTo: imageView.trailingAnchor),
+			titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor),
+			titleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
 		])
 	}
 	
