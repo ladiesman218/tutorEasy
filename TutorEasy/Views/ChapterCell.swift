@@ -76,17 +76,9 @@ class ChapterCell: UICollectionViewCell {
 			
 			let request = FileAPI.convertToImageRequest(url: fileURL)
 
-#warning("try to replace the manually serve cache implemention with stale-while-revalidate")
 #warning("Tweaking lable hide/display between skeletonView and after load")
 			self.imageTask = Task {
 				
-				// If a cachedResponse is found, serve the image from it and stop skeleton animation. When scrolling, cell's image will be reset and retrieved from server again. Since validating to server to see if an image has changed takes small amount of time, scrolling up backwards will cause cached image to show skeletonview again. This extra step avoid that.
-//				if let cachedResponse = cachedSession.configuration.urlCache?.cachedResponse(for: request), let image = UIImage(data: cachedResponse.data) {
-//					
-//					try Task.checkCancellation()
-//					imageView.image = image
-//					isLoading = false
-//				}
 				//				try await Task.sleep(nanoseconds: 3_000_000_000)
 				let image = try? await FileAPI.publicGetImageData(request: request, size: imageView.bounds.size)
 				titleLabel.text = chapter.name

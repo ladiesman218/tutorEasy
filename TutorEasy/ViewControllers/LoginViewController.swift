@@ -74,7 +74,6 @@ class LoginViewController: UIViewController {
 		view.backgroundColor = .systemBackground
 		
 		view.addSubview(loginNameTextField)
-		loginNameTextField.becomeFirstResponder()
 		view.addSubview(passwordTextField)
 		view.addSubview(loginButton)
 		loginButton.addTarget(self, action: #selector(login), for: .touchUpInside)

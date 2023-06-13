@@ -43,7 +43,7 @@ class AuthenticationVC: UIViewController {
     private let closeButton: CustomButton = {
         let button = CustomButton()
         button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
-        button.setTitle("稍后登录", for: .normal)
+        button.setTitle("暂不登录", for: .normal)
         button.setTitleColor(.systemTeal, for: .normal)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button

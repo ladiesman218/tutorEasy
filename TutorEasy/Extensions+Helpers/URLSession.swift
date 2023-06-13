@@ -19,7 +19,9 @@ var noCacheSession: URLSession = {
 var cachedSession: URLSession = {
 	URLCache.shared.memoryCapacity = 1024 * 1024 * 20	// 20M
 	URLCache.shared.diskCapacity = 1024 * 1024 * 500	//500 MB
-	
+	URLCache.shared.removeAllCachedResponses()
+//	print(URLCache.shared.currentDiskUsage / 1024 / 1024)
+//	print(URLCache.shared.currentMemoryUsage / 1024 / 1024)
 	// For default sessions, the default value for configuration.urlCache is the shared URL cache object. No need to set that manually
 	let configuration = URLSessionConfiguration.default
 	

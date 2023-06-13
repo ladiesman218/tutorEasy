@@ -67,7 +67,7 @@ class ProductsViewController: UIViewController {
 
 		Task {
 			do {
-				#warning("check the logic, when cached is used?")
+				#warning("check the logic, when cache is used?")
 				let (data, _) = try await cachedSession.dataAndResponse(for: request)
 				let identifiers = try JSONDecoder().decode([String].self, from: data)
 				self.request = SKProductsRequest(productIdentifiers: Set(identifiers))
@@ -107,8 +107,8 @@ extension ProductsViewController: UITableViewDataSource, UITableViewDelegate {
 		purchaseButton.layer.cornerRadius = purchaseButton.bounds.width * 0.35
 
 		for order in AuthAPI.orders {
-			if order.items.contains(where: { cache in
-				cache.iapIdentifier == product.productIdentifier
+			if order.items.contains(where: { courseCache in
+				courseCache.iapIdentifier == product.productIdentifier
 			}) {
 				purchaseButton.setTitle("", for: .normal)
 				

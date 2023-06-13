@@ -86,6 +86,7 @@ class ChapterDetailVC: UIViewController {
 			let path = chapter.pdfURL.path
 			Task {
 				let (data, response) = try await FileAPI.getCourseContent(path: path)
+				print(Thread.current)
 				lazy var navVC = self.navigationController!
 				lazy var cancel = UIAlertAction(title: "再看看", style: .default)
 				switch response.statusCode {

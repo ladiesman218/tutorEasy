@@ -42,7 +42,6 @@
 		B47D6659295E918800591738 /* CourseCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47D6658295E918800591738 /* CourseCache.swift */; };
 		B4BA42732A2333CF0013E134 /* ChapterButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BA42722A2333CF0013E134 /* ChapterButton.swift */; };
 		B4BBAE2228F99398004368F8 /* AccountVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4BBAE2128F99398004368F8 /* AccountVC.swift */; };
-		B4C6CAF429F0D81800988034 /* SkeletonCells.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C6CAF329F0D81800988034 /* SkeletonCells.swift */; };
 		B4C6CAF729F2D34D00988034 /* SkeletonView in Frameworks */ = {isa = PBXBuildFile; productRef = B4C6CAF629F2D34D00988034 /* SkeletonView */; };
 		B4CC8AB52A24428600028A6E /* UIButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CC8AB42A24428600028A6E /* UIButton.swift */; };
 		B4CDED9A2917C000004B2F8E /* Chapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CDED992917C000004B2F8E /* Chapter.swift */; };
@@ -99,7 +98,6 @@
 		B4A9170F2A1F656600B4BAF4 /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = System/Library/Frameworks/AVKit.framework; sourceTree = SDKROOT; };
 		B4BA42722A2333CF0013E134 /* ChapterButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterButton.swift; sourceTree = "<group>"; };
 		B4BBAE2128F99398004368F8 /* AccountVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountVC.swift; sourceTree = "<group>"; };
-		B4C6CAF329F0D81800988034 /* SkeletonCells.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonCells.swift; sourceTree = "<group>"; };
 		B4CC8AB42A24428600028A6E /* UIButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIButton.swift; sourceTree = "<group>"; };
 		B4CDED992917C000004B2F8E /* Chapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chapter.swift; sourceTree = "<group>"; };
 		B4CDED9B2917F01A004B2F8E /* FileAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileAPI.swift; sourceTree = "<group>"; };
@@ -173,7 +171,6 @@
 				B4CFC46C292921F700CB337A /* PDFThumbnailCell.swift */,
 				B4376C03290D7FC500E17698 /* ProfileIconView.swift */,
 				B4BA42722A2333CF0013E134 /* ChapterButton.swift */,
-				B4C6CAF329F0D81800988034 /* SkeletonCells.swift */,
 				B4525F072A1B52FB004EAD78 /* VideoAnnotation.swift */,
 			);
 			path = Views;
@@ -370,7 +367,6 @@
 				B4376C0A290FBBFF00E17698 /* ChapterCell.swift in Sources */,
 				B4CDED9A2917C000004B2F8E /* Chapter.swift in Sources */,
 				B45B71C82983DCEE00E4C7E3 /* UIView.swift in Sources */,
-				B4C6CAF429F0D81800988034 /* SkeletonCells.swift in Sources */,
 				B4CFC46D292921F700CB337A /* PDFThumbnailCell.swift in Sources */,
 				B462E06628BF5F920020D610 /* MessagePresenter.swift in Sources */,
 				B4F8315828B7CE660044021C /* RegisterViewController.swift in Sources */,

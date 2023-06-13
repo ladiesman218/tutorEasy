@@ -20,7 +20,8 @@ class PDFViewController: UIViewController {
 	private var document = PDFDocument() {
 		didSet {
 			pdfView.document = document
-			pdfView.setDisPlayMode()
+//			pdfView.setDisPlayMode()
+			pdfView.displayMode = .singlePageContinuous
 			pdfView.drawPlayButton()
 			recursivelyDisableSelection(view: pdfView)
 			
@@ -64,7 +65,6 @@ class PDFViewController: UIViewController {
 		view.backgroundColor = .systemBackground
 		
         closeButton.addTarget(self, action: #selector(backButtonClicked), for: .touchUpInside)
-//		closeButton.layer.zPosition = .greatestFiniteMagnitude
 		
 		view.addSubview(pdfView)
 		
@@ -85,7 +85,7 @@ class PDFViewController: UIViewController {
 				let document = PDFDocument(data: data)!
 				self.document = document
 				
-				// Only when document loaded succussfully, then add the close button.
+				// Only when document loaded succussfully, then add the close button. Otherwise it's hard/impossible to place closeButton on top of pdfView
 				view.addSubview(closeButton)
 				NSLayoutConstraint.activate([
 					closeButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -105,9 +105,5 @@ class PDFViewController: UIViewController {
 	@objc func pageChanged() {
 		// Seems like when PDFPage is changed, long press gesture will be added again to the view. So Call this here to disable the gesture
 		recursivelyDisableSelection(view: pdfView)
-	}
-	
-	@objc func closeButtonTapped() {
-		
 	}
 }
