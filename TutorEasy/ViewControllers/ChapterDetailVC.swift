@@ -21,7 +21,7 @@ class ChapterDetailVC: UIViewController {
 	private var chapterPDF = PDFDocument() {
 		didSet {
 			pdfView.document = chapterPDF
-
+			
 			pdfView.setDisPlayMode()
 			
 			// Creat thumbnails
@@ -83,49 +83,8 @@ class ChapterDetailVC: UIViewController {
 	
 	var chapter: Chapter! {
 		didSet {
-			let path = chapter.pdfURL.path
-			Task {
-				let (data, response) = try await FileAPI.getCourseContent(path: path)
-				print(Thread.current)
-				lazy var navVC = self.navigationController!
-				lazy var cancel = UIAlertAction(title: "再看看", style: .default)
-				switch response.statusCode {
-					case 200:
-						let document = PDFDocument(data: data)!
-						chapterPDF = document
-					case 400:
-						// Bad request, indicates something wrong on server end
-						navVC.popViewController(animated: true)
-						MessagePresenter.showMessage(title: "未知错误", message: "请联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [])
-					case 401:
-						navVC.popViewController(animated: true)
-						let login = UIAlertAction(title: "去登录", style: .destructive) {  _ in
-							let authVC = AuthenticationVC()
-							navVC.pushIfNot(newVC: authVC)
-						}
-						MessagePresenter.showMessage(title: "付费内容，无访问权限", message: "点击\"去登录\"可注册或登录账号", on: navVC.topViewController!, actions: [login, cancel])
-					case 402:
-						// Indicates user hasn't bought the course
-						navVC.popViewController(animated: true)
-						let message = try Decoder.isoDate.decode(ResponseError.self, from: data).reason
-						let subscription = UIAlertAction(title: "管理订阅", style: .destructive) { _ in
-							let accountsVC = AccountVC()
-							accountsVC.currentVC = .subscription
-							navVC.pushIfNot(newVC: accountsVC)
-						}
-						MessagePresenter.showMessage(title: "付费内容，无访问权限", message: message, on: navVC.topViewController!, actions: [subscription, cancel])
-					case 404:
-						// Not found, 2 possible reasons with 404 status, one for course name not found or course not published, another for course pdf file doesn't exist on server. The only possible way to legitimately get the 1st possiblity is we did something wrong in our code, so here we show message to user to indicate the 2nd reason.
-						navVC.popViewController(animated: true)
-						let message = try Decoder.isoDate.decode(ResponseError.self, from: data).reason
-						MessagePresenter.showMessage(title: message, message: "请联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [])
-					case 500...599:
-						// Service un-reachable, either client end doesn't have a network connection, or server is down
-						navVC.popViewController(animated: true)
-						MessagePresenter.showMessage(title: "服务器无响应", message: "请检查设备网络，或联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [])
-					default:
-						break
-				}
+			Task.detached { [unowned self] in
+				await self.loadPDF()
 			}
 		}
 	}
@@ -196,7 +155,7 @@ class ChapterDetailVC: UIViewController {
 		teachingPlanButton.tag = 0
 		teachingPlanButton.addTarget(self, action: #selector(goToPDF), for: .touchUpInside)
 		topView.addSubview(teachingPlanButton)
-
+		
 		buildingInstructionButton.isEnabled = chapter.bInstructionURL != nil
 		buildingInstructionButton.tag = 1
 		buildingInstructionButton.addTarget(self, action: #selector(goToPDF), for: .touchUpInside)
@@ -288,7 +247,6 @@ class ChapterDetailVC: UIViewController {
 		thumbnailCollectionView.selectItem(at: [0, index], animated: true, scrollPosition: .centeredVertically)
 	}
 	
-		
 	@objc func goToPDF(sender: UIButton) {
 		let pdfVC = PDFViewController()
 		
@@ -302,6 +260,55 @@ class ChapterDetailVC: UIViewController {
 			pdfVC.url = url
 		}
 		self.navigationController?.pushIfNot(newVC: pdfVC)
+	}
+	
+	private func loadPDF() async {
+		let path = chapter.pdfURL.path
+		do {
+			let (data, response) = try await FileAPI.getCourseContent(path: path)
+			print("In the function: \(Thread.current)")
+			let navVC = self.navigationController!
+			let cancel = UIAlertAction(title: "再看看", style: .default) { action in
+				navVC.popViewController(animated: true)
+			}
+			
+			switch response.statusCode {
+				case 200:
+					let document = PDFDocument(data: data)!
+					await MainActor.run {
+						self.chapterPDF = document
+					}
+				case 400:
+					// Bad request, indicates something wrong in code
+					MessagePresenter.showMessage(title: "未知错误", message: "请联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [cancel])
+				case 401:
+					let login = UIAlertAction(title: "去登录", style: .destructive) {  _ in
+						let authVC = AuthenticationVC()
+						navVC.pushIfNot(newVC: authVC)
+					}
+					MessagePresenter.showMessage(title: "付费内容，无访问权限", message: "点击\"去登录\"可注册或登录账号", on: navVC.topViewController!, actions: [login, cancel])
+				case 402:
+					// Indicates user hasn't bought the course
+					let message = try Decoder.isoDate.decode(ResponseError.self, from: data).reason
+					let subscription = UIAlertAction(title: "管理订阅", style: .destructive) { _ in
+						let accountsVC = AccountVC()
+						accountsVC.currentVC = .subscription
+						navVC.pushIfNot(newVC: accountsVC)
+					}
+					MessagePresenter.showMessage(title: "付费内容，无访问权限", message: message, on: navVC.topViewController!, actions: [subscription, cancel])
+				case 404:
+					// Not found, 2 possible reasons with 404 status, one for course name not found or course not published, another for course pdf file doesn't exist on server. The only possible way to legitimately get the 1st possiblity is we did something wrong in our code, so here we show message to user to indicate the 2nd reason.
+					let message = try Decoder.isoDate.decode(ResponseError.self, from: data).reason
+					MessagePresenter.showMessage(title: message, message: "请联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [cancel])
+				case 500...599:
+					// Service un-reachable, either client end doesn't have a network connection, or server is down
+					MessagePresenter.showMessage(title: "服务器无响应", message: "请检查设备网络，或联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [cancel])
+				default:
+					break
+			}
+		} catch {
+			print("Load pdf file error")
+		}
 	}
 }
 
