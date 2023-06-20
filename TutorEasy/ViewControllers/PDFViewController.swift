@@ -7,6 +7,7 @@
 
 import UIKit
 import PDFKit
+import AVKit
 
 class PDFViewController: UIViewController {
 	
@@ -16,7 +17,12 @@ class PDFViewController: UIViewController {
 			loadDocument()
 		}
 	}
+	var chapter: Chapter!
 	
+	private let player: AVPlayer = AVPlayer()
+	// After video finished playing, try to play it again will give black screen with ongoing audio. Debug view hierarchy shows something wierd in AVPlayerViewController's subview. Solution for now is to create a new instance of AVPlayerViewController everytime user click to play a video, so it has to be instantiated inside the pdfViewWillClick delegate method.
+	private var playerViewController: AVPlayerViewController!
+	// To hold thumbnails we manually generated for the pdf document, then showing them later in a collectionView. The built-in PDFThumbnailView has an hard-to-work-around issue: when clicking an thumbnail, it automatically become larger and cover other thumbnails next to it.
 	private var document = PDFDocument() {
 		didSet {
 			pdfView.document = document
@@ -63,7 +69,7 @@ class PDFViewController: UIViewController {
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		view.backgroundColor = .systemBackground
-		
+		pdfView.delegate = self
         closeButton.addTarget(self, action: #selector(backButtonClicked), for: .touchUpInside)
 		
 		view.addSubview(pdfView)
@@ -106,4 +112,60 @@ class PDFViewController: UIViewController {
 		// Seems like when PDFPage is changed, long press gesture will be added again to the view. So Call this here to disable the gesture
 		recursivelyDisableSelection(view: pdfView)
 	}
+}
+
+extension PDFViewController: PDFViewDelegate {
+	func pdfViewWillClick(onLink sender: PDFView, with url: URL) {
+		print("clicked")
+		// If the player is playing in picture in picture mode, there is a chance user could click the play button again to start another playback, make sure that doesn't happen.
+		//		guard player.currentItem == nil else { return }
+		playerViewController = AVPlayerViewController()
+		playerViewController.entersFullScreenWhenPlaybackBegins = true
+		playerViewController.delegate = self
+		playerViewController.showsTimecodes = true
+		//		if #available(iOS 16.0, *) {
+		//			playerViewController.allowsVideoFrameAnalysis = true
+		//		}
+		
+		// Disable picture in picture for now. pip still cause some issue
+		playerViewController.allowsPictureInPicturePlayback = false
+		
+		// In PDF file, relative path is used for video files(relative to chapter's directory url), so when accessing the real file, we need to modify that link path, prepend api end point and directory url first
+		let videoURL = FileAPI.contentEndPoint.appendingPathComponent(chapter.directoryURL.path).appendingPathComponent(url.path)
+		player.replaceCurrentItem(with: .init(url: videoURL))
+		playerViewController.player = player
+		
+		//		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AV, object: <#T##Any?#>)
+		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
+		
+		self.present(playerViewController, animated: true) { [unowned self] in
+			playerViewController.player?.play()
+		}
+		
+	}
+}
+
+extension PDFViewController: AVPlayerViewControllerDelegate {
+	
+	// When pip started, this method returns true, which enbales user to view pdf contents. If this returns false, pdf contents will be blocked by playerVC itself(which is a blank screen in pip mode).
+	func playerViewControllerShouldAutomaticallyDismissAtPictureInPictureStart(_ playerViewController: AVPlayerViewController) -> Bool {
+		return true
+	}
+	
+	// When clicking the restore button in pip window, restore playerViewController and keep playing the video. Without this, the resotre button acts like the close button.
+	func playerViewController(_ playerViewController: AVPlayerViewController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
+		self.present(playerViewController, animated: true)
+	}
+	
+	@objc func didFinishPlaying() {
+		player.replaceCurrentItem(with: nil)
+		// If/when playback is in a pip window, due to the current implementation, playerVC is dismissed, and will be restored after playback finished. In that case the following dismiss command will happen earlier than the restoration without asyncAfter, therefor no dismission will actually happen. Adding asyncAfter will delay dismission, practically guarantee restoration happens first, and we get a successful dismiss.
+		Task {
+			try await Task.sleep(nanoseconds: 3_000_000)
+			await MainActor.run {
+				playerViewController.dismiss(animated: true)
+			}
+		}
+	}
+	
 }

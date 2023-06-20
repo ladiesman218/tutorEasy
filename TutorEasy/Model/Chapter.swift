@@ -15,4 +15,5 @@ struct Chapter: Codable {
 	let bInstructionURL: URL?
 	let teachingPlanURL: URL?
 	let imageURL: URL?
+	var imageData: Data?
 }

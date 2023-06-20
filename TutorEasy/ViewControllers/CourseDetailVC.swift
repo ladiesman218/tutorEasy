@@ -9,7 +9,6 @@ import UIKit
 
 class CourseDetailVC: UIViewController {
 	// MARK: - Properties
-	static let stageTableCellIdentifier = "StageTableCellIdentifier"
 	var courseID: UUID!
 	
 	private var course = coursePlaceHolder {
@@ -51,7 +50,7 @@ class CourseDetailVC: UIViewController {
 	
 	private var stageTableView: UITableView = {
 		let stageTableView = UITableView()
-		stageTableView.register(UITableViewCell.self, forCellReuseIdentifier: stageTableCellIdentifier)
+		stageTableView.register(StageTableCell.self, forCellReuseIdentifier: StageTableCell.identifier)
 		stageTableView.translatesAutoresizingMaskIntoConstraints = false
 		
 		stageTableView.layer.cornerRadius = 20
@@ -127,25 +126,20 @@ extension CourseDetailVC: UITableViewDataSource, UITableViewDelegate {
 	var cellHeight: CGFloat  {
 		stageTableView.frame.height / 2.5
 	}
+	
 	func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
 		return stages.count
 	}
 	
 	func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-		// Dequeue resuable cell won't give back cells with detailTextLable, at least not for iphone 6s
-		let cell = UITableViewCell(style: .subtitle, reuseIdentifier: Self.stageTableCellIdentifier)
-		
+
+		let cell = tableView.dequeueReusableCell(withIdentifier: StageTableCell.identifier, for: indexPath) as! StageTableCell
 		cell.textLabel!.text = stages[indexPath.row].name
 		cell.textLabel?.font = cell.textLabel?.font.withSize(cellHeight / 7)
 		
 		cell.imageView?.layer.cornerRadius = tableView.layer.cornerRadius
-		cell.imageView?.clipsToBounds = true
 		cell.imageView?.image = stageImages[indexPath.row]
 		
-		// Set detailTextLabel to have 3 lines at most, when overflow, truncate tail
-		cell.detailTextLabel?.numberOfLines = 3
-		cell.detailTextLabel?.allowsDefaultTighteningForTruncation = true
-		cell.detailTextLabel?.lineBreakMode = .byTruncatingTail
 		cell.detailTextLabel?.font = cell.detailTextLabel?.font.withSize(cellHeight / 10)
 		cell.detailTextLabel?.text = stages[indexPath.row].description
 		

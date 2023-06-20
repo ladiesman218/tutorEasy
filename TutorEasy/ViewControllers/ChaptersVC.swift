@@ -133,7 +133,18 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, UICollectionViewDelegate
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
-		cell.chapter = chapters[indexPath.item]
+
+		var chapter = chapters[indexPath.item]
+		
+		if chapter.imageData == nil, let imageURL = chapter.imageURL {
+			let request = FileAPI.convertToImageRequest(url: imageURL)
+			Task {
+				chapter.imageData = try await FileAPI.publicGetImageData2(request: request, size: collectionView.cellForItem(at: indexPath)!.contentView.bounds.size)
+				
+			}
+		} else {
+			
+		}
 		return cell
 	}
 	

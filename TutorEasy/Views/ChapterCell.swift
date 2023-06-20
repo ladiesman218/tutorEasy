@@ -31,32 +31,32 @@ class ChapterCell: UICollectionViewCell {
 		return label
 	}()
 	
-	var isLoading: Bool = true {
-		didSet {
-			switch isLoading {
-				case true:
-					self.imageView.image = nil
-					self.imageView.backgroundColor = nil
-#warning("Ajust titleLabel display accordingly")
-//					contentView.addSubview(titleLabel)
-					
-					// Start skeletonView animation
-					imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonBaseColor), animation: animation, transition: .crossDissolve(0))
-//					titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonBaseColor), animation: animation, transition: .crossDissolve(0))
-				case false:
-					// Ajust titleLabel display accordingly
-//					titleLabel.removeFromSuperview()
-					
-					// Draw chapter name on the imageView
-//					imageView.drawName(name: chapter.name)
-					// Add trail if it's free
-					if chapter.isFree { imageView.drawTrail() }
-					// Stop animation and hide skeletonView
-					contentView.stopSkeletonAnimation()
-					contentView.hideSkeleton(reloadDataAfter: true, transition: .none)
-			}
-		}
-	}
+//	var isLoading: Bool = true {
+//		didSet {
+//			switch isLoading {
+//				case true:
+//					self.imageView.image = nil
+//					self.imageView.backgroundColor = nil
+//#warning("Ajust titleLabel display accordingly")
+////					contentView.addSubview(titleLabel)
+//
+//					// Start skeletonView animation
+//					imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonBaseColor), animation: animation, transition: .crossDissolve(0))
+////					titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonBaseColor), animation: animation, transition: .crossDissolve(0))
+//				case false:
+//					// Ajust titleLabel display accordingly
+////					titleLabel.removeFromSuperview()
+//
+//					// Draw chapter name on the imageView
+////					imageView.drawName(name: chapter.name)
+//					// Add trail if it's free
+//					if chapter.isFree { imageView.drawTrail() }
+//					// Stop animation and hide skeletonView
+//					contentView.stopSkeletonAnimation()
+//					contentView.hideSkeleton(reloadDataAfter: true, transition: .none)
+//			}
+//		}
+//	}
 	
 	let animation = GradientDirection.topLeftBottomRight.slidingAnimation()
 	
@@ -70,7 +70,7 @@ class ChapterCell: UICollectionViewCell {
 			
 			guard let fileURL = chapter.imageURL else {
 				imageView.backgroundColor = .blue
-				isLoading = false
+//				isLoading = false
 				return
 			}
 			
@@ -78,7 +78,7 @@ class ChapterCell: UICollectionViewCell {
 
 #warning("Tweaking lable hide/display between skeletonView and after load")
 			self.imageTask = Task {
-				
+				guard self.imageView.image == nil else { return }
 				//				try await Task.sleep(nanoseconds: 3_000_000_000)
 				let image = try? await FileAPI.publicGetImageData(request: request, size: imageView.bounds.size)
 				titleLabel.text = chapter.name
@@ -89,7 +89,7 @@ class ChapterCell: UICollectionViewCell {
 					try Task.checkCancellation()
 					imageView.backgroundColor = .blue
 				}
-				isLoading = false
+//				isLoading = false
 			}
 		}
 	}
@@ -132,6 +132,6 @@ class ChapterCell: UICollectionViewCell {
 		imageTask?.cancel()
 		imageTask = nil
 		
-		isLoading = true
+//		isLoading = true
 	}
 }

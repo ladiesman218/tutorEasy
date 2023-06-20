@@ -5,6 +5,7 @@ class CourseListVC: UIViewController {
 	// MARK: - Properties
 	private var courses: [Course] = .init(repeating: coursePlaceHolder, count: placeholderForNumberOfCells) {
 		didSet {
+			// When courses is set, download images for each course
 			Task {
 				let urls = courses.map { $0.imageURL }
 				courseImages = await downloadImages(urls: urls)
@@ -89,10 +90,6 @@ extension CourseListVC: UICollectionViewDelegate, UICollectionViewDataSource, UI
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-		//		if !loaded {
-		//			let cell = collectionView.dequeueReusableCell(withReuseIdentifier: SkeletonCollectionCell.identifier, for: indexPath) as! SkeletonCollectionCell
-		//			return cell
-		//		} else {
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CourseCell.identifier, for: indexPath) as! CourseCell
 		cell.imageView.image = courseImages[indexPath.item]
 		return cell

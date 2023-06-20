@@ -9,8 +9,8 @@ import UIKit
 import SkeletonView
 
 //let serverURL = URL(string: "http://localhost:8080")!     //localhost and docker production environment
-let serverURL = URL(string: "https://app.douwone.xyz")!		// Gigsgigs
-//let serverURL = URL(string: "https://6551-1-28-216-153.ngrok-free.app")!     //ngrok
+//let serverURL = URL(string: "https://app.douwone.xyz")!		// Gigsgigs
+let serverURL = URL(string: "https://f420-1-28-240-144.jp.ngrok.io")!     //ngrok
 
 let baseURL = serverURL.appendingPathComponent("api")
 
@@ -25,7 +25,6 @@ enum ImageExtension: String, CaseIterable {
 	case jpeg
 }
 
-//let courseRoot = URL(string: "../Courses")!
 let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
 let phoneNumberRegex = "^([+](\\d{1,3}|\\d{1,2}[- ]{1,}\\d{3,4})[- ]{1,}){0,1}\\d{5,20}$"
 let userNameLength = Range(4...35)

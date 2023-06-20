@@ -39,10 +39,6 @@ class ChapterDetailVC: UIViewController {
 			pdfView.drawPlayButton()
 			recursivelyDisableSelection(view: pdfView)
 			
-#warning("On iOS 16, ctrl + click can still select, copy text. Command + a will select all, Shift + command + A will trigger context menu")
-			if #available(iOS 16, *) {
-				pdfView.isInMarkupMode = true
-			}
 			
 			// Call changeSelectedCell and drawPlayButton when PDFViewVisiblePagesChanged doesn't work as expected, scrolling position won't be right and playbutton won't be added sometimes, so call it when PDFViewPageChanged.
 			NotificationCenter.default.addObserver(self, selector: #selector(changeSelectedCell), name: .PDFViewPageChanged, object: nil)
@@ -249,7 +245,7 @@ class ChapterDetailVC: UIViewController {
 	
 	@objc func goToPDF(sender: UIButton) {
 		let pdfVC = PDFViewController()
-		
+		pdfVC.chapter = chapter
 		if sender.tag == 0 {
 			// Teaching plan
 			guard let url = chapter.teachingPlanURL else { return }
