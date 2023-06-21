@@ -77,7 +77,7 @@ class ChapterDetailVC: UIViewController {
 		}
 	}
 	
-	var chapter: Chapter! {
+	var chapter: ChapterModel! {
 		didSet {
 			Task.detached { [unowned self] in
 				await self.loadPDF()

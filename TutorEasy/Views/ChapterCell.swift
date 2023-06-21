@@ -21,9 +21,6 @@ class ChapterCell: UICollectionViewCell {
 		label.textAlignment = .center
 		// Names longer than 2 lines will be tructated
 		label.numberOfLines = 2
-		// Longer label text will be displayed in smaller font size, no less than minimumScaleFactor's value
-		label.adjustsFontSizeToFitWidth = true
-		label.minimumScaleFactor = 0.9
 		
 		label.isSkeletonable = true
 		label.backgroundColor = .systemYellow
@@ -31,73 +28,9 @@ class ChapterCell: UICollectionViewCell {
 		return label
 	}()
 	
-//	var isLoading: Bool = true {
-//		didSet {
-//			switch isLoading {
-//				case true:
-//					self.imageView.image = nil
-//					self.imageView.backgroundColor = nil
-//#warning("Ajust titleLabel display accordingly")
-////					contentView.addSubview(titleLabel)
-//
-//					// Start skeletonView animation
-//					imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonBaseColor), animation: animation, transition: .crossDissolve(0))
-////					titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonBaseColor), animation: animation, transition: .crossDissolve(0))
-//				case false:
-//					// Ajust titleLabel display accordingly
-////					titleLabel.removeFromSuperview()
-//
-//					// Draw chapter name on the imageView
-////					imageView.drawName(name: chapter.name)
-//					// Add trail if it's free
-//					if chapter.isFree { imageView.drawTrail() }
-//					// Stop animation and hide skeletonView
-//					contentView.stopSkeletonAnimation()
-//					contentView.hideSkeleton(reloadDataAfter: true, transition: .none)
-//			}
-//		}
-//	}
-	
-	let animation = GradientDirection.topLeftBottomRight.slidingAnimation()
-	
-	// For task cancellation. When cell is off screen, there is no need to download the image so cancel the task.
-	var imageTask: Task<(), Error>? = nil
-	
-	var chapter: Chapter = chapterPlaceHolder {
-		didSet {
-			// Do nothing until real chapter info has been got from server and set to cell. Otherwise, when placeholder chapter is set for the cell, its imageURL is nil and imageView will display a solid background color first, then when real chapter is set, it will start skeleton animation. We want the skeleton animation to show first, and stop when image is got, or never gonna be set.
-			guard chapter.name != chapterPlaceHolder.name else { return }
-			
-			guard let fileURL = chapter.imageURL else {
-				imageView.backgroundColor = .blue
-//				isLoading = false
-				return
-			}
-			
-			let request = FileAPI.convertToImageRequest(url: fileURL)
-
-#warning("Tweaking lable hide/display between skeletonView and after load")
-			self.imageTask = Task {
-				guard self.imageView.image == nil else { return }
-				//				try await Task.sleep(nanoseconds: 3_000_000_000)
-				let image = try? await FileAPI.publicGetImageData(request: request, size: imageView.bounds.size)
-				titleLabel.text = chapter.name
-				if let image = image {
-					try Task.checkCancellation()
-					imageView.image = image
-				} else {
-					try Task.checkCancellation()
-					imageView.backgroundColor = .blue
-				}
-//				isLoading = false
-			}
-		}
-	}
-	
 	override init(frame: CGRect) {
 		super.init(frame: frame)
 		contentView.isSkeletonable = true
-		imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonBaseColor), animation: animation, transition: .crossDissolve(0))
 		
 		contentView.layer.cornerRadius = contentView.bounds.size.width * cornerRadiusMultiplier
 		contentView.clipsToBounds = true
@@ -106,20 +39,6 @@ class ChapterCell: UICollectionViewCell {
 		contentView.addSubview(titleLabel)
 		self.createShadow()
 		
-		imageView.translatesAutoresizingMaskIntoConstraints = false
-		titleLabel.translatesAutoresizingMaskIntoConstraints = false
-		
-		NSLayoutConstraint.activate([
-			imageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-			imageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-			imageView.topAnchor.constraint(equalTo: contentView.topAnchor),
-			imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor),
-			
-			titleLabel.leadingAnchor.constraint(equalTo: imageView.leadingAnchor),
-			titleLabel.trailingAnchor.constraint(equalTo: imageView.trailingAnchor),
-			titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor),
-			titleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
-		])
 	}
 	
 	required init?(coder: NSCoder) {
@@ -128,10 +47,41 @@ class ChapterCell: UICollectionViewCell {
 	
 	override func prepareForReuse() {
 		super.prepareForReuse()
+
+		imageView.image = nil
+		titleLabel.text = nil
+	}
+	
+	func configure(chapter: Chapter) {
+		titleLabel.text = chapter.name
+		imageView.image = chapter.image
 		
-		imageTask?.cancel()
-		imageTask = nil
 		
-//		isLoading = true
+		if titleLabel.text == chapterPlaceHolder.name {
+			titleLabel.textAlignment = .natural
+//			titleLabel.skeletonTextNumberOfLines = 2
+			titleLabel.skeletonLineSpacing = 0
+			titleLabel.lastLineFillPercent = 80
+			titleLabel.linesCornerRadius = 5
+			
+			titleLabel.skeletonTextLineHeight = .relativeToFont
+			titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonTitleColor), animation: skeletonAnimation, transition: .none)
+		} else {
+			print(titleLabel.text)
+			titleLabel.textAlignment = .center
+			titleLabel.stopSkeletonAnimation()
+			titleLabel.hideSkeleton(reloadDataAfter: true, transition: .none)
+			titleLabel.setNeedsLayout()
+			titleLabel.setNeedsDisplay()
+		}
+		
+	}
+	
+	override func layoutSubviews() {
+		super.layoutSubviews()
+		
+		imageView.frame = CGRect(x: 0, y: 0, width: contentView.bounds.width, height: contentView.bounds.width)
+		titleLabel.frame = CGRect(x: 0, y: contentView.bounds.width, width: contentView.bounds.width, height: contentView.bounds.height - contentView.bounds.width)
+		titleLabel.font = titleLabel.font.withSize(titleLabel.bounds.height * 0.4)
 	}
 }

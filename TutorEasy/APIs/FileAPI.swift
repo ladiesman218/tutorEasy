@@ -58,7 +58,6 @@ struct FileAPI {
 		return resizedImage
 	}
 	
-	// Pass in size enables the ability to resize the image inside this function, and saves the resized image data for the response cache, which in most cases are smaller than the actual image returned from server hence saves some caching space.
 	static func publicGetImageData2(request: URLRequest, size: CGSize) async throws -> Data {
 		// If a cached response exists, server will respond 304 not modified for the request, cached data will be used for the image. Nothing needs to be done on client side, other than create the data task in cachedSession.
 		let (data, response) = try await cachedSession.dataAndResponse(for: request)
@@ -90,8 +89,9 @@ struct FileAPI {
 //			print("after: \(cachedSession.configuration.urlCache?.cachedResponse(for: request)?.data.count)")
 		}
 		
-		return data
+		return resizedData
 	}
+
 	
 	// This doesn't call URLSession extension's dataAndReponse, cause in that method we've converted all error to ResponseError, hence lost the HTTPURLResponse's status code, we need the status code to handle errors easier when calling getCourseContent()
 	static func getCourseContent(path: String) async throws -> (Data, HTTPURLResponse) {

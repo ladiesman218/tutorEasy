@@ -42,7 +42,7 @@ class ChaptersVC: UIViewController {
 		stageTitle.layer.backgroundColor = UIColor.systemTeal.cgColor
 		return stageTitle
 	}()
-	
+	#warning("添加双师堂按钮")
 	private var chaptersCollectionView: UICollectionView = {
 		let layout = UICollectionViewFlowLayout()
 		let chaptersCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
@@ -108,7 +108,8 @@ class ChaptersVC: UIViewController {
 	func loadStage() {
 		Task {
 			do {
-				self.chapters = try await CourseAPI.getStage(path: stageURL.path).chapters
+				let chapters = try await CourseAPI.getStage(path: stageURL.path).chapters
+				self.chapters = chapters.map { .init(directoryURL: $0.directoryURL, name: $0.name, isFree: $0.isFree, pdfURL: $0.pdfURL, bInstructionURL: $0.bInstructionURL, teachingPlanURL: $0.teachingPlanURL, imageURL: $0.imageURL) }
 			} catch {
 				let goBack = UIAlertAction(title: "返回", style: .cancel) { [unowned self] _ in
 					self.navigationController?.popViewController(animated: true)
@@ -133,18 +134,32 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, UICollectionViewDelegate
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
-
-		var chapter = chapters[indexPath.item]
 		
-		if chapter.imageData == nil, let imageURL = chapter.imageURL {
-			let request = FileAPI.convertToImageRequest(url: imageURL)
-			Task {
-				chapter.imageData = try await FileAPI.publicGetImageData2(request: request, size: collectionView.cellForItem(at: indexPath)!.contentView.bounds.size)
-				
-			}
-		} else {
-			
+		let chapter = chapters[indexPath.item]
+		
+		cell.configure(chapter: chapter)
+		// We are going to init a URLRequest to get image from server, if the chapter is a placeholder or the image has already been set, there is no need to do that.
+		if chapter.name != chapterPlaceHolder.name {
+			collectionView.reloadItems(at: [indexPath])
 		}
+
+		cell.titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonTitleColor), animation: skeletonAnimation, transition: .none)
+		//		if chapter.image != nil || chapter.name == chapterPlaceHolder.name { return cell }
+//		guard let imageURL = chapter.imageURL else {
+//			print("\(chapter.name) doesn't have an image url")
+//
+//			return cell
+//		}
+//
+//		let request = FileAPI.convertToImageRequest(url: imageURL)
+//		Task {
+//			let image = try await FileAPI.publicGetImageData(request: request, size: cell.imageView.bounds.size)
+//			chapters[indexPath.item].image = image
+//			await MainActor.run {
+//
+//				collectionView.reloadItems(at: [indexPath])
+//			}
+//		}
 		return cell
 	}
 	
@@ -171,7 +186,7 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, UICollectionViewDelegate
 	
 	func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
 		if let cell = collectionView.cellForItem(at: indexPath) as? ChapterCell {
-			return !cell.imageView.sk.isSkeletonActive
+//			return cell.chapter.name != chapterPlaceHolder.name
 		}
 		return false
 	}
