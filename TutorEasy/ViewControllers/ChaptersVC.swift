@@ -121,7 +121,7 @@ class ChaptersVC: UIViewController {
 	
 }
 
-extension ChaptersVC: SkeletonCollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
+extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDelegate, UICollectionViewDelegateFlowLayout {
 	
 	func collectionSkeletonView(_ skeletonView: UICollectionView, cellIdentifierForItemAt indexPath: IndexPath) -> SkeletonView.ReusableCellIdentifier {
 		return ChapterCell.identifier
@@ -137,13 +137,14 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, UICollectionViewDelegate
 		
 		let chapter = chapters[indexPath.item]
 		
-		cell.configure(chapter: chapter)
+		cell.chapter = chapter
+		//		cell.configure(chapter: chapter)
 		// We are going to init a URLRequest to get image from server, if the chapter is a placeholder or the image has already been set, there is no need to do that.
+		
 		if chapter.name != chapterPlaceHolder.name {
 			collectionView.reloadItems(at: [indexPath])
+			
 		}
-
-		cell.titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonTitleColor), animation: skeletonAnimation, transition: .none)
 		//		if chapter.image != nil || chapter.name == chapterPlaceHolder.name { return cell }
 //		guard let imageURL = chapter.imageURL else {
 //			print("\(chapter.name) doesn't have an image url")
@@ -189,5 +190,9 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, UICollectionViewDelegate
 //			return cell.chapter.name != chapterPlaceHolder.name
 		}
 		return false
+	}
+	override func viewDidAppear(_ animated: Bool) {
+		super.viewDidAppear(animated)
+		chaptersCollectionView.showAnimatedGradientSkeleton()
 	}
 }

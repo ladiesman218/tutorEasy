@@ -10,6 +10,30 @@ import SkeletonView
 
 class ChapterCell: UICollectionViewCell {
 	static let identifier = "chapterCollectionViewCell"
+	var chapter: Chapter! {
+		didSet {
+			
+			titleLabel.text = chapter.name
+			imageView.image = chapter.image
+			
+			if titleLabel.text == chapterPlaceHolder.name {
+				titleLabel.textAlignment = .natural
+				//			titleLabel.skeletonTextNumberOfLines = 2
+				titleLabel.skeletonLineSpacing = 0
+				titleLabel.lastLineFillPercent = 80
+				titleLabel.linesCornerRadius = 5
+				
+				titleLabel.skeletonTextLineHeight = .relativeToFont
+				titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonTitleColor), animation: skeletonAnimation, transition: .none)
+			} else {
+				
+				titleLabel.textAlignment = .center
+				titleLabel.stopSkeletonAnimation()
+				titleLabel.hideSkeleton(reloadDataAfter: true, transition: .crossDissolve(0))
+			}
+		}
+	}
+	
 	var imageView: UIImageView = {
 		let imageView = UIImageView()
 		imageView.isSkeletonable = true
@@ -47,35 +71,34 @@ class ChapterCell: UICollectionViewCell {
 	
 	override func prepareForReuse() {
 		super.prepareForReuse()
-
 		imageView.image = nil
 		titleLabel.text = nil
 	}
 	
-	func configure(chapter: Chapter) {
-		titleLabel.text = chapter.name
-		imageView.image = chapter.image
-		
-		
-		if titleLabel.text == chapterPlaceHolder.name {
-			titleLabel.textAlignment = .natural
-//			titleLabel.skeletonTextNumberOfLines = 2
-			titleLabel.skeletonLineSpacing = 0
-			titleLabel.lastLineFillPercent = 80
-			titleLabel.linesCornerRadius = 5
-			
-			titleLabel.skeletonTextLineHeight = .relativeToFont
-			titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonTitleColor), animation: skeletonAnimation, transition: .none)
-		} else {
-			print(titleLabel.text)
-			titleLabel.textAlignment = .center
-			titleLabel.stopSkeletonAnimation()
-			titleLabel.hideSkeleton(reloadDataAfter: true, transition: .none)
-			titleLabel.setNeedsLayout()
-			titleLabel.setNeedsDisplay()
-		}
-		
-	}
+	//	func configure(chapter: Chapter) {
+	//		titleLabel.text = chapter.name
+	//		imageView.image = chapter.image
+	//
+	//
+	//		if titleLabel.text == chapterPlaceHolder.name {
+	//			titleLabel.textAlignment = .natural
+	////			titleLabel.skeletonTextNumberOfLines = 2
+	//			titleLabel.skeletonLineSpacing = 0
+	//			titleLabel.lastLineFillPercent = 80
+	//			titleLabel.linesCornerRadius = 5
+	//
+	//			titleLabel.skeletonTextLineHeight = .relativeToFont
+	//			titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: skeletonTitleColor), animation: skeletonAnimation, transition: .none)
+	//		} else {
+	//			print(titleLabel.text)
+	//			titleLabel.textAlignment = .center
+	//			titleLabel.stopSkeletonAnimation()
+	//			titleLabel.hideSkeleton(reloadDataAfter: true, transition: .none)
+	//			titleLabel.setNeedsLayout()
+	//			titleLabel.setNeedsDisplay()
+	//		}
+	//
+	//	}
 	
 	override func layoutSubviews() {
 		super.layoutSubviews()
