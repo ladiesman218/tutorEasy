@@ -13,6 +13,7 @@ class ChaptersVC: UIViewController {
 	var stageURL: URL!
 	var courseName: String!
 	var stageName: String!
+	var loadStageTask: Task<Void, Error>?
 	
 	private var chapters: [Chapter] = .init(repeating: chapterPlaceHolder, count: placeholderForNumberOfCells) {
 		didSet {
@@ -42,7 +43,7 @@ class ChaptersVC: UIViewController {
 		stageTitle.layer.backgroundColor = UIColor.systemTeal.cgColor
 		return stageTitle
 	}()
-	#warning("添加双师堂按钮")
+#warning("添加双师堂按钮")
 	private var chaptersCollectionView: UICollectionView = {
 		let layout = UICollectionViewFlowLayout()
 		let chaptersCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
@@ -52,14 +53,18 @@ class ChaptersVC: UIViewController {
 		chaptersCollectionView.layer.cornerRadius = 20
 		chaptersCollectionView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
 		chaptersCollectionView.backgroundColor = .systemGray5
+		chaptersCollectionView.isSkeletonable = true
+		
 		return chaptersCollectionView
 	}()
 	
 	// MARK: - Controller functions
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		loadStage()
 		
+//		loadStage()
+		
+		chaptersCollectionView.frame = view.frame
 		view.backgroundColor = UIColor.systemBackground
 		topView = configTopView()
 		
@@ -105,20 +110,32 @@ class ChaptersVC: UIViewController {
 		])
 	}
 	
+	// This ViewController is pushed into nav stack, without this, there will be only 1 skeleton cell displayed for collectionView, a wierd bug. Even though chapterURLs' property observer won't be triggered, it should still have 20 placeholder urls in it in the 1st place, enough for collectionView to dequeue
+	override func viewDidAppear(_ animated: Bool) {
+		super.viewDidAppear(animated)
+		chaptersCollectionView.reloadData()
+	}
+	
+	override func viewWillDisappear(_ animated: Bool) {
+		super.viewWillDisappear(animated)
+		loadStageTask?.cancel()
+		loadStageTask = nil
+	}
+	
 	func loadStage() {
-		Task {
+		// Assigning a value to a task starts it automatically
+		loadStageTask = Task {
 			do {
 				let chapters = try await CourseAPI.getStage(path: stageURL.path).chapters
+				try Task.checkCancellation()
+				
 				self.chapters = chapters.map { .init(directoryURL: $0.directoryURL, name: $0.name, isFree: $0.isFree, pdfURL: $0.pdfURL, bInstructionURL: $0.bInstructionURL, teachingPlanURL: $0.teachingPlanURL, imageURL: $0.imageURL) }
 			} catch {
-				let goBack = UIAlertAction(title: "返回", style: .cancel) { [unowned self] _ in
-					self.navigationController?.popViewController(animated: true)
-				}
-				error.present(on: self, title: "无法获取小节列表", actions: [goBack])
+				if error is CancellationError { return }
+				error.present(on: self, title: "无法获取章节列表", actions: [])
 			}
 		}
 	}
-	
 }
 
 extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDelegate, UICollectionViewDelegateFlowLayout {
@@ -134,33 +151,52 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDe
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
-		
 		let chapter = chapters[indexPath.item]
 		
-		cell.chapter = chapter
-		//		cell.configure(chapter: chapter)
-		// We are going to init a URLRequest to get image from server, if the chapter is a placeholder or the image has already been set, there is no need to do that.
-		
-		if chapter.name != chapterPlaceHolder.name {
-			collectionView.reloadItems(at: [indexPath])
-			
+		cell.titleLabel.text = chapter.name
+		guard cell.titleLabel.text != chapterPlaceHolder.name else { cell.titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .yellow, secondaryColor: .orange), animation: skeletonAnimation, transition: .none)
+			return cell
 		}
-		//		if chapter.image != nil || chapter.name == chapterPlaceHolder.name { return cell }
-//		guard let imageURL = chapter.imageURL else {
-//			print("\(chapter.name) doesn't have an image url")
-//
-//			return cell
-//		}
-//
-//		let request = FileAPI.convertToImageRequest(url: imageURL)
-//		Task {
-//			let image = try await FileAPI.publicGetImageData(request: request, size: cell.imageView.bounds.size)
-//			chapters[indexPath.item].image = image
-//			await MainActor.run {
-//
-//				collectionView.reloadItems(at: [indexPath])
-//			}
-//		}
+
+		cell.titleLabel.stopSkeletonAnimation()
+		cell.titleLabel.hideSkeleton(reloadDataAfter: true, transition: .none)
+		print("title set to \(cell.titleLabel.text)")
+
+		
+		guard chapter.image == nil else {
+			cell.imageView.image = chapter.image
+			// Why do we need to stop and hide skeletonView here?
+			cell.imageView.stopSkeletonAnimation()
+			cell.imageView.hideSkeleton(reloadDataAfter: true, transition: .none)
+			return cell
+		}
+		
+		// Public chapter image downloading has to be called here, since when download succeed, we need to modify data source(chapters array), can't do that inside ChapterCell.
+		cell.imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .lightGray, secondaryColor: .darkGray), animation: skeletonAnimation, transition: .none)
+		
+		guard let imageURL = chapter.imageURL else {
+			// Generate image from a UIColor
+			// Set imageView's image
+			// Store that image for the chapter in original chapter data source.
+			// Stop SkeletonView's animation
+			return cell
+		}
+		
+		let req = FileAPI.convertToImageRequest(url: imageURL)
+		let size = CGSize(width: cell.bounds.size.width, height: cell.bounds.size.width)
+
+		cell.imageTask = Task {
+			let image = try await FileAPI.publicGetImageData(request: req, size: size)
+			try Task.checkCancellation()
+			print("image downloaded for indexPath: \(indexPath.item)")
+			// Store image in chapters, so next time the cell gets scrolled back into collectionView, no need to download it again
+			chapters[indexPath.item].image = image
+			
+			cell.imageView.image = image
+			cell.imageView.stopSkeletonAnimation()
+			cell.imageView.hideSkeleton(reloadDataAfter: true, transition: .none)
+		}
+		
 		return cell
 	}
 	
@@ -178,21 +214,12 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDe
 		return .init(width: width, height: width * 1.3)
 	}
 	
-	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-		let chapterDetailVC = ChapterDetailVC()
-		let chapter = chapters[indexPath.item]
-		chapterDetailVC.chapter = chapter
-		navigationController?.pushIfNot(newVC: chapterDetailVC)
+	func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
+		let cell = collectionView.cellForItem(at: indexPath) as! ChapterCell
+		return !cell.titleLabel.sk.isSkeletonActive
 	}
 	
-	func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
-		if let cell = collectionView.cellForItem(at: indexPath) as? ChapterCell {
-//			return cell.chapter.name != chapterPlaceHolder.name
-		}
-		return false
-	}
-	override func viewDidAppear(_ animated: Bool) {
-		super.viewDidAppear(animated)
-		chaptersCollectionView.showAnimatedGradientSkeleton()
+	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+		print(indexPath.item)
 	}
 }
