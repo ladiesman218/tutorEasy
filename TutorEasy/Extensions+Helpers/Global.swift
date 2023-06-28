@@ -10,7 +10,7 @@ import SkeletonView
 
 //let serverURL = URL(string: "http://localhost:8080")!     //localhost and docker production environment
 //let serverURL = URL(string: "https://app.douwone.xyz")!		// Gigsgigs
-let serverURL = URL(string: "https://423b-2408-822a-1da3-7c60-900a-7ad0-a04c-280a.ngrok-free.app")!     //ngrok
+let serverURL = URL(string: "https://b86a-1-28-240-144.ngrok-free.app")!     //ngrok
 
 let baseURL = serverURL.appendingPathComponent("api")
 
@@ -36,7 +36,6 @@ let loginChanged: Notification.Name = .init(rawValue: "login-status-changed")
 
 let borderColor: CGColor = UIColor.systemGray.cgColor
 let textColor = UIColor.systemBlue
-let placeholderForNumberOfCells = 20
 
 let cornerRadiusMultiplier = 0.1
 
@@ -56,9 +55,11 @@ enum Encoder {
 	}
 }
 
-let chapterPlaceHolder = Chapter(directoryURL: URL(fileURLWithPath: ""), name: "", isFree: false, pdfURL: URL(fileURLWithPath: ""), bInstructionURL: nil, teachingPlanURL: nil, imageURL: nil)
-let stagePlaceHolder = Stage(directoryURL: URL(fileURLWithPath: "/"), name: "", imageURL: nil, description: "", chapters: [chapterPlaceHolder] )
-let coursePlaceHolder = Course(id: UUID(), name: "", description: "", price: 1, stages: [stagePlaceHolder], imageURL: nil, annuallyIAPIdentifier: "")
+let placeHolderNumber = 20
+let placeHolderURL = URL(string: "/")!
+let placeHolderChapter = Chapter(directoryURL: URL(fileURLWithPath: ""), name: "", isFree: false, pdfURL: URL(fileURLWithPath: ""), bInstructionURL: nil, teachingPlanURL: nil, imageURL: nil)
+let placeHolderStage = Stage(directoryURL: URL(fileURLWithPath: "/"), name: "", imageURL: nil, description: "", chapterURLs: [] )
+let placeHolderCourse = Course(id: UUID(), name: "", description: "", price: 1, stages: [placeHolderStage], imageURL: nil, annuallyIAPIdentifier: "")
 
 let skeletonImageColor = UIColor.asbestos
 let skeletonTitleColor = UIColor.amethyst

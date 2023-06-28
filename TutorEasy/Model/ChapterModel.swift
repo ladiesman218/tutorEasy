@@ -27,6 +27,11 @@ class ChapterModel: Codable {
 	}
 }
 
-class Chapter: ChapterModel {
+class Chapter: ChapterModel, Equatable {
+	static func == (lhs: Chapter, rhs: Chapter) -> Bool {
+		rhs.directoryURL == lhs.directoryURL
+	}
+	
 	var image: UIImage? = nil
+	
 }

@@ -12,7 +12,7 @@ struct Stage: Codable {
 	let name: String
 	let imageURL: URL?
 	let description: String
-	let chapters: [ChapterModel]
+	let chapterURLs: [URL]
 	
 //	init(directoryURL: URL) {
 //		// Order multiple stages by prefix each directory name with a number. Remove that number for stage name

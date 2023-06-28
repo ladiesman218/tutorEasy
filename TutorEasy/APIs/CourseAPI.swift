@@ -12,6 +12,7 @@ struct CourseAPI {
 	
 	private static let publicCourseEndPoint = baseURL.appendingPathComponent("course")
 	private static let publicStageEndPoint = baseURL.appendingPathComponent("stage")
+	private static let publicChapterEndPoint = baseURL.appendingPathComponent("chapter")
 	
 	static func getAllCourses() async throws -> [Course] {
 		let (data, _) = try await cachedSession.dataAndResponse(from: publicCourseEndPoint)
@@ -39,6 +40,11 @@ struct CourseAPI {
 		return stage
 	}
 	
-	// This returns chapter details, including chapters info
-
+	// This returns details info of a single chapter
+	static func getChapter(path: String) async throws -> Chapter {
+		let url = publicChapterEndPoint.appendingPathComponent(path)
+		let (data, _) = try await cachedSession.dataAndResponse(from: url)
+		let chapter = try Decoder.isoDate.decode(Chapter.self, from: data)
+		return chapter
+	}
 }

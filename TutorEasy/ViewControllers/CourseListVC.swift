@@ -3,7 +3,7 @@ import UIKit
 class CourseListVC: UIViewController {
 	
 	// MARK: - Properties
-	private var courses: [Course] = .init(repeating: coursePlaceHolder, count: placeholderForNumberOfCells) {
+	private var courses: [Course] = .init(repeating: placeHolderCourse, count: placeHolderNumber) {
 		didSet {
 			// When courses is set, download images for each course
 			Task {
@@ -13,7 +13,7 @@ class CourseListVC: UIViewController {
 		}
 	}
 	
-	private var courseImages: [UIImage?] = .init(repeating: nil, count: placeholderForNumberOfCells) {
+	private var courseImages: [UIImage?] = .init(repeating: nil, count: placeHolderNumber) {
 		didSet { loaded = true }
 	}
 	

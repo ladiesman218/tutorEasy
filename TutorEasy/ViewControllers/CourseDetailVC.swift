@@ -11,13 +11,18 @@ class CourseDetailVC: UIViewController {
 	// MARK: - Properties
 	var courseID: UUID!
 	
-	private var course = coursePlaceHolder {
+	private var course = placeHolderCourse {
 		didSet {
 			courseTitle.text = course.name
 			self.stages = course.stages
 		}
 	}
 	
+	var stageURLs: [URL] = .init(repeating: .init(string: "/")!, count: placeHolderNumber) {
+		didSet {
+			
+		}
+	}
 	private var stages: [Stage] = [] {
 		didSet {
 			Task {

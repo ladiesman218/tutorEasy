@@ -13,13 +13,10 @@ class ChaptersVC: UIViewController {
 	var stageURL: URL!
 	var courseName: String!
 	var stageName: String!
+	// Hold a reference to loadStageTask, so when viewWillDisappear, we can cancel it if it's not finished yet
 	var loadStageTask: Task<Void, Error>?
-	
-	private var chapters: [Chapter] = .init(repeating: chapterPlaceHolder, count: placeholderForNumberOfCells) {
-		didSet {
-			chaptersCollectionView.reloadData()
-		}
-	}
+	// Init value of the array is with place holder urls and chapters. When loadStage() returns, it's gonna replace urls with actual directory urls of the chapters, then when each cell is about to be scrolled into screen, loadChapter will be called, which get the actual chapter for the given index, and store the chapter back to this array, so next time the cell is scrolled back to be displayed, we don't need to download the chapter again
+	var chapterTuples: [(url: URL, chapter: Chapter)] = .init(repeating: (url: placeHolderURL, chapter: placeHolderChapter), count: placeHolderNumber)
 	
 	// MARK: - Custom subviews
 	private var topView: UIView!
@@ -57,14 +54,14 @@ class ChaptersVC: UIViewController {
 		
 		return chaptersCollectionView
 	}()
+	var refreshControl = UIRefreshControl()
 	
 	// MARK: - Controller functions
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		
-//		loadStage()
+		loadStage()
 		
-		chaptersCollectionView.frame = view.frame
 		view.backgroundColor = UIColor.systemBackground
 		topView = configTopView()
 		
@@ -81,6 +78,9 @@ class ChaptersVC: UIViewController {
 		stageTitle.font = courseTitle.font
 		stageTitle.layer.cornerRadius = stageTitle.font.pointSize * 0.8
 		topView.addSubview(stageTitle)
+		
+		refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
+		chaptersCollectionView.addSubview(refreshControl)
 		
 		view.addSubview(chaptersCollectionView)
 		chaptersCollectionView.dataSource = self
@@ -110,12 +110,6 @@ class ChaptersVC: UIViewController {
 		])
 	}
 	
-	// This ViewController is pushed into nav stack, without this, there will be only 1 skeleton cell displayed for collectionView, a wierd bug. Even though chapterURLs' property observer won't be triggered, it should still have 20 placeholder urls in it in the 1st place, enough for collectionView to dequeue
-	override func viewDidAppear(_ animated: Bool) {
-		super.viewDidAppear(animated)
-		chaptersCollectionView.reloadData()
-	}
-	
 	override func viewWillDisappear(_ animated: Bool) {
 		super.viewWillDisappear(animated)
 		loadStageTask?.cancel()
@@ -123,18 +117,64 @@ class ChaptersVC: UIViewController {
 	}
 	
 	func loadStage() {
-		// Assigning a value to a task starts it automatically
-		loadStageTask = Task {
-			do {
-				let chapters = try await CourseAPI.getStage(path: stageURL.path).chapters
-				try Task.checkCancellation()
-				
-				self.chapters = chapters.map { .init(directoryURL: $0.directoryURL, name: $0.name, isFree: $0.isFree, pdfURL: $0.pdfURL, bInstructionURL: $0.bInstructionURL, teachingPlanURL: $0.teachingPlanURL, imageURL: $0.imageURL) }
-			} catch {
-				if error is CancellationError { return }
-				error.present(on: self, title: "无法获取章节列表", actions: [])
+		loadStageTask = Task { [weak self] in
+			try await Task.sleep(nanoseconds: 3_000_000_000)
+
+			let stage = try await CourseAPI.getStage(path: self!.stageURL.path)
+			try Task.checkCancellation()
+			self?.chapterTuples = stage.chapterURLs.map { (url: $0, chapter: placeHolderChapter)}
+			// When loadStage completes, it will set the array with the right number of tuples, so reload collection view will show the right number of cells.
+			self?.chaptersCollectionView.reloadData()
+		}
+	}
+	
+	func loadChapter(forItem index: Int) async throws {
+		let url = chapterTuples[index].url
+		guard url != placeHolderURL else { return }
+		
+		if chapterTuples[index].chapter == placeHolderChapter {
+			// Load chapter
+			try await Task.sleep(nanoseconds: 3_000_000_000)
+
+			let chapter = try await CourseAPI.getChapter(path: url.path)
+			try Task.checkCancellation()
+			
+			// Store chapter back to array, so next time the cell gets dequeued, we don't need to download it again.
+			chapterTuples[index].chapter = chapter
+			// Reload given cell, which will display the chapter's name first, cos image downloading may take a while, but make sure the cell is still on screen first, otherwise titleLabel's text may not be displayed.
+			if chaptersCollectionView.indexPathsForVisibleItems.contains(where: { indexPath in
+				indexPath.item == index
+			}) {
+				chaptersCollectionView.reloadItems(at: [.init(item: index, section: 0)])
 			}
 		}
+		
+		if chapterTuples[index].chapter.image == nil {
+			// Load image
+
+			let width = CGFloat(200)
+			let size = CGSize(width: width, height: width)
+			let chapter = chapterTuples[index].chapter
+			let image = try await UIImage.load(from: chapter.imageURL, size: size)
+			try Task.checkCancellation()
+			// set the generated image as chapter's image
+			chapterTuples[index].chapter.image = image
+			if chaptersCollectionView.indexPathsForVisibleItems.contains(where: { indexPath in
+				indexPath.item == index
+			}) {
+				chaptersCollectionView.reloadItems(at: [.init(item: index, section: 0)])
+			}
+		}
+	}
+	
+	@objc func refresh(sender: UIRefreshControl) {
+		print(sender.state.rawValue)
+		chapterTuples = .init(repeating: (url: placeHolderURL, chapter: placeHolderChapter), count: placeHolderNumber)
+		chaptersCollectionView.reloadData()
+		refreshControl.endRefreshing()
+		loadStageTask?.cancel()
+		loadStageTask = nil
+		loadStage()
 	}
 }
 
@@ -145,59 +185,35 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDe
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-		return chapters.count
+		return chapterTuples.count
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
-		let chapter = chapters[indexPath.item]
 		
-		cell.titleLabel.text = chapter.name
-		guard cell.titleLabel.text != chapterPlaceHolder.name else { cell.titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .yellow, secondaryColor: .orange), animation: skeletonAnimation, transition: .none)
-			return cell
-		}
-
-		cell.titleLabel.stopSkeletonAnimation()
-		cell.titleLabel.hideSkeleton(reloadDataAfter: true, transition: .none)
-		print("title set to \(cell.titleLabel.text)")
-
-		
-		guard chapter.image == nil else {
-			cell.imageView.image = chapter.image
-			// Why do we need to stop and hide skeletonView here?
-			cell.imageView.stopSkeletonAnimation()
-			cell.imageView.hideSkeleton(reloadDataAfter: true, transition: .none)
-			return cell
-		}
-		
-		// Public chapter image downloading has to be called here, since when download succeed, we need to modify data source(chapters array), can't do that inside ChapterCell.
-		cell.imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .lightGray, secondaryColor: .darkGray), animation: skeletonAnimation, transition: .none)
-		
-		guard let imageURL = chapter.imageURL else {
-			// Generate image from a UIColor
-			// Set imageView's image
-			// Store that image for the chapter in original chapter data source.
-			// Stop SkeletonView's animation
-			return cell
-		}
-		
-		let req = FileAPI.convertToImageRequest(url: imageURL)
-		let size = CGSize(width: cell.bounds.size.width, height: cell.bounds.size.width)
-
-		cell.imageTask = Task {
-			let image = try await FileAPI.publicGetImageData(request: req, size: size)
-			try Task.checkCancellation()
-			print("image downloaded for indexPath: \(indexPath.item)")
-			// Store image in chapters, so next time the cell gets scrolled back into collectionView, no need to download it again
-			chapters[indexPath.item].image = image
-			
-			cell.imageView.image = image
-			cell.imageView.stopSkeletonAnimation()
-			cell.imageView.hideSkeleton(reloadDataAfter: true, transition: .none)
+		cell.imageView.image = chapterTuples[indexPath.item].chapter.image
+		if chapterTuples[indexPath.item].chapter.name != placeHolderChapter.name {
+			cell.titleLabel.text = chapterTuples[indexPath.item].chapter.name
 		}
 		
 		return cell
+	}
+	
+	// When a cell is about to be displayed, start the load chapter task
+	func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
+		
+		cell.loadTask = Task {
+			try await self.loadChapter(forItem: indexPath.item)
+		}
+	}
+	
+	// Cancel load chapter task when cell is about to be scrolled off the screen, this is also essential for titleLabel's text to be displayed properly.
+	func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
+		cell.loadTask?.cancel()
+		cell.loadTask = nil
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
@@ -222,4 +238,9 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDe
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
 		print(indexPath.item)
 	}
+	
+	func collectionView(_ collectionView: UICollectionView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {
+		return false
+	}
+	
 }

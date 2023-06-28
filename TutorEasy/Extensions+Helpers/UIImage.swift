@@ -26,4 +26,28 @@ extension UIImage {
 		return resizedImage
 	}
 	
+	static func load(from url: URL?, size: CGSize) async throws -> UIImage {
+		guard let url = url else {
+			// Generate a image if imageURL is nil, so skeletonView can be stopped.
+			let image = UIColor.blue.convertToImage(size: size)
+			return image
+		}
+		
+		let req = FileAPI.convertToImageRequest(url: url)
+		let image = try await FileAPI.publicGetImageData(request: req, size: size)
+		try Task.checkCancellation()
+		return image
+	}
+}
+
+extension UIColor {
+	func convertToImage(size: CGSize) -> UIImage {
+		let renderer = UIGraphicsImageRenderer(size: size)
+		let image = renderer.image { (context) in
+			self.setFill()
+			context.fill(CGRect(origin: .zero, size: size))
+		}
+		
+		return image
+	}
 }
