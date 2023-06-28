@@ -13,6 +13,7 @@ class ChapterCell: UICollectionViewCell {
 	static let identifier = "chapterCollectionViewCell"
 	// Hold a reference to loadChapter task, so when cell is about to be scrolled off the screen, we can cancel it.
 	var loadTask: Task<Void, Error>?
+	var isFree = false
 	
 	// MARK: - Custom subviews
 	var imageView: UIImageView = {
@@ -70,6 +71,9 @@ class ChapterCell: UICollectionViewCell {
 		} else {
 			imageView.stopSkeletonAnimation()
 			imageView.hideSkeleton(reloadDataAfter: true, transition: .none)
+			if isFree {
+				imageView.drawTrail()
+			}
 		}
 		
 		if titleLabel.text == nil {

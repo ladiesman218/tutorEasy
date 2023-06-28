@@ -119,7 +119,7 @@ class ChaptersVC: UIViewController {
 	func loadStage() {
 		loadStageTask = Task { [weak self] in
 			try await Task.sleep(nanoseconds: 3_000_000_000)
-
+			
 			let stage = try await CourseAPI.getStage(path: self!.stageURL.path)
 			try Task.checkCancellation()
 			self?.chapterTuples = stage.chapterURLs.map { (url: $0, chapter: placeHolderChapter)}
@@ -135,7 +135,7 @@ class ChaptersVC: UIViewController {
 		if chapterTuples[index].chapter == placeHolderChapter {
 			// Load chapter
 			try await Task.sleep(nanoseconds: 3_000_000_000)
-
+			
 			let chapter = try await CourseAPI.getChapter(path: url.path)
 			try Task.checkCancellation()
 			
@@ -151,7 +151,7 @@ class ChaptersVC: UIViewController {
 		
 		if chapterTuples[index].chapter.image == nil {
 			// Load image
-
+			
 			let width = CGFloat(200)
 			let size = CGSize(width: width, height: width)
 			let chapter = chapterTuples[index].chapter
@@ -192,10 +192,12 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDe
 		
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
 		
-		cell.imageView.image = chapterTuples[indexPath.item].chapter.image
 		if chapterTuples[indexPath.item].chapter.name != placeHolderChapter.name {
 			cell.titleLabel.text = chapterTuples[indexPath.item].chapter.name
 		}
+		
+		cell.imageView.image = chapterTuples[indexPath.item].chapter.image
+		if chapterTuples[indexPath.item].chapter.isFree { cell.isFree = true }
 		
 		return cell
 	}
