@@ -14,16 +14,16 @@ class ChaptersVC: UIViewController {
 	var courseName: String!
 	var stageName: String!
 	// Hold a reference to loadStageTask, so when viewWillDisappear, we can cancel it if it's not finished yet
-	var loadStageTask: Task<Void, Error>?
+	private var loadStageTask: Task<Void, Error>?
 	// Init value of the array is with place holder urls and chapters. When loadStage() returns, it's gonna replace urls with actual directory urls of the chapters, then when each cell is about to be scrolled into screen, loadChapter will be called, which get the actual chapter for the given index, and store the chapter back to this array, so next time the cell is scrolled back to be displayed, we don't need to download the chapter again
-	var chapterTuples: [(url: URL, chapter: Chapter)] = .init(repeating: (url: placeHolderURL, chapter: placeHolderChapter), count: placeHolderNumber)
+	private var chapterTuples: [(url: URL, chapter: Chapter)] = .init(repeating: (url: placeHolderURL, chapter: placeHolderChapter), count: placeHolderNumber)
 	
 	// MARK: - Custom subviews
 	private var topView: UIView!
-	private var iconView: ProfileIconView = .init(frame: .zero)
+	private let iconView: ProfileIconView = .init(frame: .zero)
 	private var backButtonView: UIView!
 	
-	private var courseTitle: PaddingLabel = {
+	private let courseTitle: PaddingLabel = {
 		let courseTitle = PaddingLabel()
 		courseTitle.translatesAutoresizingMaskIntoConstraints = false
 		courseTitle.textColor = .white
@@ -32,7 +32,7 @@ class ChaptersVC: UIViewController {
 		return courseTitle
 	}()
 	
-	private var stageTitle: PaddingLabel = {
+	private let stageTitle: PaddingLabel = {
 		let stageTitle = PaddingLabel()
 		stageTitle.translatesAutoresizingMaskIntoConstraints = false
 		stageTitle.textColor = .white
@@ -41,7 +41,7 @@ class ChaptersVC: UIViewController {
 		return stageTitle
 	}()
 #warning("添加双师堂按钮")
-	private var chaptersCollectionView: UICollectionView = {
+	private let chaptersCollectionView: UICollectionView = {
 		let layout = UICollectionViewFlowLayout()
 		let chaptersCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
 		chaptersCollectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -54,7 +54,8 @@ class ChaptersVC: UIViewController {
 		
 		return chaptersCollectionView
 	}()
-	var refreshControl = UIRefreshControl()
+	
+	private let refreshControl = UIRefreshControl()
 	
 	// MARK: - Controller functions
 	override func viewDidLoad() {
@@ -81,6 +82,7 @@ class ChaptersVC: UIViewController {
 		
 		refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
 		chaptersCollectionView.addSubview(refreshControl)
+		chaptersCollectionView.refreshControl = refreshControl
 		
 		view.addSubview(chaptersCollectionView)
 		chaptersCollectionView.dataSource = self
@@ -112,14 +114,19 @@ class ChaptersVC: UIViewController {
 	
 	override func viewWillDisappear(_ animated: Bool) {
 		super.viewWillDisappear(animated)
+		
 		loadStageTask?.cancel()
 		loadStageTask = nil
+		
+		chaptersCollectionView.visibleCells.map { $0 as! ChapterCell }.forEach {
+			$0.loadTask?.cancel()
+			$0.loadTask = nil
+		}
 	}
 	
-	func loadStage() {
+	// MARK: - Custom Functions
+	private func loadStage() {
 		loadStageTask = Task { [weak self] in
-			try await Task.sleep(nanoseconds: 3_000_000_000)
-			
 			let stage = try await CourseAPI.getStage(path: self!.stageURL.path)
 			try Task.checkCancellation()
 			self?.chapterTuples = stage.chapterURLs.map { (url: $0, chapter: placeHolderChapter)}
@@ -128,14 +135,12 @@ class ChaptersVC: UIViewController {
 		}
 	}
 	
-	func loadChapter(forItem index: Int) async throws {
+	private func loadChapter(forItem index: Int) async throws {
 		let url = chapterTuples[index].url
 		guard url != placeHolderURL else { return }
 		
 		if chapterTuples[index].chapter == placeHolderChapter {
 			// Load chapter
-			try await Task.sleep(nanoseconds: 3_000_000_000)
-			
 			let chapter = try await CourseAPI.getChapter(path: url.path)
 			try Task.checkCancellation()
 			
@@ -151,8 +156,7 @@ class ChaptersVC: UIViewController {
 		
 		if chapterTuples[index].chapter.image == nil {
 			// Load image
-			
-			let width = CGFloat(200)
+			let width = chaptersCollectionView.bounds.width / 4.2
 			let size = CGSize(width: width, height: width)
 			let chapter = chapterTuples[index].chapter
 			let image = try await UIImage.load(from: chapter.imageURL, size: size)
@@ -167,8 +171,7 @@ class ChaptersVC: UIViewController {
 		}
 	}
 	
-	@objc func refresh(sender: UIRefreshControl) {
-		print(sender.state.rawValue)
+	@objc private func refresh(sender: UIRefreshControl) {
 		chapterTuples = .init(repeating: (url: placeHolderURL, chapter: placeHolderChapter), count: placeHolderNumber)
 		chaptersCollectionView.reloadData()
 		refreshControl.endRefreshing()
@@ -206,8 +209,8 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDe
 	func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
 		
-		cell.loadTask = Task {
-			try await self.loadChapter(forItem: indexPath.item)
+		cell.loadTask = Task { [weak self] in
+			try await self?.loadChapter(forItem: indexPath.item)
 		}
 	}
 	

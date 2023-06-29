@@ -91,6 +91,7 @@ class ChapterCell: UICollectionViewCell {
 		
 		imageView.image = nil
 		titleLabel.text = nil
+		isFree = false
 	}
 	
 }

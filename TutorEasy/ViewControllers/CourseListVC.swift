@@ -1,52 +1,42 @@
 import UIKit
+import SkeletonView
 
 class CourseListVC: UIViewController {
 	
 	// MARK: - Properties
-	private var courses: [Course] = .init(repeating: placeHolderCourse, count: placeHolderNumber) {
-		didSet {
-			// When courses is set, download images for each course
-			Task {
-				let urls = courses.map { $0.imageURL }
-				courseImages = await downloadImages(urls: urls)
-			}
-		}
-	}
-	
-	private var courseImages: [UIImage?] = .init(repeating: nil, count: placeHolderNumber) {
-		didSet { loaded = true }
-	}
-	
-	private var loaded = false {
-		didSet { collectionView.reloadData() }
-	}
-	
+	private var courses: [Course] = .init(repeating: placeHolderCourse, count: placeHolderNumber)
+	// Hold a reference to load all courses task. When needed, we can cancel it. We need to cancel the old task so refresh could work.
+	private var loadCoursesTask: Task<Void, Never>?
+
 	// MARK: - Custom subviews
-	private var collectionView: UICollectionView = {
+	private let collectionView: UICollectionView = {
 		let layout = UICollectionViewFlowLayout()
 		let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
 		collectionView.backgroundColor = .systemGray5
 		collectionView.layer.cornerRadius = 20
 		collectionView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
 		collectionView.contentInset = .init(top: 30, left: 30, bottom: 30, right: 30)
-		//		collectionView.register(SkeletonCollectionCell.self, forCellWithReuseIdentifier: SkeletonCollectionCell.identifier)
+
 		collectionView.register(CourseCell.self, forCellWithReuseIdentifier: CourseCell.identifier)
 		collectionView.translatesAutoresizingMaskIntoConstraints = false
 		return collectionView
 	}()
 	
+	private let refreshControl = UIRefreshControl()
+	
 	private var topView: UIView!
 	
-	private var iconView: ProfileIconView = .init(frame: .zero, extraInfo: true)
+	private let iconView: ProfileIconView = .init(frame: .zero, extraInfo: true)
 	
 	// MARK: - Controller functions
-	override func viewWillAppear(_ animated: Bool) {
-		loadCourses()
-	}
-	
 	override func viewDidLoad() {
 		super.viewDidLoad()
+		loadCourses()
 		view.backgroundColor = UIColor.systemBackground
+		
+		refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
+		collectionView.addSubview(refreshControl)
+		collectionView.refreshControl = refreshControl
 		
 		view.addSubview(collectionView)
 		collectionView.dataSource = self
@@ -72,18 +62,77 @@ class CourseListVC: UIViewController {
 		])
 	}
 	
-	func loadCourses() {
-		Task {
+	override func viewWillDisappear(_ animated: Bool) {
+		super.viewWillDisappear(animated)
+		loadCoursesTask?.cancel()
+		loadCoursesTask = nil
+		collectionView.visibleCells.map { $0 as! CourseCell }.forEach {
+			$0.loadImageTask?.cancel()
+			$0.loadImageTask = nil
+		}
+	}
+	
+	// MARK: - Custom Functions
+	private func loadCourses() {
+		loadCoursesTask = Task {
 			do {
 				self.courses = try await CourseAPI.getAllCourses()
+				collectionView.reloadData()
+			} catch is CancellationError {
+				// If Task is canceled, do nothing
+				return
 			} catch {
-				error.present(on: self, title: "无法获取课程列表", actions: [])
+				let retry = UIAlertAction(title: "重试", style: .cancel) { [unowned self] action in
+					refresh(sender: self.refreshControl)
+				}
+				error.present(on: self, title: "无法获取课程列表", actions: [retry])
 			}
 		}
 	}
+	
+	private func loadImage(forItem index: Int) async throws {
+		let course = courses[index]
+		
+		// If the course is a place holder, then loadCourses() is unfinished, no need to download image
+		guard course != placeHolderCourse else { return }
+		// If there is an image, no need to download it again
+		guard course.image == nil else { return }
+		
+		let width = collectionView.bounds.size.width / 4.2
+		let size = CGSize(width: width, height: width)
+		
+		let image = try await UIImage.load(from: course.imageURL, size: size)
+		try Task.checkCancellation()
+		
+		courses[index].image = image
+		if collectionView.indexPathsForVisibleItems.contains(where: { indexPath in
+			indexPath.item == index
+		}) {
+			collectionView.reloadItems(at: [.init(item: index, section: 0)])
+		}
+	}
+	
+	@objc private func refresh(sender: UIRefreshControl) {
+		loadCoursesTask?.cancel()
+		loadCoursesTask = nil
+		// Cancel all loadImageTasks
+		collectionView.visibleCells.map { $0 as! CourseCell }.forEach {
+			$0.loadImageTask?.cancel()
+			$0.loadImageTask = nil
+		}
+		// Re-generate datasource
+		courses = .init(repeating: placeHolderCourse, count: placeHolderNumber)
+		collectionView.reloadData()
+		loadCourses()
+		refreshControl.endRefreshing()
+	}
 }
 
-extension CourseListVC: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+extension CourseListVC: SkeletonCollectionViewDelegate, SkeletonCollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+	
+	func collectionSkeletonView(_ skeletonView: UICollectionView, cellIdentifierForItemAt indexPath: IndexPath) -> SkeletonView.ReusableCellIdentifier {
+		CourseCell.identifier
+	}
 	
 	func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
 		return courses.count
@@ -91,9 +140,21 @@ extension CourseListVC: UICollectionViewDelegate, UICollectionViewDataSource, UI
 	
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CourseCell.identifier, for: indexPath) as! CourseCell
-		cell.imageView.image = courseImages[indexPath.item]
+		cell.imageView.image = courses[indexPath.item].image
 		return cell
-		//		}
+	}
+	
+	func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CourseCell.identifier, for: indexPath) as! CourseCell
+		cell.loadImageTask = Task { [weak self] in
+			try await self?.loadImage(forItem: indexPath.item)
+		}
+	}
+	
+	func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CourseCell.identifier, for: indexPath) as! CourseCell
+		cell.loadImageTask?.cancel()
+		cell.loadImageTask = nil
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
@@ -118,6 +179,7 @@ extension CourseListVC: UICollectionViewDelegate, UICollectionViewDataSource, UI
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
-		return loaded
+		let cell = collectionView.cellForItem(at: indexPath) as! CourseCell
+		return !cell.sk.isSkeletonActive
 	}
 }
