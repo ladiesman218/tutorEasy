@@ -97,9 +97,7 @@ extension UIImageView {
 			attributedString.draw(with: extraRect, options: .usesLineFragmentOrigin, context: nil)
 		}
 		
-		Task { @MainActor in
-			self.image = img
-		}
+		self.image = img
 		
 	}
 	

@@ -10,7 +10,7 @@ import SkeletonView
 
 //let serverURL = URL(string: "http://localhost:8080")!     //localhost and docker production environment
 //let serverURL = URL(string: "https://app.douwone.xyz")!		// Gigsgigs
-let serverURL = URL(string: "https://b86a-1-28-240-144.ngrok-free.app")!     //ngrok
+let serverURL = URL(string: "https://a3f3-2408-822a-1da3-7c60-4da7-69a1-40aa-30e7.ngrok-free.app")!     //ngrok
 
 let baseURL = serverURL.appendingPathComponent("api")
 
@@ -55,11 +55,11 @@ enum Encoder {
 	}
 }
 
-let placeHolderNumber = 20
+let placeHolderNumber = 12
 let placeHolderURL = URL(string: "/")!
 let placeHolderChapter = Chapter(directoryURL: URL(fileURLWithPath: ""), name: "", isFree: false, pdfURL: URL(fileURLWithPath: ""), bInstructionURL: nil, teachingPlanURL: nil, imageURL: nil)
-let placeHolderStage = Stage(directoryURL: URL(fileURLWithPath: "/"), name: "", imageURL: nil, description: "", chapterURLs: [] )
-let placeHolderCourse = Course(id: UUID(), name: "", description: "", price: 1, stages: [placeHolderStage], imageURL: nil, annuallyIAPIdentifier: "")
+let placeHolderStage = Stage(directoryURL: URL(fileURLWithPath: "/"), name: "", description: "", imageURL: nil, chapterURLs: [] )
+let placeHolderCourse = Course(id: UUID(), name: "", description: "", price: 1, stageURLs: [], imageURL: nil, annuallyIAPIdentifier: "")
 
 let skeletonImageColor = UIColor.asbestos
 let skeletonTitleColor = UIColor.amethyst

@@ -12,6 +12,7 @@ import UIKit
         if actions.isEmpty {
             alertController.addAction(UIAlertAction(title: "确定", style: .default))
         }
+		alertController.preferredAction = alertController.actions.last
         weakViewController?.present(alertController, animated: true)
     }
 }

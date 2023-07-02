@@ -5,22 +5,28 @@
 //  Created by Lei Gao on 2023/3/10.
 //
 
-import Foundation
+import UIKit
 
-struct Stage: Codable {
+class StageModel: Codable {
 	let directoryURL: URL
 	let name: String
-	let imageURL: URL?
 	let description: String
+	let imageURL: URL?
 	let chapterURLs: [URL]
 	
-//	init(directoryURL: URL) {
-//		// Order multiple stages by prefix each directory name with a number. Remove that number for stage name
-//		let name = directoryURL.lastPathComponent
-//		let index = name.firstIndex { !$0.isNumber } ?? name.startIndex
-//		self.name = String(name[index...])
-//		
-//		self.directoryURL = directoryURL
-//		self.imagePath = getImagePathInDirectory(url: directoryURL)
-//	}
+	init(directoryURL: URL, name: String, description: String, imageURL: URL?, chapterURLs: [URL]) {
+		self.directoryURL = directoryURL
+		self.name = name
+		self.description = description
+		self.imageURL = imageURL
+		self.chapterURLs = chapterURLs
+	}
+}
+
+class Stage: StageModel, Equatable {
+	static func == (lhs: Stage, rhs: Stage) -> Bool {
+		lhs.directoryURL == rhs.directoryURL
+	}
+
+	var image: UIImage? = nil
 }

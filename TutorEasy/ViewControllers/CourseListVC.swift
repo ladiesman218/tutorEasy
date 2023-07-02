@@ -31,7 +31,6 @@ class CourseListVC: UIViewController {
 	// MARK: - Controller functions
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		loadCourses()
 		view.backgroundColor = UIColor.systemBackground
 		
 		refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
@@ -62,10 +61,14 @@ class CourseListVC: UIViewController {
 		])
 	}
 	
+	override func viewWillAppear(_ animated: Bool) {
+		super.viewWillAppear(animated)
+		loadCourses()
+	}
+	
 	override func viewWillDisappear(_ animated: Bool) {
 		super.viewWillDisappear(animated)
-		loadCoursesTask?.cancel()
-		loadCoursesTask = nil
+		// Don't cancel loadCoursesTask here, otherwise when user is not logged in, AuthenticationVC may be pushed into nav stack, which will cause task to cancel, then when user goes back to this vc, they will have to wait for the task to start again.
 		collectionView.visibleCells.map { $0 as! CourseCell }.forEach {
 			$0.loadImageTask?.cancel()
 			$0.loadImageTask = nil
@@ -74,25 +77,43 @@ class CourseListVC: UIViewController {
 	
 	// MARK: - Custom Functions
 	private func loadCourses() {
-		loadCoursesTask = Task {
+		loadCoursesTask = Task { [weak self] in
+			// When user is not logged in, AuthenticationVC maybe pushed into nav stack, if loadCourses() fails when AuthVC is the top vc of nav stack, make sure alert won't pop up to confuse user. But we still need to tell user loading courses failed, so this function need to be called everytime this view will appear so when failing it can tell users what happened. Since the view may appear many times during a single run, we need a mechanism to avoid fectch data multiple times. This is done by checking if courses array contains any place holder course, if not, that means it has completed before, do nothing.
 			do {
-				self.courses = try await CourseAPI.getAllCourses()
-				collectionView.reloadData()
+				guard let courses = self?.courses,
+					  courses.contains(where: { $0 == placeHolderCourse }) else { return }
+				
+				// Cancel currently running load image tasks first
+				self?.collectionView.visibleCells.map { $0 as! CourseCell }.forEach {
+					$0.loadImageTask?.cancel()
+					$0.loadImageTask = nil
+				}
+				try await Task.sleep(nanoseconds: 2_000_000_000)
+				self?.courses = try await CourseAPI.getAllCourses()
+				try Task.checkCancellation()
+				
+				self?.collectionView.reloadData()
 			} catch is CancellationError {
 				// If Task is canceled, do nothing
 				return
 			} catch {
-				let retry = UIAlertAction(title: "重试", style: .cancel) { [unowned self] action in
-					refresh(sender: self.refreshControl)
+				// Do not show alert when authVC is on top.
+				guard let strongSelf = self,
+						let topVC = self?.navigationController?.topViewController,
+					  topVC.isKind(of: Self.self) else { return }
+				
+				let retry = UIAlertAction(title: "重试", style: .default) { action in
+					self?.refresh(sender: strongSelf.refreshControl)
 				}
-				error.present(on: self, title: "无法获取课程列表", actions: [retry])
+				let cancel = UIAlertAction(title: "取消", style: .cancel)
+				error.present(on: strongSelf, title: "无法获取课程列表", actions: [retry, cancel])
 			}
 		}
 	}
 	
 	private func loadImage(forItem index: Int) async throws {
-		let course = courses[index]
 		
+		let course = courses[index]
 		// If the course is a place holder, then loadCourses() is unfinished, no need to download image
 		guard course != placeHolderCourse else { return }
 		// If there is an image, no need to download it again
@@ -175,11 +196,16 @@ extension CourseListVC: SkeletonCollectionViewDelegate, SkeletonCollectionViewDa
 		let id = courses[indexPath.item].id
 		let detailVC = CourseDetailVC()
 		detailVC.courseID = id
+		detailVC.courseTitle.text = courses[indexPath.item].name
 		self.navigationController?.pushIfNot(newVC: detailVC)
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
 		let cell = collectionView.cellForItem(at: indexPath) as! CourseCell
 		return !cell.sk.isSkeletonActive
+	}
+	
+	func collectionView(_ collectionView: UICollectionView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {
+		return false
 	}
 }

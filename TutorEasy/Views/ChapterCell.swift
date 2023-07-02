@@ -44,8 +44,6 @@ class ChapterCell: UICollectionViewCell {
 	override init(frame: CGRect) {
 		super.init(frame: frame)
 		
-		contentView.isSkeletonable = true
-		
 		contentView.layer.cornerRadius = contentView.bounds.size.width * cornerRadiusMultiplier
 		contentView.clipsToBounds = true
 		
@@ -71,9 +69,7 @@ class ChapterCell: UICollectionViewCell {
 		} else {
 			imageView.stopSkeletonAnimation()
 			imageView.hideSkeleton(reloadDataAfter: true, transition: .none)
-			if isFree {
-				imageView.drawTrail()
-			}
+			if isFree { imageView.drawTrail() }
 		}
 		
 		if titleLabel.text == nil {

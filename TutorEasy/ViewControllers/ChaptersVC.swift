@@ -15,7 +15,7 @@ class ChaptersVC: UIViewController {
 	var stageName: String!
 	// Hold a reference to loadStageTask, so when viewWillDisappear, we can cancel it if it's not finished yet
 	private var loadStageTask: Task<Void, Error>?
-	// Init value of the array is with place holder urls and chapters. When loadStage() returns, it's gonna replace urls with actual directory urls of the chapters, then when each cell is about to be scrolled into screen, loadChapter will be called, which get the actual chapter for the given index, and store the chapter back to this array, so next time the cell is scrolled back to be displayed, we don't need to download the chapter again
+	// Init value of the array is with place holder urls and chapters. When loadStage() returns, it's gonna replace urls with actual directory urls of the chapters. This way when total number of chapters for a stage is changed, users can pull to refresh to get the right number(comparing to set urls when initializing this vc, users will have to go back to previous VC and refresh stage info). Then when each cell is about to be scrolled onto screen, loadChapter will be called for each cell, which get the actual chapter for the given index, and store the chapter back to this array, so next time the cell is scrolled back to be displayed, we don't need to download the chapter again
 	private var chapterTuples: [(url: URL, chapter: Chapter)] = .init(repeating: (url: placeHolderURL, chapter: placeHolderChapter), count: placeHolderNumber)
 	
 	// MARK: - Custom subviews
@@ -50,7 +50,6 @@ class ChaptersVC: UIViewController {
 		chaptersCollectionView.layer.cornerRadius = 20
 		chaptersCollectionView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
 		chaptersCollectionView.backgroundColor = .systemGray5
-		chaptersCollectionView.isSkeletonable = true
 		
 		return chaptersCollectionView
 	}()
@@ -127,7 +126,8 @@ class ChaptersVC: UIViewController {
 	// MARK: - Custom Functions
 	private func loadStage() {
 		loadStageTask = Task { [weak self] in
-			let stage = try await CourseAPI.getStage(path: self!.stageURL.path)
+			guard let strongSelf = self else { return }
+			let stage = try await CourseAPI.getStage(path: strongSelf.stageURL.path)
 			try Task.checkCancellation()
 			self?.chapterTuples = stage.chapterURLs.map { (url: $0, chapter: placeHolderChapter)}
 			// When loadStage completes, it will set the array with the right number of tuples, so reload collection view will show the right number of cells.
@@ -172,11 +172,16 @@ class ChaptersVC: UIViewController {
 	}
 	
 	@objc private func refresh(sender: UIRefreshControl) {
+		loadStageTask?.cancel()
+		loadStageTask = nil
+		chaptersCollectionView.visibleCells.map { $0 as! ChapterCell }.forEach {
+			$0.loadTask?.cancel()
+			$0.loadTask = nil
+		}
+		
 		chapterTuples = .init(repeating: (url: placeHolderURL, chapter: placeHolderChapter), count: placeHolderNumber)
 		chaptersCollectionView.reloadData()
 		refreshControl.endRefreshing()
-		loadStageTask?.cancel()
-		loadStageTask = nil
 		loadStage()
 	}
 }
@@ -198,7 +203,7 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDe
 		if chapterTuples[indexPath.item].chapter.name != placeHolderChapter.name {
 			cell.titleLabel.text = chapterTuples[indexPath.item].chapter.name
 		}
-		
+
 		cell.imageView.image = chapterTuples[indexPath.item].chapter.image
 		if chapterTuples[indexPath.item].chapter.isFree { cell.isFree = true }
 		
@@ -214,11 +219,11 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDe
 		}
 	}
 	
-	// Cancel load chapter task when cell is about to be scrolled off the screen, this is also essential for titleLabel's text to be displayed properly.
+	// This will be called even when reloading a cell!!!. Cancel load chapter task when cell is about to be scrolled off the screen, this is also essential for titleLabel's text to be displayed properly.
 	func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
-		cell.loadTask?.cancel()
-		cell.loadTask = nil
+//		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
+//		cell.loadTask?.cancel()
+//		cell.loadTask = nil
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {

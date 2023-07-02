@@ -40,7 +40,6 @@ class CourseCell: UICollectionViewCell {
 		self.createShadow()
         
         NSLayoutConstraint.activate([
-            
             imageView.widthAnchor.constraint(equalTo: contentView.widthAnchor),
             imageView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             imageView.topAnchor.constraint(equalTo: contentView.topAnchor),
@@ -64,7 +63,6 @@ class CourseCell: UICollectionViewCell {
     
 	override func prepareForReuse() {
 		super.prepareForReuse()
-		
 		loadImageTask?.cancel()
 		loadImageTask = nil
 		
