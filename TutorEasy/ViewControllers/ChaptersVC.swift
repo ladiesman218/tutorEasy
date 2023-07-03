@@ -118,8 +118,10 @@ class ChaptersVC: UIViewController {
 		loadStageTask = nil
 		
 		chaptersCollectionView.visibleCells.map { $0 as! ChapterCell }.forEach {
-			$0.loadTask?.cancel()
-			$0.loadTask = nil
+			$0.loadChapterTask?.cancel()
+			$0.loadChapterTask = nil
+			$0.loadImageTask?.cancel()
+			$0.loadImageTask = nil
 		}
 	}
 	
@@ -135,48 +137,56 @@ class ChaptersVC: UIViewController {
 		}
 	}
 	
-	private func loadChapter(forItem index: Int) async throws {
+	private func loadChapter(forItem index: Int) -> Task<Void, Error>? {
 		let url = chapterTuples[index].url
-		guard url != placeHolderURL else { return }
-		
-		if chapterTuples[index].chapter == placeHolderChapter {
-			// Load chapter
+		let task = Task {
 			let chapter = try await CourseAPI.getChapter(path: url.path)
 			try Task.checkCancellation()
 			
 			// Store chapter back to array, so next time the cell gets dequeued, we don't need to download it again.
 			chapterTuples[index].chapter = chapter
-			// Reload given cell, which will display the chapter's name first, cos image downloading may take a while, but make sure the cell is still on screen first, otherwise titleLabel's text may not be displayed.
-			if chaptersCollectionView.indexPathsForVisibleItems.contains(where: { indexPath in
-				indexPath.item == index
-			}) {
+			
+			//If cell is still on screen, reload given cell, which will display the chapter's name first, cos image downloading may take a while.
+			guard !chaptersCollectionView.indexPathsForVisibleItems.contains(where: {
+				$0.item == index
+			}) else {
 				chaptersCollectionView.reloadItems(at: [.init(item: index, section: 0)])
+				return
 			}
 		}
+		return task
+	}
+	
+	private func loadImage(forItem index: Int) -> Task<Void, Error> {
+		let width = chaptersCollectionView.bounds.width / 4.2
+		let size = CGSize(width: width, height: width)
+		let chapter = chapterTuples[index].chapter
 		
-		if chapterTuples[index].chapter.image == nil {
-			// Load image
-			let width = chaptersCollectionView.bounds.width / 4.2
-			let size = CGSize(width: width, height: width)
-			let chapter = chapterTuples[index].chapter
+		let task = Task {
 			let image = try await UIImage.load(from: chapter.imageURL, size: size)
 			try Task.checkCancellation()
 			// set the generated image as chapter's image
 			chapterTuples[index].chapter.image = image
-			if chaptersCollectionView.indexPathsForVisibleItems.contains(where: { indexPath in
-				indexPath.item == index
-			}) {
+			
+			//If cell is still on screen, reload given cell, which will display the downloaded image.
+			guard !chaptersCollectionView.indexPathsForVisibleItems.contains(where: {
+				$0.item == index
+			}) else {
 				chaptersCollectionView.reloadItems(at: [.init(item: index, section: 0)])
+				return
 			}
 		}
+		return task
 	}
 	
 	@objc private func refresh(sender: UIRefreshControl) {
 		loadStageTask?.cancel()
 		loadStageTask = nil
 		chaptersCollectionView.visibleCells.map { $0 as! ChapterCell }.forEach {
-			$0.loadTask?.cancel()
-			$0.loadTask = nil
+			$0.loadChapterTask?.cancel()
+			$0.loadChapterTask = nil
+			$0.loadImageTask?.cancel()
+			$0.loadImageTask = nil
 		}
 		
 		chapterTuples = .init(repeating: (url: placeHolderURL, chapter: placeHolderChapter), count: placeHolderNumber)
@@ -200,30 +210,48 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDe
 		
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
 		
-		if chapterTuples[indexPath.item].chapter.name != placeHolderChapter.name {
+		// titleLabel's text is nil by default, display skeletonView for that. If the corresponding chapter in chapterTuples is not a place holder, which means the real chapter info has been downloaded, set titleLable's text to chapter's name and hide skeletonView.
+		if chapterTuples[indexPath.item].chapter != placeHolderChapter {
+			cell.titleLabel.stopSkeletonAnimation()
+			cell.titleLabel.hideSkeleton(reloadDataAfter: false, transition: .none)
 			cell.titleLabel.text = chapterTuples[indexPath.item].chapter.name
+		} else {
+			cell.titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos, secondaryColor: .clouds), animation: skeletonAnimation, transition: .none)
 		}
-
-		cell.imageView.image = chapterTuples[indexPath.item].chapter.image
-		if chapterTuples[indexPath.item].chapter.isFree { cell.isFree = true }
+		
+		// Do the same thing for imageView.
+		if let image = chapterTuples[indexPath.item].chapter.image {
+			cell.imageView.stopSkeletonAnimation()
+			cell.imageView.hideSkeleton(reloadDataAfter: false, transition: .none)
+			// Add trail string to image if needed.
+			cell.imageView.image = (chapterTuples[indexPath.item].chapter.isFree) ? image.addTrail() : image
+		} else {
+			cell.imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos, secondaryColor: .clouds), animation: skeletonAnimation, transition: .none)
+		}
 		
 		return cell
 	}
 	
-	// When a cell is about to be displayed, start the load chapter task
+	// When a cell is about to be displayed, check datasource to see if loading tasks should be started.
 	func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+		// If url for the given indexPath is a place holder, bail out.
+		guard chapterTuples[indexPath.item].url != placeHolderURL else { return }
+		// Here means we got a real url for a chapter.
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
 		
-		cell.loadTask = Task { [weak self] in
-			try await self?.loadChapter(forItem: indexPath.item)
+		// Make sure chapter info is not loaded
+		guard chapterTuples[indexPath.item].chapter == placeHolderChapter else {
+			// Here means chapter is already downloaded
+			guard chapterTuples[indexPath.item].chapter.image != nil else {
+				// Here means image has not been downloaded.
+				cell.loadImageTask = loadImage(forItem: indexPath.item)
+				return
+			}
+			// Here means both chapter and image have been downloaded, we can bailout.
+			return
 		}
-	}
-	
-	// This will be called even when reloading a cell!!!. Cancel load chapter task when cell is about to be scrolled off the screen, this is also essential for titleLabel's text to be displayed properly.
-	func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-//		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
-//		cell.loadTask?.cancel()
-//		cell.loadTask = nil
+		// Start load info for chapter
+		cell.loadChapterTask = loadChapter(forItem: indexPath.item)
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
