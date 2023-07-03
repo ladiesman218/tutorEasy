@@ -14,7 +14,7 @@ class ChaptersVC: UIViewController {
 	var courseName: String!
 	var stageName: String!
 	// Hold a reference to loadStageTask, so when viewWillDisappear, we can cancel it if it's not finished yet
-	private var loadStageTask: Task<Void, Error>?
+	private var loadStageTask: Task<Void, Never>?
 	// Init value of the array is with place holder urls and chapters. When loadStage() returns, it's gonna replace urls with actual directory urls of the chapters. This way when total number of chapters for a stage is changed, users can pull to refresh to get the right number(comparing to set urls when initializing this vc, users will have to go back to previous VC and refresh stage info). Then when each cell is about to be scrolled onto screen, loadChapter will be called for each cell, which get the actual chapter for the given index, and store the chapter back to this array, so next time the cell is scrolled back to be displayed, we don't need to download the chapter again
 	private var chapterTuples: [(url: URL, chapter: Chapter)] = .init(repeating: (url: placeHolderURL, chapter: placeHolderChapter), count: placeHolderNumber)
 	
@@ -129,29 +129,45 @@ class ChaptersVC: UIViewController {
 	private func loadStage() {
 		loadStageTask = Task { [weak self] in
 			guard let strongSelf = self else { return }
-			let stage = try await CourseAPI.getStage(path: strongSelf.stageURL.path)
-			try Task.checkCancellation()
-			self?.chapterTuples = stage.chapterURLs.map { (url: $0, chapter: placeHolderChapter)}
-			// When loadStage completes, it will set the array with the right number of tuples, so reload collection view will show the right number of cells.
-			self?.chaptersCollectionView.reloadData()
+			do {
+				let stage = try await CourseAPI.getStage(path: strongSelf.stageURL.path)
+				try Task.checkCancellation()
+				self?.chapterTuples = stage.chapterURLs.map { (url: $0, chapter: placeHolderChapter)}
+				// When loadStage completes, it will set the array with the right number of tuples, so reload collection view will show the right number of cells.
+				self?.chaptersCollectionView.reloadData()
+			} catch is CancellationError {
+				return
+			} catch {
+				let cancel = UIAlertAction(title: "取消", style: .cancel)
+				let retry = UIAlertAction(title: "重试", style: .default) { action in
+					self?.refresh(sender: nil)
+				}
+				error.present(on: strongSelf, title: "无法载入课程列表", actions: [cancel, retry])
+			}
 		}
 	}
 	
-	private func loadChapter(forItem index: Int) -> Task<Void, Error>? {
+	private func loadChapter(forItem index: Int) -> Task<Void, Never>? {
 		let url = chapterTuples[index].url
 		let task = Task {
-			let chapter = try await CourseAPI.getChapter(path: url.path)
-			try Task.checkCancellation()
-			
-			// Store chapter back to array, so next time the cell gets dequeued, we don't need to download it again.
-			chapterTuples[index].chapter = chapter
-			
-			//If cell is still on screen, reload given cell, which will display the chapter's name first, cos image downloading may take a while.
-			guard !chaptersCollectionView.indexPathsForVisibleItems.contains(where: {
-				$0.item == index
-			}) else {
-				chaptersCollectionView.reloadItems(at: [.init(item: index, section: 0)])
-				return
+			do {
+				let chapter = try await CourseAPI.getChapter(path: url.path)
+				try Task.checkCancellation()
+				
+				// Store chapter back to array, so next time the cell gets dequeued, we don't need to download it again.
+				chapterTuples[index].chapter = chapter
+				
+				//If cell is still on screen, reload given cell, which will display the chapter's name first, cos image downloading may take a while.
+				guard !chaptersCollectionView.indexPathsForVisibleItems.contains(where: {
+					$0.item == index
+				}) else {
+					chaptersCollectionView.reloadItems(at: [.init(item: index, section: 0)])
+					return
+				}
+			} catch is CancellationError { return }
+			catch {
+				print("load chapter error for \(index)")
+				#warning("When failing, set image to say '获取课程信息失败，请尝试下拉刷新'")
 			}
 		}
 		return task
@@ -179,7 +195,7 @@ class ChaptersVC: UIViewController {
 		return task
 	}
 	
-	@objc private func refresh(sender: UIRefreshControl) {
+	@objc private func refresh(sender: UIRefreshControl?) {
 		loadStageTask?.cancel()
 		loadStageTask = nil
 		chaptersCollectionView.visibleCells.map { $0 as! ChapterCell }.forEach {

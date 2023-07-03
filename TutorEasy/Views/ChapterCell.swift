@@ -12,7 +12,7 @@ class ChapterCell: UICollectionViewCell {
 	// MARK: - Properties
 	static let identifier = "chapterCollectionViewCell"
 	// Hold reference to loadChapter and loadImage tasks, so when cell is about to be scrolled off the screen, we can cancel it.
-	var loadChapterTask: Task<Void, Error>?
+	var loadChapterTask: Task<Void, Never>?
 	var loadImageTask: Task<Void, Error>?
 	
 	// MARK: - Custom subviews
