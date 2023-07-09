@@ -126,7 +126,7 @@ extension ProductsViewController: UITableViewDataSource, UITableViewDelegate {
 		return cell
 	}
 	
-	@objc func purchaseTapped(sender: UIButton) {
+	@objc private func purchaseTapped(sender: UIButton) {
 		
 		Task {
 			guard let userInfo = try? await AuthAPI.getPublicUserFromToken() else {

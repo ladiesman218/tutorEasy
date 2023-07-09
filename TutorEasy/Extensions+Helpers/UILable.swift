@@ -14,6 +14,7 @@ class PaddingLabel: UILabel {
 	}
 	
 	open override func textRect(forBounds bounds: CGRect, limitedToNumberOfLines numberOfLines: Int) -> CGRect {
+		super.textRect(forBounds: bounds, limitedToNumberOfLines: numberOfLines)
 		let textSize = self.font.pointSize
 
 		// Magic numbers to set left & right inset

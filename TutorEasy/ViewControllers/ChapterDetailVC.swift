@@ -77,7 +77,7 @@ class ChapterDetailVC: UIViewController {
 		}
 	}
 	
-	var chapter: ChapterModel! {
+	var chapter: Chapter! {
 		didSet {
 			Task.detached { [unowned self] in
 				await self.loadPDF()
@@ -133,6 +133,7 @@ class ChapterDetailVC: UIViewController {
 	
 	// MARK: - Controller functions
 	override func viewDidLayoutSubviews() {
+		super.viewDidLayoutSubviews()
 		// viewDidLayoutSubviews will be called both when full screen is toggled, and after the chapterPdf was set and the first page was displayed on screen, so this is the only place to set scale factor and disable zooming by set min/max scale factor to the same value.
 		pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
 		pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
@@ -214,17 +215,17 @@ class ChapterDetailVC: UIViewController {
 		buildingInstructionButton.centerVertically()
 	}
 	
-	@objc func toggleFullScreen() {
+	@objc private func toggleFullScreen() {
 		isFullScreen.toggle()
 	}
 	
-	@objc func pageChanged() {
+	@objc private func pageChanged() {
 		// Seems like when PDFPage is changed, long press gesture will be added again to the view. So Call this here to disable the gesture
 		recursivelyDisableSelection(view: pdfView)
 	}
 	
 	// When scrolling on pdfView to change pdf page, change opacity for thumbnail collection view cells accordingly. This should be called only when not in full screen mode, otherwise it does nothing.
-	@objc func changeSelectedCell() {
+	@objc private func changeSelectedCell() {
 		guard let labelString = pdfView.currentPage?.label, let labelInt = Int(labelString) else { return }
 		let index = labelInt - 1
 		
@@ -243,7 +244,7 @@ class ChapterDetailVC: UIViewController {
 		thumbnailCollectionView.selectItem(at: [0, index], animated: true, scrollPosition: .centeredVertically)
 	}
 	
-	@objc func goToPDF(sender: UIButton) {
+	@objc private func goToPDF(sender: UIButton) {
 		let pdfVC = PDFViewController()
 		pdfVC.chapter = chapter
 		if sender.tag == 0 {
@@ -350,7 +351,7 @@ extension ChapterDetailVC: AVPlayerViewControllerDelegate {
 		self.present(playerViewController, animated: true)
 	}
 	
-	@objc func didFinishPlaying() {
+	@objc private func didFinishPlaying() {
 		player.replaceCurrentItem(with: nil)
 		// If/when playback is in a pip window, due to the current implementation, playerVC is dismissed, and will be restored after playback finished. In that case the following dismiss command will happen earlier than the restoration without asyncAfter, therefor no dismission will actually happen. Adding asyncAfter will delay dismission, practically guarantee restoration happens first, and we get a successful dismiss.
 		Task {

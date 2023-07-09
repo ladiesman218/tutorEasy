@@ -99,7 +99,7 @@ class RegisterViewController: UIViewController {
         ])
     }
     
-    @objc func register() {
+    @objc private func register() {
         guard let email = registrationEmailTextField.text, !email.isEmpty && email.range(of: emailRegex, options: .regularExpression) != nil else {
             MessagePresenter.showMessage(title: "无效邮箱地址", message: "请填写正确的邮箱地址", on: self, actions: [])
             return

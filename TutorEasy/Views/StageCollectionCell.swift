@@ -10,7 +10,8 @@ import SkeletonView
 
 class StageCollectionCell: UICollectionViewCell {
 	static let identifier = "StageCellIdentifier"
-	var loadStageTask: Task<Void, Error>?
+	var loadStageTask: Task<Void, Never>?
+	var loadImageTask: Task<Void, Error>?
 	
 	let imageView: UIImageView = {
 		let imageView = UIImageView()
@@ -37,7 +38,7 @@ class StageCollectionCell: UICollectionViewCell {
 	let descriptionLabel: UILabel = {
 		let label = UILabel()
 		label.translatesAutoresizingMaskIntoConstraints = false
-		// Set detailTextLabel to have 3 lines at most, when overflow, truncate tail
+//		 Set detailTextLabel to have 3 lines at most, when overflow, truncate tail
 		label.numberOfLines = 3
 		label.allowsDefaultTighteningForTruncation = true
 		label.lineBreakMode = .byTruncatingTail
@@ -52,7 +53,7 @@ class StageCollectionCell: UICollectionViewCell {
 	override init(frame: CGRect) {
 		super.init(frame: frame)
 		contentView.clipsToBounds = true
-		
+		contentView.isSkeletonable = true
 		contentView.addSubview(imageView)
 		contentView.addSubview(titleLabel)
 		contentView.addSubview(descriptionLabel)
@@ -82,31 +83,14 @@ class StageCollectionCell: UICollectionViewCell {
 		super.layoutSubviews()
 		titleLabel.font = titleLabel.font.withSize(self.frame.height * 0.2)
 		descriptionLabel.font = descriptionLabel.font.withSize(self.frame.height * 0.75 / 5)
-		
-		let animation = GradientDirection.leftRight.slidingAnimation(duration: 2.5, autoreverses: false)
-		
-		if titleLabel.text == nil {
-			titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos, secondaryColor: .clouds), animation: animation, transition: .none)
-			descriptionLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos, secondaryColor: .clouds), animation: animation, transition: .none)
-		} else {
-			titleLabel.stopSkeletonAnimation()
-			titleLabel.hideSkeleton(reloadDataAfter: true, transition: .none)
-			descriptionLabel.stopSkeletonAnimation()
-			descriptionLabel.hideSkeleton(reloadDataAfter: true, transition: .none)
-		}
-		
-		if imageView.image == nil {
-			imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos, secondaryColor: .clouds), animation: animation, transition: .none)
-		} else {
-			imageView.stopSkeletonAnimation()
-			imageView.hideSkeleton(reloadDataAfter: true, transition: .none)
-		}
 	}
 	
 	override func prepareForReuse() {
 		super.prepareForReuse()
 		loadStageTask?.cancel()
 		loadStageTask = nil
+		loadImageTask?.cancel()
+		loadImageTask = nil
 		
 		imageView.image = nil
 		titleLabel.text = nil

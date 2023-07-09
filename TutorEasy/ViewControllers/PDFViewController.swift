@@ -61,6 +61,7 @@ class PDFViewController: UIViewController {
 	
 	// MARK: - Controller functions
 	override func viewDidLayoutSubviews() {
+		super.viewDidLayoutSubviews()
 		pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
 		pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
 		pdfView.maxScaleFactor = pdfView.scaleFactorForSizeToFit
@@ -108,7 +109,7 @@ class PDFViewController: UIViewController {
 		}
 	}
 	
-	@objc func pageChanged() {
+	@objc private func pageChanged() {
 		// Seems like when PDFPage is changed, long press gesture will be added again to the view. So Call this here to disable the gesture
 		recursivelyDisableSelection(view: pdfView)
 	}
@@ -157,7 +158,7 @@ extension PDFViewController: AVPlayerViewControllerDelegate {
 		self.present(playerViewController, animated: true)
 	}
 	
-	@objc func didFinishPlaying() {
+	@objc private func didFinishPlaying() {
 		player.replaceCurrentItem(with: nil)
 		// If/when playback is in a pip window, due to the current implementation, playerVC is dismissed, and will be restored after playback finished. In that case the following dismiss command will happen earlier than the restoration without asyncAfter, therefor no dismission will actually happen. Adding asyncAfter will delay dismission, practically guarantee restoration happens first, and we get a successful dismiss.
 		Task {

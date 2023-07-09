@@ -46,6 +46,8 @@ class ChapterCell: UICollectionViewCell {
 		
 		contentView.layer.cornerRadius = contentView.bounds.size.width * cornerRadiusMultiplier
 		contentView.clipsToBounds = true
+		contentView.isSkeletonable = true
+		self.isSkeletonable = true
 		
 		contentView.addSubview(imageView)
 		contentView.addSubview(titleLabel)

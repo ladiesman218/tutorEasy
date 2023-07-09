@@ -62,7 +62,7 @@ class ProfileIconView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 	
-    @objc func loginStatusChanged() {
+    @objc private func loginStatusChanged() {
 		Task {
 			await MainActor.run { 
 				if AuthAPI.userInfo != nil {
@@ -78,7 +78,7 @@ class ProfileIconView: UIView {
 		}
     }
 	
-	@objc func profileIconClicked() {
+	@objc private func profileIconClicked() {
 		let destinationVC: UIViewController = (AuthAPI.userInfo != nil) ? AccountVC() : AuthenticationVC()
 		// When a logged in user click profileIcon, go to manage profile view by default
 		if let accountsVC = destinationVC as? AccountVC {

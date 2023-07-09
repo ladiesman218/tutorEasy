@@ -12,10 +12,15 @@ class CourseDetailVC: UIViewController {
 	// MARK: - Properties
 	var courseID: UUID!
 	
-	// Init value of the array is with place holder urls and stages. When loadCourse() returns, it's gonna replace urls with actual directory urls of the stages. This way when total number of stages for a course is changed, users can pull to refresh to get the right number(comparing to set urls when initializing this vc, users will have to go back to previous VC and refresh course info). Then when each cell is about to be scrolled onto screen, loadStage() will be called for each cell, which get the actual stage for the given index, and store the stage back to this array, so next time the cell is scrolled back to be displayed, we don't need to download the stage again
+	// Init value of the array is with place holder urls and stages. When loadCourse() returns, it's gonna replace urls with actual directory urls of the stages. This way when total number of stages for a course is changed, users can pull to refresh to get the right number(comparing to set urls when initializing this vc, users will have to go back to previous VC and refresh course info). Then when each cell is about to be scrolled in screen, loadStage() will be called for each cell, which get the actual stage for the given index, and store the stage back to this array, so next time the cell is scrolled back to be displayed, we don't need to download the stage again.
 	private var stageTuples: [(url: URL, stage: Stage)] = .init(repeating: (url: placeHolderURL, stage: placeHolderStage), count: placeHolderNumber)
-		
-	private var loadCourseTask: Task<Void, Error>?
+	
+	private var loadCourseTask: Task<Void, Never>?
+	private var cellHeight: CGFloat!
+	private var cellWidth: CGFloat!
+	private var cellSize: CGSize!
+	private var imageSize: CGSize!
+	private let skeletonAnimation = GradientDirection.leftRight.slidingAnimation(duration: 2.5, autoreverses: false)
 	
 	// MARK: - Custom Subviews
 	private var topView: UIView!
@@ -50,7 +55,21 @@ class CourseDetailVC: UIViewController {
 	// MARK: - Controller functions
 	// When coming back from a previous VC, clear selection otherwise former selected item still shows different background color.
 	override func viewWillAppear(_ animated: Bool) {
+		super.viewWillAppear(animated)
 		stageCollectionView.selectItem(at: nil, animated: false, scrollPosition: .top)
+	}
+	
+	override func viewWillDisappear(_ animated: Bool) {
+		super.viewWillDisappear(animated)
+		loadCourseTask?.cancel()
+		loadCourseTask = nil
+		
+		stageCollectionView.visibleCells.map { $0 as! StageCollectionCell }.forEach {
+			$0.loadStageTask?.cancel()
+			$0.loadStageTask = nil
+			$0.loadImageTask?.cancel()
+			$0.loadImageTask = nil
+		}
 	}
 	
 	override func viewDidLoad() {
@@ -95,48 +114,77 @@ class CourseDetailVC: UIViewController {
 			stageCollectionView.leadingAnchor.constraint(equalTo: backButtonView.leadingAnchor),
 			stageCollectionView.trailingAnchor.constraint(equalTo: iconView.trailingAnchor),
 			stageCollectionView.topAnchor.constraint(equalTo: topView.bottomAnchor, constant: 20),
-			stageCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-		])
+			stageCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor) ])
+		
+	}
+	
+	override func viewDidLayoutSubviews() {
+		super.viewDidLayoutSubviews()
+		cellHeight = stageCollectionView.bounds.height / 2.5
+		cellWidth = stageCollectionView.bounds.width
+		cellSize = CGSize(width: cellWidth, height: cellHeight)
+		imageSize = CGSize(width: cellHeight, height: cellHeight)
 	}
 	
 	// MARK: - Custom Functions
 	private func loadCourse() {
 		loadCourseTask = Task { [weak self] in
+			guard let strongSelf = self else { return }
 			do {
-				guard let strongSelf = self else { return }
 				let course = try await CourseAPI.getCourse(id: strongSelf.courseID)
 				try Task.checkCancellation()
 				self?.stageTuples = course.stageURLs.map { (url: $0, stage: placeHolderStage) }
 				self?.stageCollectionView.reloadData()
-			} catch is CancellationError {
-				return
-			} catch {
-				guard let strongSelf = self else { return }
+			} catch is CancellationError { return }
+			catch {
+				let cancel = UIAlertAction(title: "取消", style: .cancel)
 				let retry = UIAlertAction(title: "重试", style: .default) { action in
 					self?.refresh(sender: self?.refreshControl)
 				}
-				let cancel = UIAlertAction(title: "取消", style: .cancel)
-				error.present(on: strongSelf, title: "无法获取课程详情", actions: [retry, cancel])
+				error.present(on: strongSelf, title: "无法载入课程详情", actions: [retry, cancel])
 			}
 		}
 	}
 	
-	private func loadStage(forItem index: Int) async throws {
+	private func loadStage(forItem index: Int) -> Task<Void, Never> {
 		let url = stageTuples[index].url
-		// Make sure loadCourse() has finished
-		guard url != placeHolderURL else { return }
 		
-		if stageTuples[index].stage == placeHolderStage {
-			let stage = try await CourseAPI.getStage(path: url.path)
-			try Task.checkCancellation()
-			stageTuples[index].stage = stage
+		let task = Task { [weak self] in
+			guard let strongSelf = self else { return }
 			
-			if stageCollectionView.indexPathsForVisibleItems.contains(where: {
-				$0.item == index
-			}) {
-				stageCollectionView.reloadItems(at: [.init(item: index, section: 0)])
+			do {
+				let randomNumber = Double.random(in: 1...3)
+				try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
+				
+				let stage = try await CourseAPI.getStage(path: url.path)
+				try Task.checkCancellation()
+				// Store stage back to datasource, so next time it's called, we don't need to download it again.
+				self?.stageTuples[index].stage = stage
+				
+				self?.stageCollectionView.reloadItems(at: [.init(item: index, section: 0)])
+			} catch is CancellationError { return }
+			catch {
+				print("load stage failed for \(index)")
+#warning("Set image to the same failed loading image in chaptersVC")
 			}
 		}
+		return task
+	}
+	
+	private func loadImage(forItem index: Int) -> Task<Void, Error> {
+		let stage = stageTuples[index].stage
+#warning("first image won't show sometimes")
+		let task = Task { [weak self] in
+			guard let strongSelf = self else { return }
+			let randomNumber = Double.random(in: 1...3)
+			try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
+			let image = try await UIImage.load(from: stage.imageURL, size: strongSelf.imageSize)
+			try Task.checkCancellation()
+			// Store image back 1to datasource, so next time it's called, we don't need to download it again.
+			self?.stageTuples[index].stage.image = image
+			self?.stageCollectionView.reloadItems(at: [.init(item: index, section: 0)])
+		}
+		return task
 	}
 	
 	@objc private func refresh(sender: UIRefreshControl?) {
@@ -146,6 +194,8 @@ class CourseDetailVC: UIViewController {
 		stageCollectionView.visibleCells.map { $0 as! StageCollectionCell }.forEach {
 			$0.loadStageTask?.cancel()
 			$0.loadStageTask = nil
+			$0.loadImageTask?.cancel()
+			$0.loadStageTask = nil
 		}
 		
 		stageTuples = .init(repeating: (url: placeHolderURL, stage: placeHolderStage), count: placeHolderNumber)
@@ -153,7 +203,6 @@ class CourseDetailVC: UIViewController {
 		refreshControl.endRefreshing()
 		loadCourse()
 	}
-	
 }
 
 extension CourseDetailVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDelegate, UICollectionViewDelegateFlowLayout {
@@ -161,35 +210,40 @@ extension CourseDetailVC: SkeletonCollectionViewDataSource, SkeletonCollectionVi
 	func collectionSkeletonView(_ skeletonView: UICollectionView, cellIdentifierForItemAt indexPath: IndexPath) -> SkeletonView.ReusableCellIdentifier {
 		StageCollectionCell.identifier
 	}
-		
+	
 	func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
 		stageTuples.count
 	}
-		
+	
+	// cellForItem(at:) method is called automatically when the cell or the entire collectionView is reloaded, and it's called before viewWillDisplay(_:, forItemAt:) function, which in contrast will not be called when cell or collectionView is reloaded.
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StageCollectionCell.identifier, for: indexPath) as! StageCollectionCell
-
-		if stageTuples[indexPath.item].stage.name != placeHolderStage.name {
-			cell.titleLabel.text = stageTuples[indexPath.row].stage.name
-			cell.descriptionLabel.text = stageTuples[indexPath.row].stage.description
-		}
-		cell.imageView.image = stageTuples[indexPath.row].stage.image
 		
-//		cell.backgroundColor = tableView.backgroundColor
-		return cell
-	}
-
-	func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+		
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StageCollectionCell.identifier, for: indexPath) as! StageCollectionCell
-		cell.loadStageTask = Task { [weak self] in
-			try? await self?.loadStage(forItem: indexPath.row)
+		cell.contentView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos, secondaryColor: .clouds), animation: skeletonAnimation, transition: .none)
+		
+		let stage = stageTuples[indexPath.item].stage
+		guard stage != placeHolderStage else {
+			cell.loadStageTask = loadStage(forItem: indexPath.item)
+			return cell
 		}
-	}
-
-	func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StageCollectionCell.identifier, for: indexPath ) as! StageCollectionCell
-		cell.loadStageTask?.cancel()
-		cell.loadStageTask = nil
+		cell.titleLabel.stopSkeletonAnimation()
+		cell.titleLabel.hideSkeleton(reloadDataAfter: false, transition: .none)
+		cell.titleLabel.text = stage.name
+		cell.descriptionLabel.stopSkeletonAnimation()
+		cell.descriptionLabel.hideSkeleton(reloadDataAfter: false, transition: .none)
+		cell.descriptionLabel.text = stage.description
+		
+		guard let image = stage.image else {
+			cell.loadImageTask = loadImage(forItem: indexPath.item)
+			return cell
+		}
+		
+		cell.imageView.stopSkeletonAnimation()
+		cell.imageView.hideSkeleton(reloadDataAfter: false, transition: .none)
+		cell.imageView.image = image
+		
+		return cell
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
@@ -201,10 +255,7 @@ extension CourseDetailVC: SkeletonCollectionViewDataSource, SkeletonCollectionVi
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-		let width = stageCollectionView.bounds.width
-		let height = stageCollectionView.bounds.height / 2.5
-		let size = CGSize(width: width, height: height)
-		return size
+		return cellSize
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {

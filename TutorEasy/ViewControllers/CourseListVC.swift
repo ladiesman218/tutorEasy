@@ -7,6 +7,8 @@ class CourseListVC: UIViewController {
 	private var courses: [Course] = .init(repeating: placeHolderCourse, count: placeHolderNumber)
 	// Hold a reference to load all courses task. When needed, we can cancel it. We need to cancel the old task so refresh could work.
 	private var loadCoursesTask: Task<Void, Never>?
+//	private var cellWidth: CGFloat!
+//	private var cellSize: CGSize!
 
 	// MARK: - Custom subviews
 	private let collectionView: UICollectionView = {
@@ -29,6 +31,10 @@ class CourseListVC: UIViewController {
 	private let iconView: ProfileIconView = .init(frame: .zero, extraInfo: true)
 	
 	// MARK: - Controller functions
+	override func viewDidLayoutSubviews() {
+		super.viewDidLayoutSubviews()
+//		cellWidth =
+	}
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		view.backgroundColor = UIColor.systemBackground
@@ -144,8 +150,8 @@ class CourseListVC: UIViewController {
 		// Re-generate datasource
 		courses = .init(repeating: placeHolderCourse, count: placeHolderNumber)
 		collectionView.reloadData()
-		loadCourses()
 		refreshControl.endRefreshing()
+		loadCourses()
 	}
 }
 

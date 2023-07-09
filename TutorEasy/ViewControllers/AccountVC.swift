@@ -84,6 +84,7 @@ class AccountVC: UIViewController {
 	// MARK: - View Controller functions
 	// Without this, navigationTable won't show a selected background before selection change, kinda confusing which one is currently selected when first enter this VC.
 	override func viewDidAppear(_ animated: Bool) {
+		super.viewDidAppear(animated)
 		let index = Self.subVCs.firstIndex(of: currentVC)!
 		let indexPath = IndexPath(row: index, section: 0)
 		navigationTable.selectRow(at: indexPath, animated: false, scrollPosition: .none)
@@ -129,7 +130,7 @@ class AccountVC: UIViewController {
 		
 	}
 	
-	@objc func logout() {
+	@objc private func logout() {
 		Task {
 			await AuthAPI.logout()
 			self.navigationController?.popViewController(animated: true)
