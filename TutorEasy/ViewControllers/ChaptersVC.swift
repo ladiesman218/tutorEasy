@@ -15,7 +15,7 @@ class ChaptersVC: UIViewController {
 	var stageName: String!
 	// Hold a reference to loadStageTask, so when viewWillDisappear, we can cancel it if it's not finished yet
 	private var loadStageTask: Task<Void, Never>?
-	// Init value of the array is with place holder urls and chapters. When loadStage() returns, it's gonna replace urls with actual directory urls of the chapters. This way when total number of chapters for a stage is changed, users can pull to refresh to get the right number(comparing to set urls when initializing this vc, users will have to go back to previous VC and refresh stage info). Then when each cell is about to be scrolled onto screen, loadChapter will be called for each cell, which get the actual chapter for the given index, and store the chapter back to this array, so next time the cell is scrolled back to be displayed, we don't need to download the chapter again
+	// Init value of the array is with place holder urls and chapters. When loadStage() returns, it's gonna replace urls with actual directory urls of the chapters. This way when total number of chapters for a stage is changed, users can pull to refresh to get the right number(comparing to set urls when initializing this vc, users will have to go back to previous VC and refresh stage info). When each cell is dequeued, loadChapter will be called if corresponding chapter in datasource array is a placeholder, which get the actual chapter for the given index, and store the chapter back to this array, so next time the cell is scrolled back to be displayed, we don't need to download the chapter again.
 	private var chapterTuples: [(url: URL, chapter: Chapter)] = .init(repeating: (url: placeHolderURL, chapter: placeHolderChapter), count: placeHolderNumber)
 	private var cellWidth: CGFloat!
 	private var cellSize: CGSize!
@@ -200,9 +200,11 @@ class ChaptersVC: UIViewController {
 				// Store chapter back to array, so next time the cell gets dequeued, we don't need to download it again.
 				self?.chapterTuples[index].chapter = chapter
 				
+				// If cell is still on screen, cellForItem(at:) won't be triggered, set text value for cell's titleLabel and call setNeedsLayout(), so what's inside ChapterCell's layoutSubviews() would be called.
 				if let cell = self?.chaptersCollectionView.cellForItem(at: .init(item: index, section: 0)) as? ChapterCell {
 					cell.titleLabel.text = chapter.name
 					cell.setNeedsLayout()
+					// Since we are not reloading the cell, call loadImage() manually.
 					cell.loadImageTask = self?.loadImage(forItem: index)
 				}
 			} catch is CancellationError { return }
