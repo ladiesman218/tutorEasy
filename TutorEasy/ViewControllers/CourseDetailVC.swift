@@ -164,7 +164,7 @@ class CourseDetailVC: UIViewController {
 				self?.stageCollectionView.reloadItems(at: [.init(item: index, section: 0)])
 			} catch is CancellationError { return }
 			catch {
-				print("load stage failed for \(index)")
+				print("load stage failed for \(index): \(error)")
 #warning("Set image to the same failed loading image in chaptersVC")
 			}
 		}

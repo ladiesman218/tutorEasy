@@ -12,14 +12,15 @@ class ChapterCell: UICollectionViewCell {
 	// MARK: - Properties
 	static let identifier = "chapterCollectionViewCell"
 	// Hold reference to loadChapter and loadImage tasks, so when cell is about to be scrolled off the screen, we can cancel it.
-	var loadChapterTask: Task<Void, Never>?
-	var loadImageTask: Task<Void, Error>?
+	var loadChapterTask: Task<Void, Never>? = nil
+	var loadImageTask: Task<Void, Error>? = nil
 	
 	// MARK: - Custom subviews
+	// SkeletonView doesn't work very well with auto layout, using auto layout on these 2 views will cause only 1 cell displaying skeleton animation, dispite collection view has many cells.
 	let imageView: UIImageView = {
 		let imageView = UIImageView()
 		imageView.isSkeletonable = true
-
+		imageView.isUserInteractionDisabledWhenSkeletonIsActive
 		return imageView
 	}()
 	
@@ -36,7 +37,7 @@ class ChapterCell: UICollectionViewCell {
 		label.skeletonTextLineHeight = .relativeToFont
 		label.skeletonTextNumberOfLines = 1
 		label.lastLineFillPercent = 100
-
+		
 		return label
 	}()
 	
@@ -46,8 +47,6 @@ class ChapterCell: UICollectionViewCell {
 		
 		contentView.layer.cornerRadius = contentView.bounds.size.width * cornerRadiusMultiplier
 		contentView.clipsToBounds = true
-		contentView.isSkeletonable = true
-		self.isSkeletonable = true
 		
 		contentView.addSubview(imageView)
 		contentView.addSubview(titleLabel)
@@ -65,6 +64,24 @@ class ChapterCell: UICollectionViewCell {
 		imageView.frame = CGRect(x: 0, y: 0, width: contentView.bounds.width, height: contentView.bounds.width)
 		titleLabel.frame = CGRect(x: 0, y: contentView.bounds.width, width: contentView.bounds.width, height: contentView.bounds.height - contentView.bounds.width)
 		titleLabel.font = titleLabel.font.withSize(titleLabel.bounds.height * 0.4)
+		
+		// Display/hide skeleton depending on those 2 view's text/image property, so that we can simply set view's property value accordingly, then call setNeedsLayout() on cell, no need to reload cell anymore.
+		if titleLabel.text == nil || titleLabel.text == placeHolderChapter.name {
+			titleLabel.showAnimatedGradientSkeleton(usingGradient: skeletonGradient, animation: skeletonAnimation, transition: .none)
+		} else {
+			// titleLable's text will be lost after hideSkeleton(reloadDataAfter: , transition: ) gets called, despite value of reloadDataAfter. This may be a bug. Anyway we get it's text before calling hideSkeleton() and set the text again after that.
+			let text = titleLabel.text
+			titleLabel.stopSkeletonAnimation()
+			titleLabel.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(0.25))
+			titleLabel.text = text
+		}
+		
+		if imageView.image == nil {
+			imageView.showAnimatedGradientSkeleton(usingGradient: skeletonGradient, animation: skeletonAnimation, transition: .none)
+		} else {
+			imageView.stopSkeletonAnimation()
+			imageView.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(0.25))
+		}
 	}
 	
 	override func prepareForReuse() {

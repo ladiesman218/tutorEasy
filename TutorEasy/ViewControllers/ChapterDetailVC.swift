@@ -263,7 +263,6 @@ class ChapterDetailVC: UIViewController {
 		let path = chapter.pdfURL.path
 		do {
 			let (data, response) = try await FileAPI.getCourseContent(path: path)
-			print("In the function: \(Thread.current)")
 			let navVC = self.navigationController!
 			let cancel = UIAlertAction(title: "再看看", style: .default) { action in
 				navVC.popViewController(animated: true)

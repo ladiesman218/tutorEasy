@@ -15,8 +15,6 @@ class ChaptersVC: UIViewController {
 	var stageName: String!
 	// Hold a reference to loadStageTask, so when viewWillDisappear, we can cancel it if it's not finished yet
 	private var loadStageTask: Task<Void, Never>?
-	// UIRefreshControl's isRefreshing property will always be true when refresh method is triggered, so it's useless, refreshControl's isHidden is always false so it's useless too. Hence this property is created to track if a refresh is in progress.
-	private var isRefreshing = false
 	// Init value of the array is with place holder urls and chapters. When loadStage() returns, it's gonna replace urls with actual directory urls of the chapters. This way when total number of chapters for a stage is changed, users can pull to refresh to get the right number(comparing to set urls when initializing this vc, users will have to go back to previous VC and refresh stage info). Then when each cell is about to be scrolled onto screen, loadChapter will be called for each cell, which get the actual chapter for the given index, and store the chapter back to this array, so next time the cell is scrolled back to be displayed, we don't need to download the chapter again
 	private var chapterTuples: [(url: URL, chapter: Chapter)] = .init(repeating: (url: placeHolderURL, chapter: placeHolderChapter), count: placeHolderNumber)
 	private var cellWidth: CGFloat!
@@ -55,7 +53,6 @@ class ChaptersVC: UIViewController {
 		chaptersCollectionView.layer.cornerRadius = 20
 		chaptersCollectionView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
 		chaptersCollectionView.backgroundColor = .systemGray5
-		chaptersCollectionView.isSkeletonable = true
 		
 		return chaptersCollectionView
 	}()
@@ -73,8 +70,6 @@ class ChaptersVC: UIViewController {
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		// Start skeleton animation for collectionView, number of cells is still affected by chapterTuples.count value, but since skeletonView is showed on collectionView, scrolling will be disbaled until loadStageTask returns.
-		chaptersCollectionView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos, secondaryColor: .clouds), animation: skeletonAnimation, transition: .none)
 		
 		view.backgroundColor = UIColor.systemBackground
 		topView = configTopView()
@@ -94,6 +89,7 @@ class ChaptersVC: UIViewController {
 		topView.addSubview(stageTitle)
 		
 		refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
+		refreshControl.tintColor = .systemYellow
 		chaptersCollectionView.addSubview(refreshControl)
 		chaptersCollectionView.refreshControl = refreshControl
 		
@@ -127,16 +123,7 @@ class ChaptersVC: UIViewController {
 	
 	override func viewWillDisappear(_ animated: Bool) {
 		super.viewWillDisappear(animated)
-		
-		loadStageTask?.cancel()
-		loadStageTask = nil
-		
-		chaptersCollectionView.visibleCells.map { $0 as! ChapterCell }.forEach {
-			$0.loadChapterTask?.cancel()
-			$0.loadChapterTask = nil
-			$0.loadImageTask?.cancel()
-			$0.loadImageTask = nil
-		}
+		cancelAllTasks()
 	}
 	
 	// Unfinished loadStageTask, visible cell's loadChapter and loadImage tasks will be canceled when view disappeared. So when user goes back from a chapter detail vc or accountsVC, skeletonView will be shown on these cells, check and re-start loading tasks accordingly.
@@ -146,21 +133,22 @@ class ChaptersVC: UIViewController {
 		guard !chapterTuples.contains(where: {
 			$0.url == placeHolderURL
 		}) else {
+			cancelAllTasks()
 			loadStageTask = loadStage()
-			// When loadStage() returns successfully, it will reload collectionView's data, loadChapter for each visible cell will be triggered, so we can return if we are here.
 			return
 		}
 		
 		// Here means all urls for each chapter is set correctly, check if visible cells has unfinished load tasks
-		chaptersCollectionView.indexPathsForVisibleItems.forEach {
-			let chapter = chapterTuples[$0.item].chapter
-			if chapter == placeHolderChapter {
-				let cell = chaptersCollectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: $0) as! ChapterCell
-				cell.loadChapterTask = loadChapter(forItem: $0.item)
-				// When loadChapter() returns successfully, it will reload the cell, which will trigger loadImage()
-			} else if chapter.image == nil {
-				let cell = chaptersCollectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: $0) as! ChapterCell
-				cell.loadImageTask = loadImage(forItem: $0.item)
+		for indexPath in chaptersCollectionView.indexPathsForVisibleItems {
+			guard let cell = chaptersCollectionView.cellForItem(at: indexPath) as? ChapterCell else { continue }
+
+			let chapter = chapterTuples[indexPath.item].chapter
+			guard chapter != placeHolderChapter else {
+				cell.loadChapterTask = loadChapter(forItem: indexPath.item)
+				continue
+			}
+			if chapter.image == nil {
+				cell.loadImageTask = loadImage(forItem: indexPath.item)
 			}
 		}
 	}
@@ -168,44 +156,39 @@ class ChaptersVC: UIViewController {
 	// MARK: - Custom Functions
 	private func loadStage() -> Task<Void, Never> {
 		let task = Task { [weak self] in
-			// Avoid capturing self in task, hence weak self is used. But data task needs a url instead of optional url, so get a strongSelf here and pass it in CourseAPI.getStage(). If when CourseAPI.getStage() returns strongSelf is not available, we should be getting an CancellationError before that, so later use of strongSelf won't cause the app to crash.
-			guard let strongSelf = self else { return }
 			
 			do {
 				let randomNumber = Double.random(in: 4...7)
 				try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
+				
+				guard let strongSelf = self else { return }
 				let stage = try await CourseAPI.getStage(path: strongSelf.stageURL.path)
-
 				try Task.checkCancellation()
-				Task { //@MainActor in
-					strongSelf.chapterTuples = stage.chapterURLs.map { (url: $0, chapter: placeHolderChapter)}
-					// When loadStage completes, it will set the array with the right number of tuples, so reload collection view will show the right number of cells.
-					strongSelf.chaptersCollectionView.hideSkeleton()
-					strongSelf.chaptersCollectionView.reloadData()
-					strongSelf.isRefreshing = false
-					strongSelf.refreshControl.endRefreshing()
-				}
+				
+				self?.chapterTuples = stage.chapterURLs.map { (url: $0, chapter: placeHolderChapter)}
+				// When loadStage completes, it will set the array with the right number of tuples, so reload collection view will show the right number of cells.
+				self?.chaptersCollectionView.reloadData()
 			} catch is CancellationError { return }
 			catch {
-				Task { //@MainActor in
-					let cancel = UIAlertAction(title: "取消", style: .cancel)
-					let retry = UIAlertAction(title: "重试", style: .default) { action in
-						strongSelf.refresh(sender: strongSelf.refreshControl)
-					}
-					error.present(on: strongSelf, title: "无法载入课程列表", actions: [cancel, retry])
-					strongSelf.isRefreshing = false
-					strongSelf.refreshControl.endRefreshing()
+				guard let strongSelf = self else { return }
+
+				let cancel = UIAlertAction(title: "取消", style: .cancel)
+				let retry = UIAlertAction(title: "重试", style: .default) { action in
+					strongSelf.refresh(sender: strongSelf.refreshControl)
 				}
+				error.present(on: strongSelf, title: "无法载入课程列表", actions: [cancel, retry])
 			}
-			// refresh control won't be hid until this function returns
-			
+			// Discard task reference, so user can refresh if needed.
+			self?.loadStageTask = nil
+			// Hide refreshControl
+			self?.refreshControl.endRefreshing()
 		}
 		return task
 	}
 	
 	private func loadChapter(forItem index: Int) -> Task<Void, Never>? {
 		let url = chapterTuples[index].url
-
+		
 		let task = Task { [weak self] in
 			do {
 				let randomNumber = Double.random(in: 1...3)
@@ -217,11 +200,21 @@ class ChaptersVC: UIViewController {
 				// Store chapter back to array, so next time the cell gets dequeued, we don't need to download it again.
 				self?.chapterTuples[index].chapter = chapter
 				
-				self?.chaptersCollectionView.reloadItems(at: [.init(item: index, section: 0)])
+				if let cell = self?.chaptersCollectionView.cellForItem(at: .init(item: index, section: 0)) as? ChapterCell {
+					cell.titleLabel.text = chapter.name
+					cell.setNeedsLayout()
+					cell.loadImageTask = self?.loadImage(forItem: index)
+				}
 			} catch is CancellationError { return }
 			catch {
 				print("load chapter error for \(index): \(error)")
-#warning("When failing, set image to say '获取信息失败，请尝试下拉刷新'")
+				if let cell = self?.chaptersCollectionView.cellForItem(at: .init(item: index, section: 0)) as? ChapterCell {
+					let image = UIImage(named: "load-failed.png")!
+					cell.imageView.image = image
+					// To hide skeletonView for titleLabel
+					cell.titleLabel.text = "   "
+					cell.setNeedsLayout()
+				}
 			}
 		}
 		return task
@@ -229,46 +222,50 @@ class ChaptersVC: UIViewController {
 	
 	private func loadImage(forItem index: Int) -> Task<Void, Error> {
 		let chapter = chapterTuples[index].chapter
-		
+
 		let task = Task { [weak self] in
 			guard let strongSelf = self else { return }
 			let randomNumber = Double.random(in: 1...3)
 			try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
 			
-			let image = try await UIImage.load(from: chapter.imageURL, size: strongSelf.imageSize)
+			var image = try await UIImage.load(from: chapter.imageURL, size: strongSelf.imageSize)
 			try Task.checkCancellation()
+			image = (chapter.isFree) ? image.addTrail() : image
 			// set the generated image as chapter's image
 			self?.chapterTuples[index].chapter.image = image
-			
-			self?.chaptersCollectionView.reloadItems(at: [.init(item: index, section: 0)])
+			if let cell = self?.chaptersCollectionView.cellForItem(at: .init(item: index, section: 0)) as? ChapterCell {
+				cell.imageView.image = image
+				cell.setNeedsLayout()
+			}
 		}
 		return task
 	}
 	
-	@objc private func refresh(sender: UIRefreshControl) {
-		// Make sure previous refresh progress has finished, if not we do nothing and bail out directly.
-		guard !isRefreshing else { return }
-		// Mark a refreshing is in progress, so if user pull down to refresh multiple times, only 1 is ongoing.
-		isRefreshing = true
-		
-		// Cancel loadStageTask and visible cell's loadChapter and loadImage tasks.
+	private func cancelAllTasks() {
 		loadStageTask?.cancel()
 		loadStageTask = nil
-		chaptersCollectionView.visibleCells.map { $0 as! ChapterCell }.forEach {
-			$0.loadChapterTask?.cancel()
-			$0.loadChapterTask = nil
-			$0.loadImageTask?.cancel()
-			$0.loadImageTask = nil
+		// Somehow, use cellForItem(at:) will miss out some cells
+		for case let cell as ChapterCell in (0 ... chapterTuples.count - 1).map({
+			chaptersCollectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: .init(item: $0, section: 0))
+		}) {
+			cell.loadChapterTask?.cancel()
+			cell.loadImageTask?.cancel()
+			cell.loadChapterTask = nil
+			cell.loadImageTask = nil
 		}
+	}
+	
+	@objc private func refresh(sender: UIRefreshControl) {
+		// Make sure previous refresh progress has finished
+		guard loadStageTask == nil else { return }
+		
+		cancelAllTasks()
 		
 		// Reset datasource
 		chapterTuples = .init(repeating: (url: placeHolderURL, chapter: placeHolderChapter), count: placeHolderNumber)
-		// Reload collectionView
+		// Reload collectionView to show skeleton animation for cells
 		chaptersCollectionView.reloadData()
-		// Show skeleton animation on collectionView.
-		chaptersCollectionView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos, secondaryColor: .clouds), animation: skeletonAnimation, transition: .none)
-
-		// Start a loadStage task, which will set the right number of cell for collectionView when successfully returned.
+		
 		loadStageTask = loadStage()
 	}
 }
@@ -286,32 +283,21 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDe
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
-
-		cell.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos, secondaryColor: .clouds), animation: skeletonAnimation, transition: .none)
-		//		cell.imageView.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos, secondaryColor: .clouds), animation: skeletonAnimation, transition: .none)
-		//		cell.titleLabel.showAnimatedGradientSkeleton(usingGradient: .init(baseColor: .asbestos, secondaryColor: .clouds), animation: skeletonAnimation, transition: .none)
 		
 		guard chapterTuples[indexPath.item].url != placeHolderURL else { return cell }
 		
-		let chapter = chapterTuples[indexPath.item].chapter
-		guard chapter != placeHolderChapter else {
+		guard chapterTuples[indexPath.item].chapter != placeHolderChapter else {
 			cell.loadChapterTask = loadChapter(forItem: indexPath.item)
 			return cell
 		}
+		cell.titleLabel.text = chapterTuples[indexPath.item].chapter.name
 		
-		cell.titleLabel.stopSkeletonAnimation()
-		cell.titleLabel.hideSkeleton(reloadDataAfter: false, transition: .none)
-		cell.titleLabel.text = chapter.name
-		
-		guard let image = chapter.image else {
+		// When loadChapterTask succeed, it will set loadImageTask, but in case during image downloading, user has scrolled away then back to the cell, downloading task might be cancelled.
+		guard chapterTuples[indexPath.item].chapter.image != nil else {
 			cell.loadImageTask = loadImage(forItem: indexPath.item)
 			return cell
 		}
-		cell.imageView.stopSkeletonAnimation()
-		cell.imageView.hideSkeleton(reloadDataAfter: false, transition: .none)
-		// Add trail string to image if needed.
-		cell.imageView.image = (chapter.isFree) ? image.addTrail() : image
-		
+		cell.imageView.image = chapterTuples[indexPath.item].chapter.image
 		
 		return cell
 	}
@@ -342,5 +328,4 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDe
 	func collectionView(_ collectionView: UICollectionView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {
 		return false
 	}
-	
 }

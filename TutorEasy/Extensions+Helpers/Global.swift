@@ -10,7 +10,7 @@ import SkeletonView
 
 //let serverURL = URL(string: "http://localhost:8080")!     //localhost and docker production environment
 //let serverURL = URL(string: "https://app.douwone.xyz")!		// Gigsgigs
-let serverURL = URL(string: "https://0ee5-1-28-216-175.ngrok-free.app")!     //ngrok
+let serverURL = URL(string: "https://ce2d-1-28-216-175.ngrok-free.app")!     //ngrok
 
 let baseURL = serverURL.appendingPathComponent("api")
 
@@ -61,6 +61,5 @@ let placeHolderChapter = Chapter(directoryURL: URL(fileURLWithPath: ""), name: "
 let placeHolderStage = Stage(directoryURL: URL(fileURLWithPath: "/"), name: "", description: "", imageURL: nil, chapterURLs: [] )
 let placeHolderCourse = Course(id: UUID(), name: "", description: "", price: 1, stageURLs: [], imageURL: nil, annuallyIAPIdentifier: "")
 
-let skeletonImageColor = UIColor.asbestos
-let skeletonTitleColor = UIColor.amethyst
 let skeletonAnimation = GradientDirection.topLeftBottomRight.slidingAnimation()
+let skeletonGradient = SkeletonGradient(baseColor: .asbestos, secondaryColor: .clouds)
