@@ -158,8 +158,8 @@ class ChaptersVC: UIViewController {
 		let task = Task { [weak self] in
 			
 			do {
-				let randomNumber = Double.random(in: 4...7)
-				try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
+//				let randomNumber = Double.random(in: 4...7)
+//				try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
 				
 				guard let strongSelf = self else { return }
 				let stage = try await CourseAPI.getStage(path: strongSelf.stageURL.path)
@@ -191,8 +191,8 @@ class ChaptersVC: UIViewController {
 		
 		let task = Task { [weak self] in
 			do {
-				let randomNumber = Double.random(in: 1...3)
-				try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
+//				let randomNumber = Double.random(in: 1...3)
+//				try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
 				
 				let chapter = try await CourseAPI.getChapter(path: url.path)
 				try Task.checkCancellation()
@@ -225,8 +225,8 @@ class ChaptersVC: UIViewController {
 
 		let task = Task { [weak self] in
 			guard let strongSelf = self else { return }
-			let randomNumber = Double.random(in: 1...3)
-			try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
+//			let randomNumber = Double.random(in: 1...3)
+//			try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
 			
 			var image = try await UIImage.load(from: chapter.imageURL, size: strongSelf.imageSize)
 			try Task.checkCancellation()
@@ -248,10 +248,7 @@ class ChaptersVC: UIViewController {
 		for case let cell as ChapterCell in (0 ... chapterTuples.count - 1).map({
 			chaptersCollectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: .init(item: $0, section: 0))
 		}) {
-			cell.loadChapterTask?.cancel()
-			cell.loadImageTask?.cancel()
-			cell.loadChapterTask = nil
-			cell.loadImageTask = nil
+			cell.prepareForReuse()
 		}
 	}
 	
