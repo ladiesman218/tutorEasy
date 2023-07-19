@@ -30,15 +30,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		
 		Task {
 			AuthAPI.userInfo = try? await AuthAPI.getPublicUserFromToken()
-			// Only push a new authenticationVC when the current top vc is not of type authentication VC
 			if AuthAPI.userInfo == nil {
 				let authenticationVC = AuthenticationVC()
-				// When AuthVC is about to be pushed into nav stack, check if currently displayed vc has presented a UIAlertViewController, if so, dismiss it first.
-				if let presentedViewController = navVC.topViewController?.presentedViewController,
-				   presentedViewController is UIAlertController {
-					navVC.topViewController?.presentedViewController?.dismiss(animated: false)
-				}
-				// Only push a new authenticationVC when the current top vc is not of type authentication VC
 				navVC.pushIfNot(newVC: authenticationVC)
 			}
 		}

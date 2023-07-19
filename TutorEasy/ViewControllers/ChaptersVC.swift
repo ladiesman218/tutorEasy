@@ -130,6 +130,8 @@ class ChaptersVC: UIViewController {
 	override func viewWillAppear(_ animated: Bool) {
 		super.viewWillAppear(animated)
 		
+		// Hiding refresh control is animated so it takes time. If before refresh control is fully hidden, user goes to another VC, then comeback later, collectionView may leave a blank gap(previously held by refresh control) on top, so scroll back.
+		if chaptersCollectionView.contentOffset.y < 0 { chaptersCollectionView.scrollToItem(at: .init(item: 0, section: 0), at: .top, animated: true) }
 		guard !chapterTuples.contains(where: {
 			$0.url == placeHolderURL
 		}) else {
@@ -158,8 +160,8 @@ class ChaptersVC: UIViewController {
 		let task = Task { [weak self] in
 			
 			do {
-//				let randomNumber = Double.random(in: 4...7)
-//				try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
+				let randomNumber = Double.random(in: 4...7)
+				try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
 				
 				guard let strongSelf = self else { return }
 				let stage = try await CourseAPI.getStage(path: strongSelf.stageURL.path)
@@ -314,8 +316,7 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDe
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
-		let cell = collectionView.cellForItem(at: indexPath) as! ChapterCell
-		return !cell.titleLabel.sk.isSkeletonActive
+		return chapterTuples[indexPath.item].chapter != placeHolderChapter
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {

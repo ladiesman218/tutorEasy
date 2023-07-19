@@ -20,7 +20,6 @@ class ChapterCell: UICollectionViewCell {
 	let imageView: UIImageView = {
 		let imageView = UIImageView()
 		imageView.isSkeletonable = true
-		imageView.isUserInteractionDisabledWhenSkeletonIsActive
 		return imageView
 	}()
 	
@@ -64,6 +63,7 @@ class ChapterCell: UICollectionViewCell {
 		imageView.frame = CGRect(x: 0, y: 0, width: contentView.bounds.width, height: contentView.bounds.width)
 		titleLabel.frame = CGRect(x: 0, y: contentView.bounds.width, width: contentView.bounds.width, height: contentView.bounds.height - contentView.bounds.width)
 		titleLabel.font = titleLabel.font.withSize(titleLabel.bounds.height * 0.4)
+		titleLabel.skeletonPaddingInsets = .init(top: titleLabel.bounds.height * 0.4, left: 0, bottom: 0, right: 0)
 		
 		// Display/hide skeleton depending on those 2 view's text/image property, so that we can simply set view's property value accordingly, then call setNeedsLayout() on cell, no need to reload cell anymore.
 		if titleLabel.text == nil || titleLabel.text == placeHolderChapter.name {

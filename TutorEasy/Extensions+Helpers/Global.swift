@@ -10,7 +10,7 @@ import SkeletonView
 
 //let serverURL = URL(string: "http://localhost:8080")!     //localhost and docker production environment
 //let serverURL = URL(string: "https://app.douwone.xyz")!		// Gigsgigs
-let serverURL = URL(string: "https://ce2d-1-28-216-175.ngrok-free.app")!     //ngrok
+let serverURL = URL(string: "https://419f-1-28-218-66.ngrok-free.app")!     //ngrok
 
 let baseURL = serverURL.appendingPathComponent("api")
 
@@ -55,10 +55,10 @@ enum Encoder {
 	}
 }
 
-let placeHolderNumber = 12
+let placeHolderNumber = 8
 let placeHolderURL = URL(string: "/")!
 let placeHolderChapter = Chapter(directoryURL: URL(fileURLWithPath: ""), name: "", isFree: false, pdfURL: URL(fileURLWithPath: ""), bInstructionURL: nil, teachingPlanURL: nil, imageURL: nil)
-let placeHolderStage = Stage(directoryURL: URL(fileURLWithPath: "/"), name: "", description: "", imageURL: nil, chapterURLs: [] )
+let placeHolderStage = Stage(directoryURL: URL(fileURLWithPath: "/"), name: "", description: " ", imageURL: nil, chapterURLs: [] )
 let placeHolderCourse = Course(id: UUID(), name: "", description: "", price: 1, stageURLs: [], imageURL: nil, annuallyIAPIdentifier: "")
 
 let skeletonAnimation = GradientDirection.topLeftBottomRight.slidingAnimation()

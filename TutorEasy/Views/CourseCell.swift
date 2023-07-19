@@ -10,12 +10,11 @@ import SkeletonView
 
 class CourseCell: UICollectionViewCell {
     static let identifier = "courseCollectionViewCell"
-	var loadImageTask: Task<Void, Error>?
+	var loadImageTask: Task<Void, Never>?
 	
     private let nameLabel: UILabel = {
         let label = UILabel()
         label.textColor = .systemRed
-        label.translatesAutoresizingMaskIntoConstraints = false
 		
 		label.isSkeletonable = true
         return label
@@ -23,7 +22,6 @@ class CourseCell: UICollectionViewCell {
 	
     let imageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.translatesAutoresizingMaskIntoConstraints = false
 		imageView.isSkeletonable = true
         return imageView
     }()
@@ -38,14 +36,19 @@ class CourseCell: UICollectionViewCell {
 
         contentView.addSubview(imageView)
 		self.createShadow()
-        
-        NSLayoutConstraint.activate([
-            imageView.widthAnchor.constraint(equalTo: contentView.widthAnchor),
-            imageView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            imageView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            imageView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)//, constant: -50),
-        ])
     }
+	
+	override func layoutSubviews() {
+		super.layoutSubviews()
+		imageView.frame = contentView.frame
+		
+		if imageView.image == nil {
+			imageView.showAnimatedGradientSkeleton(usingGradient: skeletonGradient, animation: skeletonAnimation, transition: .none)
+		} else {
+			imageView.stopSkeletonAnimation()
+			imageView.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(0.25))
+		}
+	}
 	    
     required init?(coder: NSCoder) {
         fatalError()
