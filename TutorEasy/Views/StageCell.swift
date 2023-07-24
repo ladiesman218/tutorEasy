@@ -10,6 +10,8 @@ import SkeletonView
 
 class StageCell: UICollectionViewCell {
 	static let identifier = "StageCellIdentifier"
+	static private let skeletonAnimation = GradientDirection.leftRight.slidingAnimation(duration: 2.5, autoreverses: false)
+	
 	var loadStageTask: Task<Void, Never>?
 	var loadImageTask: Task<Void, Error>?
 	
@@ -50,7 +52,6 @@ class StageCell: UICollectionViewCell {
 	override init(frame: CGRect) {
 		super.init(frame: frame)
 		contentView.clipsToBounds = true
-		contentView.isSkeletonable = true
 		contentView.addSubview(imageView)
 		contentView.addSubview(titleLabel)
 		contentView.addSubview(descriptionLabel)
@@ -64,20 +65,20 @@ class StageCell: UICollectionViewCell {
 		super.layoutSubviews()
 		
 		let height = contentView.bounds.height
-		let verticalGap = height * 0.05
-		let titleHeight = height * 0.18
-		titleLabel.font = titleLabel.font.withSize(titleHeight)
-		descriptionLabel.font = descriptionLabel.font.withSize(self.frame.height * 0.75 / 5)
-
+ 
 		imageView.frame = .init(origin: .zero, size: .init(width: height, height: height))
-		titleLabel.frame = .init(origin: .init(x: height + 20, y: verticalGap), size: .init(width: contentView.bounds.width - height - 20, height: titleHeight))
-		descriptionLabel.frame.origin.x = titleLabel.frame.origin.x
-		descriptionLabel.frame.origin.y = titleLabel.frame.origin.y + titleHeight + verticalGap
-		descriptionLabel.frame.size.width = titleLabel.frame.size.width
-		descriptionLabel.frame.size.height = height - titleHeight - verticalGap * 2
+		titleLabel.frame = .init(origin: .init(x: height + 20, y: 0), size: .init(width: contentView.bounds.width - height - 20, height: height / 4))
 		
+		descriptionLabel.frame.origin.x = titleLabel.frame.origin.x
+		descriptionLabel.frame.origin.y = titleLabel.frame.height * 1.3
+		descriptionLabel.frame.size.height = height - titleLabel.frame.height * 1.3
+		descriptionLabel.frame.size.width = titleLabel.frame.size.width
+		
+		titleLabel.font = titleLabel.font.withSize(titleLabel.frame.height)
+		descriptionLabel.font = descriptionLabel.font.withSize(descriptionLabel.frame.height / CGFloat(descriptionLabel.numberOfLines + 1))
+
 		if titleLabel.text == nil || titleLabel.text == placeHolderStage.name {
-			titleLabel.showAnimatedGradientSkeleton(usingGradient: skeletonGradient, animation: skeletonAnimation, transition: .none)
+			titleLabel.showAnimatedGradientSkeleton(usingGradient: skeletonGradient, animation: Self.skeletonAnimation, transition: .none)
 		} else {
 			let text = titleLabel.text
 			titleLabel.stopSkeletonAnimation()
@@ -86,7 +87,7 @@ class StageCell: UICollectionViewCell {
 		}
 		
 		if descriptionLabel.text == nil || descriptionLabel.text == placeHolderStage.description {
-			descriptionLabel.showAnimatedGradientSkeleton(usingGradient: skeletonGradient, animation: skeletonAnimation, transition: .none)
+			descriptionLabel.showAnimatedGradientSkeleton(usingGradient: skeletonGradient, animation: Self.skeletonAnimation, transition: .none)
 		} else {
 			let text = descriptionLabel.text
 			descriptionLabel.stopSkeletonAnimation()
@@ -95,7 +96,7 @@ class StageCell: UICollectionViewCell {
 		}
 		
 		if imageView.image == nil {
-			imageView.showAnimatedGradientSkeleton(usingGradient: skeletonGradient, animation: skeletonAnimation, transition: .none)
+			imageView.showAnimatedGradientSkeleton(usingGradient: skeletonGradient, animation: Self.skeletonAnimation, transition: .none)
 		} else {
 			imageView.stopSkeletonAnimation()
 			imageView.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(0.25))

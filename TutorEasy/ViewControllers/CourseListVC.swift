@@ -8,8 +8,7 @@ class CourseListVC: UIViewController {
 	private var loadCoursesTask: Task<Void, Never>?
 	private var cellWidth: CGFloat!
 	private var cellSize: CGSize!
-	private let failedImage = UIImage(named: "load-failed.png")!
-
+	
 	// MARK: - Custom subviews
 	private let courseCollectionView: UICollectionView = {
 		let layout = UICollectionViewFlowLayout()
@@ -18,7 +17,7 @@ class CourseListVC: UIViewController {
 		collectionView.layer.cornerRadius = 20
 		collectionView.layer.maskedCorners = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
 		collectionView.contentInset = .init(top: 30, left: 30, bottom: 30, right: 30)
-
+		
 		collectionView.register(CourseCell.self, forCellWithReuseIdentifier: CourseCell.identifier)
 		collectionView.translatesAutoresizingMaskIntoConstraints = false
 		return collectionView
@@ -72,30 +71,29 @@ class CourseListVC: UIViewController {
 			courseCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 		])
 	}
-			
+	
 	// MARK: - Custom Functions
 	private func loadCourses() -> Task<Void, Never> {
 		let task = Task { [weak self] in
 			// When user is not logged in, AuthenticationVC maybe pushed into nav stack, if loadCourses() fails while AuthVC is the top vc of nav stack, make sure alert won't pop up to confuse user. But we still need to tell user loading courses failed, this is done by setting images for place holder cell's to load-failed.png
 			do {
-//				try await Task.sleep(nanoseconds: 2_000_000_000)
+//				try await Task.sleep(nanoseconds: 4_000_000_000)
 				self?.courses = try await CourseAPI.getAllCourses()
 				try Task.checkCancellation()
 				self?.courseCollectionView.reloadData()
 			} catch is CancellationError { return }
 			catch {
 				guard let strongSelf = self else { return }
-				// Set all cell's image to failedImage
 				for case let cell as CourseCell in (0 ... strongSelf.courses.count - 1).map({
 					self?.courseCollectionView.cellForItem(at: .init(item: $0, section: 0)) }) {
-					cell.imageView.image = self?.failedImage
+					cell.imageView.image = failedImage
 					cell.imageView.backgroundColor = .systemBrown
 					cell.setNeedsLayout()
 				}
-
+				
 				// Do not show alert when self is not the top VC of nav stack
 				guard self?.navigationController?.topViewController == self else {
-					// This early `return` may actually happen, so when it happens, end refresh if there is one ongoing, allow user to refresh again.
+					// This early `return` may actually happen, so when it happens, end refresh if there is one ongoing, so refreshControl won't be displayed if user come back to this vc later.
 					self?.refreshControl.endRefreshing()
 					return
 				}
@@ -111,37 +109,26 @@ class CourseListVC: UIViewController {
 		return task
 	}
 	
-	private func loadImage(forItem index: Int) -> Task<Void, Never> {
+	private func loadImage(forItem index: Int) -> Task<Void, Error> {
 		
 		let task = Task { [weak self] in
-			do {
-//				try await Task.sleep(nanoseconds: 3_000_000_000)
-				guard let strongSelf = self else { return }
-				let course = strongSelf.courses[index]
-				let image = try await UIImage.load(from: course.imageURL, size: strongSelf.cellSize)
-				try Task.checkCancellation()
-				
-				self?.courses[index].image = image
-				if let cell = self?.courseCollectionView.cellForItem(at: .init(item: index, section: 0)) as? CourseCell {
-					cell.imageView.image = image
-					cell.setNeedsLayout()
-				}
-			} catch is CancellationError { return }
-			catch {
-				// Since loadImage fail won't affect users to use the app, set it to an image generated from color
-				guard let strongSelf = self else { return }
-				let image = UIColor.blue.convertToImage(size: strongSelf.cellSize)
-				if let cell = self?.courseCollectionView.cellForItem(at: .init(item: index, section: 0)) as? CourseCell {
-					cell.imageView.image = image
-					cell.setNeedsLayout()
-				}
+			//				try await Task.sleep(nanoseconds: 3_000_000_000)
+			guard let strongSelf = self else { return }
+			let course = strongSelf.courses[index]
+			let image = await UIImage.load(from: course.imageURL, size: strongSelf.cellSize)
+			try Task.checkCancellation()
+			
+			self?.courses[index].image = image
+			
+			if let cell = self?.courseCollectionView.cellForItem(at: .init(item: index, section: 0)) as? CourseCell {
+				cell.imageView.image = image
+				cell.setNeedsLayout()
 			}
 		}
 		return task
 	}
 	
 	@objc private func refresh(sender: UIRefreshControl) {
-		// Resetting datasource and reload collectionView will give us new cells, hence new tasks
 		courses = .init(repeating: placeHolderCourse, count: placeHolderNumber)
 		courseCollectionView.reloadData()
 		loadCoursesTask = loadCourses()
@@ -194,7 +181,7 @@ extension CourseListVC: SkeletonCollectionViewDelegate, SkeletonCollectionViewDa
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
-			return courses[indexPath.item] != placeHolderCourse
+		return courses[indexPath.item] != placeHolderCourse
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {

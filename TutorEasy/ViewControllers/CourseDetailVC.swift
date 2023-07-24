@@ -19,7 +19,6 @@ class CourseDetailVC: UIViewController {
 	private var cellWidth: CGFloat!
 	private var cellSize: CGSize!
 	private var imageSize: CGSize!
-	private let skeletonAnimation = GradientDirection.leftRight.slidingAnimation(duration: 2.5, autoreverses: false)
 	
 	// MARK: - Custom Subviews
 	private var topView: UIView!
@@ -56,8 +55,6 @@ class CourseDetailVC: UIViewController {
 		super.viewWillAppear(animated)
 		
 		if stageCollectionView.contentOffset.y < 0 { stageCollectionView.scrollToItem(at: .init(item: 0, section: 0), at: .top, animated: true) }
-		// When coming back from a previous VC, clear selection otherwise former selected item still shows different background color.
-		stageCollectionView.selectItem(at: nil, animated: false, scrollPosition: .top)
 		
 		guard !stageTuples.contains(where: { item in
 			item.url == placeHolderURL
@@ -152,7 +149,7 @@ class CourseDetailVC: UIViewController {
 	private func loadCourse() -> Task<Void, Never> {
 		let task = Task { [weak self] in
 			do {
-				try await Task.sleep(nanoseconds: 4_000_000_000)
+//				try await Task.sleep(nanoseconds: 4_000_000_000)
 				guard let strongSelf = self else { return }
 				let course = try await CourseAPI.getCourse(id: strongSelf.courseID)
 				try Task.checkCancellation()
@@ -162,13 +159,15 @@ class CourseDetailVC: UIViewController {
 			catch {
 				guard let strongSelf = self else { return }
 				
-				let cancel = UIAlertAction(title: "取消", style: .cancel)
-				let retry = UIAlertAction(title: "重试", style: .default) { action in
-					self?.refresh(sender: strongSelf.refreshControl)
+				for case let cell as StageCell in (0 ... strongSelf.stageTuples.count - 1).map({
+					self?.stageCollectionView.cellForItem(at: .init(item: $0, section: 0)) }) {
+					cell.imageView.image = failedImage
+					cell.imageView.backgroundColor = .systemBrown
+					cell.titleLabel.text = "  "
+					cell.descriptionLabel.text = "  "
+					cell.setNeedsLayout()
 				}
-				error.present(on: strongSelf, title: "无法载入课程详情", actions: [retry, cancel])
 			}
-			self?.loadCourseTask = nil
 			self?.refreshControl.endRefreshing()
 		}
 		return task
@@ -178,32 +177,27 @@ class CourseDetailVC: UIViewController {
 		let url = stageTuples[index].url
 		
 		let task = Task { [weak self] in
+			guard let cell = self?.stageCollectionView.cellForItem(at: .init(item: index, section: 0)) as? StageCell else { return }
 			do {
 				let randomNumber = Double.random(in: 1...3)
-				try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
+//				try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
 				
 				let stage = try await CourseAPI.getStage(path: url.path)
 				try Task.checkCancellation()
-
+				
 				self?.stageTuples[index].stage = stage
 				
-				if let cell = self?.stageCollectionView.cellForItem(at: .init(item: index, section: 0)) as? StageCell {
-					cell.titleLabel.text = stage.name
-					cell.descriptionLabel.text = stage.description
-					cell.setNeedsLayout()
-					cell.loadImageTask = self?.loadImage(forItem: index)
-				}
+				cell.titleLabel.text = stage.name
+				cell.descriptionLabel.text = stage.description
+				cell.setNeedsLayout()
+				cell.loadImageTask = self?.loadImage(forItem: index)
 			} catch is CancellationError { return }
 			catch {
-				print("load stage error for \(index): \(error)")
-				if let cell = self?.stageCollectionView.cellForItem(at: .init(item: index, section: 0)) as? StageCell {
-					let image = UIImage(named: "load-failed.png")!
-					cell.imageView.image = image
-					// To hide skeletonView for titleLabel
-					cell.titleLabel.text = "   "
-					cell.descriptionLabel.text = "   "
-					cell.setNeedsLayout()
-				}
+				cell.imageView.image = failedImage
+				// To hide skeletonView for titleLabel
+				cell.titleLabel.text = "   "
+				cell.descriptionLabel.text = "   "
+				cell.setNeedsLayout()
 			}
 		}
 		return task
@@ -211,16 +205,16 @@ class CourseDetailVC: UIViewController {
 	
 	private func loadImage(forItem index: Int) -> Task<Void, Error> {
 		let stage = stageTuples[index].stage
-
+		
 		let task = Task { [weak self] in
+			//			let randomNumber = Double.random(in: 1...3)
+			//			try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
+			
 			guard let strongSelf = self else { return }
-			let randomNumber = Double.random(in: 1...3)
-			try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
-			
-			let image = try await UIImage.load(from: stage.imageURL, size: strongSelf.imageSize)
+			let image = await UIImage.load(from: stage.imageURL, size: strongSelf.imageSize)
 			try Task.checkCancellation()
-			
 			self?.stageTuples[index].stage.image = image
+			
 			if let cell = self?.stageCollectionView.cellForItem(at: .init(item: index, section: 0)) as? StageCell {
 				cell.imageView.image = image
 				cell.setNeedsLayout()
@@ -230,7 +224,6 @@ class CourseDetailVC: UIViewController {
 	}
 	
 	@objc private func refresh(sender: UIRefreshControl) {
-		guard loadCourseTask == nil else { return }
 		
 		cancelAllTasks()
 		
@@ -260,6 +253,7 @@ extension CourseDetailVC: SkeletonCollectionViewDataSource, SkeletonCollectionVi
 			cell.loadStageTask = loadStage(forItem: indexPath.item)
 			return cell
 		}
+		
 		cell.titleLabel.text = stageTuples[indexPath.item].stage.name
 		cell.descriptionLabel.text = stageTuples[indexPath.item].stage.description
 		

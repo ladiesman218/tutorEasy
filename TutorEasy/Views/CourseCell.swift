@@ -10,7 +10,7 @@ import SkeletonView
 
 class CourseCell: UICollectionViewCell {
     static let identifier = "courseCollectionViewCell"
-	var loadImageTask: Task<Void, Never>?
+	var loadImageTask: Task<Void, Error>?
 	
     private let nameLabel: UILabel = {
         let label = UILabel()

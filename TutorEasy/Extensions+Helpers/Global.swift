@@ -10,7 +10,7 @@ import SkeletonView
 
 //let serverURL = URL(string: "http://localhost:8080")!     //localhost and docker production environment
 //let serverURL = URL(string: "https://app.douwone.xyz")!		// Gigsgigs
-let serverURL = URL(string: "https://419f-1-28-218-66.ngrok-free.app")!     //ngrok
+let serverURL = URL(string: "https://9744-1-28-218-66.ngrok-free.app")!     //ngrok
 
 let baseURL = serverURL.appendingPathComponent("api")
 
@@ -54,6 +54,8 @@ enum Encoder {
 		return encoder
 	}
 }
+
+let failedImage = UIImage(named: "load-failed.png")!
 
 let placeHolderNumber = 8
 let placeHolderURL = URL(string: "/")!

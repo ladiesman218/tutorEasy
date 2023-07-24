@@ -70,7 +70,7 @@ extension UIImage {
 		return resultImage ?? self
 	}
 	
-	static func load(from url: URL?, size: CGSize) async throws -> UIImage {
+	static func load(from url: URL?, size: CGSize) async -> UIImage {
 		guard let url = url else {
 			// Generate a image if imageURL is nil
 			let image = UIColor.blue.convertToImage(size: size)
@@ -78,8 +78,12 @@ extension UIImage {
 		}
 		
 		let req = FileAPI.convertToImageRequest(url: url)
-		let image = try await FileAPI.publicGetImageData(request: req, size: size)
-		try Task.checkCancellation()
+		var image: UIImage
+		do {
+			image = try await FileAPI.publicGetImageData(request: req, size: size)
+		} catch {
+			image = UIColor.blue.convertToImage(size: size)
+		}
 		return image
 	}
 }
