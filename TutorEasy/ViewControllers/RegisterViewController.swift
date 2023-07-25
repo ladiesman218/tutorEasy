@@ -64,6 +64,15 @@ class RegisterViewController: UIViewController {
         return button
     }()
     
+	private let registerIndicator: UIActivityIndicatorView = {
+		let indicator = UIActivityIndicatorView()
+		indicator.color = .systemYellow
+		indicator.hidesWhenStopped = true
+		indicator.style = .large
+		indicator.translatesAutoresizingMaskIntoConstraints = false
+		return indicator
+	}()
+	
     override func viewDidLoad() {
         super.viewDidLoad()
 		view.backgroundColor = .systemBackground
@@ -72,8 +81,10 @@ class RegisterViewController: UIViewController {
         view.addSubview(usernameTextField)
         view.addSubview(passwordTextField)
         view.addSubview(password2TextField)
+		registerButton.addSubview(registerIndicator)
         view.addSubview(registerButton)
-        registerButton.addTarget(self, action: #selector(register), for: .touchUpInside)
+
+		registerButton.addTarget(self, action: #selector(register), for: .touchUpInside)
         
         NSLayoutConstraint.activate([
             
@@ -95,7 +106,10 @@ class RegisterViewController: UIViewController {
             
             registerButton.topAnchor.constraint(equalTo: password2TextField.bottomAnchor, constant: 20),
             registerButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            registerButton.widthAnchor.constraint(equalTo: registrationEmailTextField.widthAnchor, multiplier: 0.8)
+            registerButton.widthAnchor.constraint(equalTo: registrationEmailTextField.widthAnchor, multiplier: 0.8),
+			
+			registerIndicator.topAnchor.constraint(equalTo: registerButton.topAnchor),
+			registerIndicator.leadingAnchor.constraint(equalTo: registerButton.titleLabel!.trailingAnchor)
         ])
     }
     
@@ -105,8 +119,8 @@ class RegisterViewController: UIViewController {
             return
         }
         
-        guard let username = usernameTextField.text, !username.isEmpty else {
-            MessagePresenter.showMessage(title: "无效用户名", message: "", on: self, actions: [])
+		guard let username = usernameTextField.text, userNameLength.contains(username.count) else {
+            MessagePresenter.showMessage(title: "无效用户名", message: "用户名长度应在4-35个字符之间", on: self, actions: [])
             return
         }
         
@@ -115,15 +129,20 @@ class RegisterViewController: UIViewController {
             return
         }
         
-        guard let password2 = password2TextField.text, !password2.isEmpty || password2 != password1 else {
+        guard let password2 = password2TextField.text, password2 == password1 else {
             MessagePresenter.showMessage(title: "两次输入密码不同", message: "请确认两次输入的密码完全一致", on: self, actions: [])
             return
         }
         
         let registerInput = User.RegisterInput(email: email, username: username, firstName: nil, lastName: nil, password1: password1, password2: password2)
         
+		registerIndicator.startAnimating()
+		registerButton.backgroundColor = .systemGray
+		registerButton.isEnabled = false
+		
 		Task {
 			do {
+				try await Task.sleep(nanoseconds: 5_000_000_000)
 				try await AuthAPI.register(input: registerInput)
 				// Here means registration process is successful, then we go login the user
 				try await AuthAPI.login(username: registerInput.username, password: registerInput.password1)
@@ -131,6 +150,11 @@ class RegisterViewController: UIViewController {
 			} catch {
 				error.present(on: self, title: "注册失败", actions: [])
 			}
+			
+			registerIndicator.stopAnimating()
+			registerButton.backgroundColor = .purple
+			registerButton.isEnabled = true
+
 		}
     }
 }

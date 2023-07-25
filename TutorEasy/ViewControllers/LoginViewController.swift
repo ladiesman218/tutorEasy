@@ -48,6 +48,15 @@ class LoginViewController: UIViewController {
 		return button
 	}()
 	
+	private let loginIndicator: UIActivityIndicatorView = {
+		let indicator = UIActivityIndicatorView()
+		indicator.color = .systemYellow
+		indicator.hidesWhenStopped = true
+		indicator.style = .large
+		indicator.translatesAutoresizingMaskIntoConstraints = false
+		return indicator
+	}()
+	
 	@objc private func login() {
 		guard let username = loginNameTextField.text, !username.isEmpty else {
 			MessagePresenter.showMessage(title: "无效用户名", message: "请输入用户名", on: self, actions: [])
@@ -59,13 +68,23 @@ class LoginViewController: UIViewController {
 			return
 		}
 		
+		// Disable login button and display activity indicator
+		loginIndicator.startAnimating()
+		loginButton.isEnabled = false
+		loginButton.backgroundColor = UIColor.systemGray
+		
 		Task {
 			do {
+				try await Task.sleep(nanoseconds: 4_000_000_000)
 				try await AuthAPI.login(username: username, password: password)
 				self.navigationController?.popViewController(animated: true)
 			} catch {
 				error.present(on: self, title: "登录失败", actions: [])
 			}
+			// When success, popViewController will make self deinitialized, following won't be called but that's okay.
+			loginIndicator.stopAnimating()
+			loginButton.backgroundColor = UIColor.purple
+			loginButton.isEnabled = true
 		}
 	}
 	
@@ -75,6 +94,7 @@ class LoginViewController: UIViewController {
 		
 		view.addSubview(loginNameTextField)
 		view.addSubview(passwordTextField)
+		loginButton.addSubview(loginIndicator)
 		view.addSubview(loginButton)
 		loginButton.addTarget(self, action: #selector(login), for: .touchUpInside)
 		
@@ -89,7 +109,10 @@ class LoginViewController: UIViewController {
 			
 			loginButton.topAnchor.constraint(equalTo: passwordTextField.bottomAnchor, constant: 20),
 			loginButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-			loginButton.widthAnchor.constraint(equalTo: loginNameTextField.widthAnchor, multiplier: 0.8)
+			loginButton.widthAnchor.constraint(equalTo: loginNameTextField.widthAnchor, multiplier: 0.8),
+			
+			loginIndicator.topAnchor.constraint(equalTo: loginButton.topAnchor),
+			loginIndicator.leadingAnchor.constraint(equalTo: loginButton.titleLabel!.trailingAnchor)
 		])
 	}
 }
