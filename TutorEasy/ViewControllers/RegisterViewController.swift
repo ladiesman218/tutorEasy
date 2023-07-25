@@ -140,20 +140,20 @@ class RegisterViewController: UIViewController {
 		registerButton.backgroundColor = .systemGray
 		registerButton.isEnabled = false
 		
-		Task {
+		Task { [weak self] in
 			do {
-				try await Task.sleep(nanoseconds: 5_000_000_000)
 				try await AuthAPI.register(input: registerInput)
 				// Here means registration process is successful, then we go login the user
 				try await AuthAPI.login(username: registerInput.username, password: registerInput.password1)
-				self.backButtonClicked()
+				self?.navigationController?.popViewController(animated: true)
 			} catch {
-				error.present(on: self, title: "注册失败", actions: [])
+				guard let strongSelf = self else { return }
+				error.present(on: strongSelf, title: "注册失败", actions: [])
 			}
 			
-			registerIndicator.stopAnimating()
-			registerButton.backgroundColor = .purple
-			registerButton.isEnabled = true
+			self?.registerIndicator.stopAnimating()
+			self?.registerButton.backgroundColor = .purple
+			self?.registerButton.isEnabled = true
 
 		}
     }

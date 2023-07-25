@@ -79,8 +79,8 @@ class ChapterDetailVC: UIViewController {
 	
 	var chapter: Chapter! {
 		didSet {
-			Task.detached { [unowned self] in
-				await self.loadPDF()
+			Task { [weak self] in
+				await self?.loadPDF()
 			}
 		}
 	}
@@ -89,7 +89,7 @@ class ChapterDetailVC: UIViewController {
 	// After video finished playing, try to play it again will give black screen with ongoing audio. Debug view hierarchy shows something wierd in AVPlayerViewController's subview. Solution for now is to create a new instance of AVPlayerViewController everytime user click to play a video, so it has to be instantiated inside the pdfViewWillClick delegate method.
 	private var playerViewController: AVPlayerViewController!
 	// To hold thumbnails we manually generated for the pdf document, then showing them later in a collectionView. The built-in PDFThumbnailView has an hard-to-work-around issue: when clicking an thumbnail, it automatically become larger and cover other thumbnails next to it.
-	private var thumbnails = [UIImage]() {
+	private var thumbnails: [UIImage] = .init(repeating: UIImage(), count: placeHolderNumber) {//[UIImage]() {
 		didSet {
 			thumbnailCollectionView.reloadData()
 			// Select the first cell, make it fully opaque

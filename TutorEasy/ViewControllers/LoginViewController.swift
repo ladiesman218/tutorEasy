@@ -73,18 +73,19 @@ class LoginViewController: UIViewController {
 		loginButton.isEnabled = false
 		loginButton.backgroundColor = UIColor.systemGray
 		
-		Task {
+		Task { [weak self] in
 			do {
 				try await Task.sleep(nanoseconds: 4_000_000_000)
 				try await AuthAPI.login(username: username, password: password)
-				self.navigationController?.popViewController(animated: true)
+				self?.navigationController?.popViewController(animated: true)
 			} catch {
-				error.present(on: self, title: "登录失败", actions: [])
+				guard let strongSelf = self else { return }
+				error.present(on: strongSelf, title: "登录失败", actions: [])
 			}
 			// When success, popViewController will make self deinitialized, following won't be called but that's okay.
-			loginIndicator.stopAnimating()
-			loginButton.backgroundColor = UIColor.purple
-			loginButton.isEnabled = true
+			self?.loginIndicator.stopAnimating()
+			self?.loginButton.backgroundColor = UIColor.purple
+			self?.loginButton.isEnabled = true
 		}
 	}
 	
