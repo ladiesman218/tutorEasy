@@ -28,7 +28,6 @@ class StageCell: UICollectionViewCell {
 		label.textAlignment = .left
 		
 		label.isSkeletonable = true
-		label.skeletonTextLineHeight = .relativeToFont
 		label.skeletonTextNumberOfLines = 1
 		label.lastLineFillPercent = 30
 		
@@ -43,7 +42,6 @@ class StageCell: UICollectionViewCell {
 		label.lineBreakMode = .byTruncatingTail
 		
 		label.isSkeletonable = true
-		label.skeletonTextLineHeight = .relativeToFont
 		label.skeletonTextNumberOfLines = 3
 		label.lastLineFillPercent = 80
 		return label
@@ -75,7 +73,11 @@ class StageCell: UICollectionViewCell {
 		descriptionLabel.frame.size.width = titleLabel.frame.size.width
 		
 		titleLabel.font = titleLabel.font.withSize(titleLabel.frame.height)
+		// Setting textLineHeight this way silences the warnings.
+		titleLabel.skeletonTextLineHeight = .fixed(titleLabel.frame.height)
+
 		descriptionLabel.font = descriptionLabel.font.withSize(descriptionLabel.frame.height / CGFloat(descriptionLabel.numberOfLines + 1))
+		descriptionLabel.skeletonTextLineHeight = .fixed(descriptionLabel.frame.height / CGFloat(descriptionLabel.numberOfLines + 1))
 
 		if titleLabel.text == nil || titleLabel.text == placeHolderStage.name {
 			titleLabel.showAnimatedGradientSkeleton(usingGradient: skeletonGradient, animation: Self.skeletonAnimation, transition: .none)

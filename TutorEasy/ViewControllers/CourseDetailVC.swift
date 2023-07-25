@@ -149,7 +149,7 @@ class CourseDetailVC: UIViewController {
 	private func loadCourse() -> Task<Void, Never> {
 		let task = Task { [weak self] in
 			do {
-//				try await Task.sleep(nanoseconds: 4_000_000_000)
+				try await Task.sleep(nanoseconds: 8_000_000_000)
 				guard let strongSelf = self else { return }
 				let course = try await CourseAPI.getCourse(id: strongSelf.courseID)
 				try Task.checkCancellation()
@@ -179,7 +179,7 @@ class CourseDetailVC: UIViewController {
 		let task = Task { [weak self] in
 			guard let cell = self?.stageCollectionView.cellForItem(at: .init(item: index, section: 0)) as? StageCell else { return }
 			do {
-				let randomNumber = Double.random(in: 1...3)
+//				let randomNumber = Double.random(in: 1...3)
 //				try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
 				
 				let stage = try await CourseAPI.getStage(path: url.path)

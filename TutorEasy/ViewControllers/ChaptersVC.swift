@@ -161,7 +161,7 @@ class ChaptersVC: UIViewController {
 		let task = Task { [weak self] in
 			
 			do {
-				let randomNumber = Double.random(in: 4...7)
+//				let randomNumber = Double.random(in: 4...7)
 //				try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
 				
 				guard let strongSelf = self else { return }
@@ -227,7 +227,7 @@ class ChaptersVC: UIViewController {
 		let chapter = chapterTuples[index].chapter
 		
 		let task = Task { [weak self] in
-			let randomNumber = Double.random(in: 1...3)
+//			let randomNumber = Double.random(in: 1...3)
 //			try await Task.sleep(nanoseconds: UInt64(randomNumber) * 1_000_000_000)
 			guard let strongSelf = self else { return }
 			// UIImage.load() will generate a image from given color if failed to retrieve data from server.
