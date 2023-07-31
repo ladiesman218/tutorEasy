@@ -10,7 +10,7 @@ import SkeletonView
 
 //let serverURL = URL(string: "http://localhost:8080")!     //localhost and docker production environment
 //let serverURL = URL(string: "https://app.douwone.xyz")!		// Gigsgigs
-let serverURL = URL(string: "https://9744-1-28-218-66.ngrok-free.app")!     //ngrok
+let serverURL = URL(string: "https://39e4-2408-822a-1da2-5d20-3949-e643-c31c-fd60.ngrok-free.app")!     //ngrok
 
 let baseURL = serverURL.appendingPathComponent("api")
 

@@ -27,7 +27,7 @@ class VideoAnnotation: PDFAnnotation {
 
 		let playIcon = UIImage(named: "playButton.png")!
 
-		// Drawing the image within the annotation’s bounds.
+		// Draw the image within the annotation’s bounds.
 		guard let cgImage = playIcon.cgImage else { return }
 
 		context.draw(cgImage, in: bounds)

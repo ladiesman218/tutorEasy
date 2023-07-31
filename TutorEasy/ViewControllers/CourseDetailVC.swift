@@ -149,7 +149,7 @@ class CourseDetailVC: UIViewController {
 	private func loadCourse() -> Task<Void, Never> {
 		let task = Task { [weak self] in
 			do {
-				try await Task.sleep(nanoseconds: 8_000_000_000)
+//				try await Task.sleep(nanoseconds: 8_000_000_000)
 				guard let strongSelf = self else { return }
 				let course = try await CourseAPI.getCourse(id: strongSelf.courseID)
 				try Task.checkCancellation()

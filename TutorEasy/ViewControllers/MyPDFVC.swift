@@ -11,38 +11,21 @@ import AVKit
 
 class MyPDFVC: UIViewController {
 	// MARK: - Properties
-	var pdfURL: URL! {
-		didSet {
-			loadDocument()
-		}
-	}
-		
+	var pdfURL: URL!
+	
+	// Whether to display a close button. The button is only needed when this view controller displays nothing but a pdfView(no topView so the button is used for allowing user to go back to previous vc)
+	var showCloseButton: Bool = false
+	
 	private let player: AVPlayer = AVPlayer()
 	// After video finished playing, try to play it again will give black screen with ongoing audio. Debug view hierarchy shows something wierd in AVPlayerViewController's subview. Solution for now is to create a new instance of AVPlayerViewController everytime user click to play a video, so it has to be instantiated inside the pdfViewWillClick delegate method.
 	private var playerViewController: AVPlayerViewController!
-	// To hold thumbnails we manually generated for the pdf document, then showing them later in a collectionView. The built-in PDFThumbnailView has an hard-to-work-around issue: when clicking an thumbnail, it automatically become larger and cover other thumbnails next to it.
-	private var document = PDFDocument() {
-		didSet {
-			
-			loadIndicator.stopAnimating()
-			pdfView.document = document
-			pdfView.setDisPlayMode()
-			pdfView.drawPlayButton()
-			recursivelyDisableSelection(view: pdfView)
-			
-			NotificationCenter.default.addObserver(self, selector: #selector(drawPlayButton), name: .PDFViewPageChanged, object: nil)
-			
-			// Disbale text selection should be called when PDFViewVisiblePagesChanged, when calling in PDFViewPageChanged it fails sometime.
-			NotificationCenter.default.addObserver(self, selector: #selector(pageChanged), name: .PDFViewVisiblePagesChanged, object: nil)
-		}
-	}
+	
+	private var loadTask: Task<Void, Never>? = nil
 	
 	// MARK: - Custom subviews
-	private let pdfView: PDFView = {
+	let pdfView: PDFView = {
 		let pdfView = PDFView()
-		
 		pdfView.layer.cornerRadius = 10
-		
 		pdfView.translatesAutoresizingMaskIntoConstraints = false
 		return pdfView
 	}()
@@ -56,23 +39,33 @@ class MyPDFVC: UIViewController {
 		return indicator
 	}()
 	
-	// MARK: - Controller functions
-	// Disable scale for pdfView
-	override func viewDidLayoutSubviews() {
-		super.viewDidLayoutSubviews()
-		pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
-		pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
-		pdfView.maxScaleFactor = pdfView.scaleFactorForSizeToFit
-	}
+	private let closeButton: CustomButton = {
+		let button = CustomButton()
+		button.animated = true
+		button.layer.cornerRadius = 10
+		button.backgroundColor = .gray.withAlphaComponent(0.3)
+		
+		button.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+		button.translatesAutoresizingMaskIntoConstraints = false
+		return button
+	}()
 	
+	// MARK: - Controller functions
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		view.backgroundColor = .systemBackground
 		pdfView.delegate = self
 		
+		// Draw play button for annotations with video links
+		NotificationCenter.default.addObserver(self, selector: #selector(drawPlayButton), name: .PDFViewPageChanged, object: nil)
+		
+		// Disbale text selection should be called when PDFViewVisiblePagesChanged, when calling in PDFViewPageChanged it fails sometime.
+		NotificationCenter.default.addObserver(self, selector: #selector(disableSelection), name: .PDFViewVisiblePagesChanged, object: nil)
+		
 		pdfView.addSubview(loadIndicator)
-		loadIndicator.startAnimating()
 		view.addSubview(pdfView)
+		
+		closeButton.addTarget(self, action: #selector(backButtonClicked), for: .touchUpInside)
 		
 		NSLayoutConstraint.activate([
 			pdfView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -85,26 +78,66 @@ class MyPDFVC: UIViewController {
 			loadIndicator.topAnchor.constraint(equalTo: pdfView.topAnchor),
 			loadIndicator.bottomAnchor.constraint(equalTo: pdfView.bottomAnchor)
 		])
+		
+		if showCloseButton {
+			view.addSubview(closeButton)
+			NSLayoutConstraint.activate([
+				closeButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+				closeButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+				closeButton.widthAnchor.constraint(equalToConstant: Self.topViewHeight),
+				closeButton.heightAnchor.constraint(equalToConstant: Self.topViewHeight)
+			])
+		}
 	}
 	
-	private func loadDocument() {
-		Task {
+	override func viewWillAppear(_ animated: Bool) {
+		super.viewWillAppear(animated)
+		// Users may go to a new pdf vc before a chapter's main pdf been loaded, then when they go back, check if document is nil and load it again if needed.
+		if pdfView.document == nil {
+			loadTask = loadDocument()
+		}
+	}
+	
+	override func viewWillDisappear(_ animated: Bool) {
+		super.viewWillDisappear(animated)
+		loadTask?.cancel()
+		loadTask = nil
+	}
+	
+	private func loadDocument() -> Task<Void, Never> {
+		loadIndicator.startAnimating()
+		
+		let task = Task { [weak self] in
 			do {
-				let (data, response) = try await FileAPI.getCourseContent(path: self.pdfURL.path)
-				let navVC = self.navigationController!
-				let cancel = UIAlertAction(title: "再看看", style: .default) { action in
-					navVC.popViewController(animated: true)
+				guard let strongSelf = self else { return }
+				
+				// try await Task.sleep(nanoseconds: 6_000_000_000)
+				let (data, response) = try await FileAPI.getCourseContent(path: strongSelf.pdfURL.path)
+				try Task.checkCancellation()
+				
+				if let document = PDFDocument(data: data) {
+					self?.loadIndicator.stopAnimating()
+					self?.pdfView.document = document
+					self?.setDisPlayMode()
+					// Disable scale for pdfView, set after document has been set, otherwise won't work
+					self?.pdfView.scaleFactor = strongSelf.pdfView.scaleFactorForSizeToFit
+					self?.pdfView.minScaleFactor = strongSelf.pdfView.scaleFactorForSizeToFit
+					self?.pdfView.maxScaleFactor = strongSelf.pdfView.scaleFactorForSizeToFit
+					
+					return
 				}
 				
+				// Success will return, so here means request failed.
+				guard let navVC = self?.navigationController else { return }
+				// Pop current vc first, no need to stay here
+				navVC.popViewController(animated: true)
+				
+				let cancel = UIAlertAction(title: "取消", style: .cancel)
+				
 				switch response.statusCode {
-					case 200:
-						let document = PDFDocument(data: data)!
-						await MainActor.run {
-							self.document = document
-						}
 					case 400:
 						// Bad request, indicates something wrong in code
-						MessagePresenter.showMessage(title: "未知错误", message: "请联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [cancel])
+						MessagePresenter.showMessage(title: "无法载入PDF", message: "请联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [cancel])
 					case 401:
 						let login = UIAlertAction(title: "去登录", style: .destructive) {  _ in
 							let authVC = AuthenticationVC()
@@ -130,24 +163,75 @@ class MyPDFVC: UIViewController {
 					default:
 						break
 				}
-			} catch {
-				print("Load pdf file error")
-			}
+			} catch is CancellationError { return }
+			catch {}
 			
-			
+			self?.loadIndicator.stopAnimating()
 			// Only when document loaded succussfully, then add the close button. Otherwise it's hard/impossible to place closeButton on top of pdfView
+		}
+		return task
+	}
+	
+	@objc private func disableSelection() {
+		// Seems like when PDFPage is changed, long press gesture will be added again to the view. So Call this here to disable the gesture
+		recursivelyDisableSelection(view: pdfView)
+	}
+	
+	// This function checks if a play button should be added, and will draw it if it should.
+	@objc func drawPlayButton() {
+		let startTime = Date().timeIntervalSince1970
+		
+		// All possible file extension for video used in pdf goes here
+		let videoExtension = ["mp4"]
+		
+		// Make sure current page contains annotations(link is a form of annotation), otherwise bail out
+		guard let annotations = pdfView.currentPage?.annotations else { return }
+		// Make sure video annotations hasn't been added, otherwise bail. This avoid adding same play button multiple times.
+		guard !annotations.contains(where: {$0.isKind(of: VideoAnnotation.self)} ) else {
+			return
+		}
+		
+		// Loop through all annotations on current page that contains an actionable url, which the url itself contains one of path extensions defined in videoExtension array.
+		for annotation in annotations {
+			guard let action = annotation.action as? PDFActionURL else { continue }
+			guard let url = action.url else { continue }
+			
+			// The link's extension has to be contained by videoExtension array, which means it's a link for a video file
+			guard videoExtension.contains(url.pathExtension) else { continue }
+			
+			// Initialize a VideoAnnotation, add it to current page
+			let size = CGFloat(integerLiteral: 80)	// Playbutton's size
+			// Place the play button annotation to bottom left corner of the link's annotation area, offset by 20 points right and 20 upwards.
+			let bounds = CGRect(x: annotation.bounds.minX + 20, y: annotation.bounds.minY + 20, width: size, height: size)
+			let videoAnnotation = VideoAnnotation(bounds: bounds, properties: ["/A": action])
+			pdfView.currentPage?.addAnnotation(videoAnnotation)
+			print(Date().timeIntervalSince1970 - startTime)
+			
 		}
 	}
 	
-	@objc private func pageChanged() {
-		// Seems like when PDFPage is changed, long press gesture will be added again to the view. So Call this here to disable the gesture
-		recursivelyDisableSelection(view: pdfView)
+	// Check if pdf is vertical or horizontal, set displayMode to .singlePageContinuous for vertical document, usePageViewController if it's horizontal. PageViewController's default displayMode is .singlePage
+	func setDisPlayMode() {
+		// Make sure pdfView has an document, and the document has at least 1 page
+		guard let bounds = pdfView.document?.page(at: 0)?.bounds(for: pdfView.displayBox) else {
+			return
+		}
+		
+		if bounds.width >= bounds.height {
+			// Horizontal
+			// Configure PDFView to display one page at a time, while keep the ability to scroll up and down on the pdfView itself.
+			pdfView.usePageViewController(true)
+		} else {
+			// Vertical
+			pdfView.displayMode = .singlePageContinuous
+			// Manually trigger viewDidLayoutSubviews here is needed, maybe becoz pageViewController works different than setting displayMode.
+			pdfView.superview?.setNeedsLayout()
+		}
 	}
 }
 
 extension MyPDFVC: PDFViewDelegate {
 	func pdfViewWillClick(onLink sender: PDFView, with url: URL) {
-		print("clicked")
 		// If the player is playing in picture in picture mode, there is a chance user could click the play button again to start another playback, make sure that doesn't happen.
 		//		guard player.currentItem == nil else { return }
 		playerViewController = AVPlayerViewController()
@@ -166,7 +250,6 @@ extension MyPDFVC: PDFViewDelegate {
 		player.replaceCurrentItem(with: .init(url: videoURL))
 		playerViewController.player = player
 		
-		//		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AV, object: <#T##Any?#>)
 		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
 		
 		self.present(playerViewController, animated: true) { [unowned self] in

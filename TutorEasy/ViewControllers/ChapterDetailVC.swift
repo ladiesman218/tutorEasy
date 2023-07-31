@@ -8,7 +8,7 @@
 import UIKit
 import PDFKit
 import AVKit
-#warning("Loading chapter pdf should enable skeletonView")
+
 class ChapterDetailVC: UIViewController {
 	
 	// MARK: - Properties
@@ -17,37 +17,7 @@ class ChapterDetailVC: UIViewController {
 	private var fullThumb: NSLayoutConstraint!
 	private var noThumb: NSLayoutConstraint!
 	
-	// When chapter's pdf file is got from server, set this variable's value to that file, this will trigger property observer to do its things
-	private var chapterPDF = PDFDocument() {
-		didSet {
-			pdfView.document = chapterPDF
-			
-			pdfView.setDisPlayMode()
-			
-			// Creat thumbnails
-			for number in 0 ... chapterPDF.pageCount - 1 {
-				let box = pdfView.displayBox
-				let image = pdfView.document!.page(at: number)!.thumbnail(of: .init(width: 500, height: 350), for: box)
-				thumbnails.append(image)
-			}
-			
-			// Add functionality for double tapping to toggle full screen
-			let doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(toggleFullScreen))
-			doubleTapGesture.numberOfTapsRequired = 2
-			pdfView.addGestureRecognizer(doubleTapGesture)
-			
-			pdfView.drawPlayButton()
-			recursivelyDisableSelection(view: pdfView)
-			
-			
-			// Call changeSelectedCell and drawPlayButton when PDFViewVisiblePagesChanged doesn't work as expected, scrolling position won't be right and playbutton won't be added sometimes, so call it when PDFViewPageChanged.
-			NotificationCenter.default.addObserver(self, selector: #selector(changeSelectedCell), name: .PDFViewPageChanged, object: nil)
-			NotificationCenter.default.addObserver(self, selector: #selector(drawPlayButton), name: .PDFViewPageChanged, object: nil)
-			
-			// Disbale text selection should be called when PDFViewVisiblePagesChanged, when calling in PDFViewPageChanged it fails sometime.
-			NotificationCenter.default.addObserver(self, selector: #selector(pageChanged), name: .PDFViewVisiblePagesChanged, object: nil)
-		}
-	}
+	var pdfVC: MyPDFVC!
 	
 	private var isFullScreen: Bool = false {
 		didSet {
@@ -72,38 +42,40 @@ class ChapterDetailVC: UIViewController {
 				view.setNeedsLayout()
 			})
 			
-			// This has to be called after collectionView is already on screen, otherwise it won't work.
+			// Adjust scaleFactor after size of pdfView has changed
+			pdfVC.pdfView.scaleFactor = pdfVC.pdfView.scaleFactorForSizeToFit
+			pdfVC.pdfView.minScaleFactor = pdfVC.pdfView.scaleFactorForSizeToFit
+			pdfVC.pdfView.maxScaleFactor = pdfVC.pdfView.scaleFactorForSizeToFit
+
+			// In case scrolling was happened when in full screen, then user exit full screen mode, change selected cell.
 			if !isFullScreen { changeSelectedCell() }
 		}
 	}
 	
-	var chapter: Chapter! {
-		didSet {
-			Task { [weak self] in
-				await self?.loadPDF()
-			}
-		}
-	}
+	var chapter: Chapter!
 	
-	private let player: AVPlayer = AVPlayer()
-	// After video finished playing, try to play it again will give black screen with ongoing audio. Debug view hierarchy shows something wierd in AVPlayerViewController's subview. Solution for now is to create a new instance of AVPlayerViewController everytime user click to play a video, so it has to be instantiated inside the pdfViewWillClick delegate method.
-	private var playerViewController: AVPlayerViewController!
-	// To hold thumbnails we manually generated for the pdf document, then showing them later in a collectionView. The built-in PDFThumbnailView has an hard-to-work-around issue: when clicking an thumbnail, it automatically become larger and cover other thumbnails next to it.
-	private var thumbnails: [UIImage] = .init(repeating: UIImage(), count: placeHolderNumber) {//[UIImage]() {
-		didSet {
-			thumbnailCollectionView.reloadData()
-			// Select the first cell, make it fully opaque
-			thumbnailCollectionView.selectItem(at: [0, 0], animated: true, scrollPosition: .top)
-			thumbnailCollectionView.cellForItem(at: [0, 0])?.contentView.layer.opacity = 1
-		}
-	}
+	private var thumbnails: [UIImage?] = .init(repeating: nil, count: placeHolderNumber)
 	
 	// MARK: - Custom subviews
 	private var topView: UIView!
 	private var backButtonView: UIView!
-	private let teachingPlanButton: ChapterButton = ChapterButton(image: .init(named: "教案.png")!, titleText: "教案", fontSize: 10)
+	private let containerView: UIView = {
+		let view = UIView()
+		view.translatesAutoresizingMaskIntoConstraints = false
+		return view
+	}()
 	
-	private let buildingInstructionButton: ChapterButton = ChapterButton(image: .init(named: "搭建说明.png")!, titleText: "搭建说明", fontSize: 10)
+	private let teachingPlanButton: ChapterButton = {
+		let button = ChapterButton(image: .init(named: "教案.png")!, titleText: "教案", fontSize: 10)
+		button.tag = 0
+		return button
+	}()
+	
+	private let buildingInstructionButton: ChapterButton = {
+		let button = ChapterButton(image: .init(named: "搭建说明.png")!, titleText: "搭建说明", fontSize: 10)
+		button.tag = 1
+		return button
+	}()
 	
 	private let chapterTitle: UILabel = {
 		let chapterTitle = UILabel()
@@ -112,16 +84,7 @@ class ChapterDetailVC: UIViewController {
 		return chapterTitle
 	}()
 	
-	private let pdfView: PDFView = {
-		let pdfView = PDFView()
-		
-		pdfView.layer.cornerRadius = 10
-		//		pdfView.enableDataDetectors = true		// Does't seem to affect anything?
-		
-		pdfView.translatesAutoresizingMaskIntoConstraints = false
-		return pdfView
-	}()
-	
+	// To hold thumbnails we manually generated for the pdf document, then showing them later in a collectionView. The built-in PDFThumbnailView has an hard-to-work-around issue: when clicking an thumbnail, it automatically become larger and cover other thumbnails next to it.
 	private let thumbnailCollectionView: UICollectionView = {
 		let layout = UICollectionViewFlowLayout()
 		let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
@@ -132,14 +95,6 @@ class ChapterDetailVC: UIViewController {
 	}()
 	
 	// MARK: - Controller functions
-	override func viewDidLayoutSubviews() {
-		super.viewDidLayoutSubviews()
-		// viewDidLayoutSubviews will be called both when full screen is toggled, and after the chapterPdf was set and the first page was displayed on screen, so this is the only place to set scale factor and disable zooming by set min/max scale factor to the same value.
-		pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
-		pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
-		pdfView.maxScaleFactor = pdfView.scaleFactorForSizeToFit
-	}
-	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		
@@ -149,12 +104,10 @@ class ChapterDetailVC: UIViewController {
 		backButtonView = setUpGoBackButton(in: topView)
 		
 		teachingPlanButton.isEnabled = chapter.teachingPlanURL != nil
-		teachingPlanButton.tag = 0
 		teachingPlanButton.addTarget(self, action: #selector(goToPDF), for: .touchUpInside)
 		topView.addSubview(teachingPlanButton)
 		
 		buildingInstructionButton.isEnabled = chapter.bInstructionURL != nil
-		buildingInstructionButton.tag = 1
 		buildingInstructionButton.addTarget(self, action: #selector(goToPDF), for: .touchUpInside)
 		topView.addSubview(buildingInstructionButton)
 		
@@ -162,11 +115,10 @@ class ChapterDetailVC: UIViewController {
 		chapterTitle.font = chapterTitle.font.withSize(Self.topViewHeight / 2)
 		topView.addSubview(chapterTitle)
 		
-		pdfView.delegate = self
-		view.addSubview(pdfView)
-		
 		thumbnailCollectionView.delegate = self
 		thumbnailCollectionView.dataSource = self
+		// Disable selection, then enable it when thumbnails have been generated. Change of selection before document has been loaded crash the app.
+		thumbnailCollectionView.allowsSelection = false
 		view.addSubview(thumbnailCollectionView)
 		
 		fullTop = topView.heightAnchor.constraint(equalToConstant: Self.topViewHeight)
@@ -182,6 +134,20 @@ class ChapterDetailVC: UIViewController {
 			fullTop.isActive = true
 			fullThumb.isActive = true
 		}
+		
+		pdfVC = MyPDFVC()
+		pdfVC.pdfURL = chapter.pdfURL
+		self.addChild(pdfVC)
+		pdfVC.view.translatesAutoresizingMaskIntoConstraints = false
+		containerView.addSubview(pdfVC.view)
+		view.addSubview(containerView)
+		// Add functionality for double tapping to toggle full screen
+		let doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(toggleFullScreen))
+		doubleTapGesture.numberOfTapsRequired = 2
+		pdfVC.pdfView.addGestureRecognizer(doubleTapGesture)
+		
+		NotificationCenter.default.addObserver(self, selector: #selector(createThumbnails), name: .PDFViewDocumentChanged, object: nil)
+		NotificationCenter.default.addObserver(self, selector: #selector(changeSelectedCell), name: .PDFViewPageChanged, object: nil)
 		
 		NSLayoutConstraint.activate([
 			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
@@ -205,12 +171,17 @@ class ChapterDetailVC: UIViewController {
 			thumbnailCollectionView.topAnchor.constraint(equalTo: topView.bottomAnchor, constant: 10),
 			thumbnailCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
 			
-			pdfView.leadingAnchor.constraint(equalTo: thumbnailCollectionView.trailingAnchor),
-			pdfView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-			pdfView.topAnchor.constraint(equalTo: thumbnailCollectionView.topAnchor),
-			pdfView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+			containerView.leadingAnchor.constraint(equalTo: thumbnailCollectionView.trailingAnchor),
+			containerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
+			containerView.topAnchor.constraint(equalTo: thumbnailCollectionView.topAnchor),
+			containerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+			
+			pdfVC.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+			pdfVC.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+			pdfVC.view.topAnchor.constraint(equalTo: containerView.topAnchor),
+			pdfVC.view.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
 		])
-		// These 2 functions should be called after constraints have been set, coz centerVertically() needs button's frame to have been set, to actually work.
+		// Button's centerVertically() should be called after constraints have been set, coz it needs button's frame to have been set first.
 		teachingPlanButton.centerVertically()
 		buildingInstructionButton.centerVertically()
 	}
@@ -219,148 +190,50 @@ class ChapterDetailVC: UIViewController {
 		isFullScreen.toggle()
 	}
 	
-	@objc private func pageChanged() {
-		// Seems like when PDFPage is changed, long press gesture will be added again to the view. So Call this here to disable the gesture
-		recursivelyDisableSelection(view: pdfView)
-	}
-	
-	// When scrolling on pdfView to change pdf page, change opacity for thumbnail collection view cells accordingly. This should be called only when not in full screen mode, otherwise it does nothing.
+	// When scrolling on pdfView to change pdf page, change selected cell for thumbnail collection view, and update all visible cells' opacity value. This should be called only when not in full screen mode, otherwise it does nothing.
 	@objc private func changeSelectedCell() {
-		guard let labelString = pdfView.currentPage?.label, let labelInt = Int(labelString) else { return }
+		guard let labelString = pdfVC.pdfView.currentPage?.label, let labelInt = Int(labelString) else { return }
 		let index = labelInt - 1
-		
-		// Clear selection
-		for indexPath in thumbnailCollectionView.indexPathsForVisibleItems {
-			thumbnailCollectionView.deselectItem(at: indexPath, animated: false)
-		}
-		// By default, un-selected cells are a little transparent
-		thumbnailCollectionView.visibleCells.forEach {
-			$0.contentView.layer.opacity = PDFThumbnailCell.opacity
-		}
-		
-		// Make it fully opaque
-		thumbnailCollectionView.cellForItem(at: [0, index])?.contentView.layer.opacity = 1
-		// Select item
-		thumbnailCollectionView.selectItem(at: [0, index], animated: true, scrollPosition: .centeredVertically)
+
+		// Select item, and scroll it to vertically centered position
+		thumbnailCollectionView.selectItem(at: .init(item: index, section: 0), animated: true, scrollPosition: .centeredVertically)
+		// Call setNeedsLayout for all visible cells to update its opacity value
+		thumbnailCollectionView.visibleCells.forEach { $0.setNeedsLayout() }
 	}
 	
 	@objc private func goToPDF(sender: UIButton) {
-		let pdfVC = PDFViewController()
-		pdfVC.chapter = chapter
+		let newVC = MyPDFVC()
 		if sender.tag == 0 {
 			// Teaching plan
 			guard let url = chapter.teachingPlanURL else { return }
-			pdfVC.url = url
+			newVC.pdfURL = url
 		} else if sender.tag == 1 {
 			// Building instruction
 			guard let url = chapter.bInstructionURL else { return }
-			pdfVC.url = url
+			newVC.pdfURL = url
 		}
-		self.navigationController?.pushIfNot(newVC: pdfVC)
+		newVC.showCloseButton = true
+		self.navigationController?.pushIfNot(newVC: newVC)
 	}
 	
-	private func loadPDF() async {
-		let path = chapter.pdfURL.path
-		do {
-			let (data, response) = try await FileAPI.getCourseContent(path: path)
-			let navVC = self.navigationController!
-			let cancel = UIAlertAction(title: "再看看", style: .default) { action in
-				navVC.popViewController(animated: true)
-			}
-			
-			switch response.statusCode {
-				case 200:
-					let document = PDFDocument(data: data)!
-					await MainActor.run {
-						self.chapterPDF = document
-					}
-				case 400:
-					// Bad request, indicates something wrong in code
-					MessagePresenter.showMessage(title: "未知错误", message: "请联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [cancel])
-				case 401:
-					let login = UIAlertAction(title: "去登录", style: .destructive) {  _ in
-						let authVC = AuthenticationVC()
-						navVC.pushIfNot(newVC: authVC)
-					}
-					MessagePresenter.showMessage(title: "付费内容，无访问权限", message: "点击\"去登录\"可注册或登录账号", on: navVC.topViewController!, actions: [login, cancel])
-				case 402:
-					// Indicates user hasn't bought the course
-					let message = try Decoder.isoDate.decode(ResponseError.self, from: data).reason
-					let subscription = UIAlertAction(title: "管理订阅", style: .destructive) { _ in
-						let accountsVC = AccountVC()
-						accountsVC.currentVC = .subscription
-						navVC.pushIfNot(newVC: accountsVC)
-					}
-					MessagePresenter.showMessage(title: "付费内容，无访问权限", message: message, on: navVC.topViewController!, actions: [subscription, cancel])
-				case 404:
-					// Not found, 2 possible reasons with 404 status, one for course name not found or course not published, another for course pdf file doesn't exist on server. The only possible way to legitimately get the 1st possiblity is we did something wrong in our code, so here we show message to user to indicate the 2nd reason.
-					let message = try Decoder.isoDate.decode(ResponseError.self, from: data).reason
-					MessagePresenter.showMessage(title: message, message: "请联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [cancel])
-				case 500...599:
-					// Service un-reachable, either client end doesn't have a network connection, or server is down
-					MessagePresenter.showMessage(title: "服务器无响应", message: "请检查设备网络，或联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [cancel])
-				default:
-					break
-			}
-		} catch {
-			print("Load pdf file error")
-		}
-	}
-}
-
-extension ChapterDetailVC: PDFViewDelegate {
-	func pdfViewWillClick(onLink sender: PDFView, with url: URL) {
-		// If the player is playing in picture in picture mode, there is a chance user could click the play button again to start another playback, make sure that doesn't happen.
-		//		guard player.currentItem == nil else { return }
-		playerViewController = AVPlayerViewController()
-		playerViewController.entersFullScreenWhenPlaybackBegins = true
-		playerViewController.delegate = self
-		playerViewController.showsTimecodes = true
-		//		if #available(iOS 16.0, *) {
-		//			playerViewController.allowsVideoFrameAnalysis = true
-		//		}
+	@objc func createThumbnails() {
+		guard let pageCount = pdfVC.pdfView.document?.pageCount else { return }
+		let lastIndex = pageCount - 1
+		var images = [UIImage]()
 		
-		// Disable picture in picture for now. pip still cause some issue
-		playerViewController.allowsPictureInPicturePlayback = false
-		
-		// In PDF file, relative path is used for video files(relative to chapter's directory url), so when accessing the real file, we need to modify that link path, prepend api end point and directory url first
-		let videoURL = FileAPI.contentEndPoint.appendingPathComponent(chapter.directoryURL.path).appendingPathComponent(url.path)
-		player.replaceCurrentItem(with: .init(url: videoURL))
-		playerViewController.player = player
-		
-		//		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AV, object: <#T##Any?#>)
-		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
-		
-		self.present(playerViewController, animated: true) { [unowned self] in
-			playerViewController.player?.play()
+		for number in 0 ... lastIndex {
+			let box = pdfVC.pdfView.displayBox
+			let image = pdfVC.pdfView.document!.page(at: number)!.thumbnail(of: .init(width: 500, height: 350), for: box)
+			images.append(image)
 		}
 		
+		thumbnails = images
+		thumbnailCollectionView.allowsSelection = true
+		
+		thumbnailCollectionView.reloadData()
+		// Select the first cell
+		thumbnailCollectionView.selectItem(at: [0, 0], animated: true, scrollPosition: .top)
 	}
-}
-
-extension ChapterDetailVC: AVPlayerViewControllerDelegate {
-	
-	// When pip started, this method returns true, which enbales user to view pdf contents. If this returns false, pdf contents will be blocked by playerVC itself(which is a blank screen in pip mode).
-	func playerViewControllerShouldAutomaticallyDismissAtPictureInPictureStart(_ playerViewController: AVPlayerViewController) -> Bool {
-		return true
-	}
-	
-	// When clicking the restore button in pip window, restore playerViewController and keep playing the video. Without this, the resotre button acts like the close button.
-	func playerViewController(_ playerViewController: AVPlayerViewController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
-		self.present(playerViewController, animated: true)
-	}
-	
-	@objc private func didFinishPlaying() {
-		player.replaceCurrentItem(with: nil)
-		// If/when playback is in a pip window, due to the current implementation, playerVC is dismissed, and will be restored after playback finished. In that case the following dismiss command will happen earlier than the restoration without asyncAfter, therefor no dismission will actually happen. Adding asyncAfter will delay dismission, practically guarantee restoration happens first, and we get a successful dismiss.
-		Task {
-			try await Task.sleep(nanoseconds: 3_000_000)
-			await MainActor.run {
-				playerViewController.dismiss(animated: true)
-			}
-		}
-	}
-	
 }
 
 extension ChapterDetailVC: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
@@ -371,8 +244,6 @@ extension ChapterDetailVC: UICollectionViewDataSource, UICollectionViewDelegate,
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PDFThumbnailCell.identifier, for: indexPath) as! PDFThumbnailCell
 		cell.imageView.image = thumbnails[indexPath.item]
-		// Since opacity is changing during select and deselect, and we are reusing instead of creating new cells, opacity should be set here otherwise scrolling will cause visual bugs
-		cell.contentView.layer.opacity = (cell.isSelected) ? 1 : PDFThumbnailCell.opacity
 		return cell
 	}
 	
@@ -385,7 +256,7 @@ extension ChapterDetailVC: UICollectionViewDataSource, UICollectionViewDelegate,
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-		let page = pdfView.document!.page(at: indexPath.item)!
-		pdfView.go(to: page)
+		let page = pdfVC.pdfView.document!.page(at: indexPath.item)!
+		pdfVC.pdfView.go(to: page)
 	}
 }
