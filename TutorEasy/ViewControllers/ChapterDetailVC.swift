@@ -64,7 +64,8 @@ class ChapterDetailVC: UIViewController {
 		view.translatesAutoresizingMaskIntoConstraints = false
 		return view
 	}()
-	
+	#warning("Add a menu button, when clicking, show the teachingplan and building instruction buttons etc")
+
 	private let teachingPlanButton: ChapterButton = {
 		let button = ChapterButton(image: .init(named: "教案.png")!, titleText: "教案", fontSize: 10)
 		button.tag = 0

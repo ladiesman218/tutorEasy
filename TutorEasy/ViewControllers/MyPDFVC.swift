@@ -61,7 +61,6 @@ class MyPDFVC: UIViewController {
 		
 		// Disbale text selection should be called when PDFViewVisiblePagesChanged, when calling in PDFViewPageChanged it fails sometime.
 		NotificationCenter.default.addObserver(self, selector: #selector(disableSelection), name: .PDFViewVisiblePagesChanged, object: nil)
-		
 		pdfView.addSubview(loadIndicator)
 		view.addSubview(pdfView)
 		
@@ -118,12 +117,13 @@ class MyPDFVC: UIViewController {
 				if let document = PDFDocument(data: data) {
 					self?.loadIndicator.stopAnimating()
 					self?.pdfView.document = document
-					self?.setDisPlayMode()
+
 					// Disable scale for pdfView, set after document has been set, otherwise won't work
 					self?.pdfView.scaleFactor = strongSelf.pdfView.scaleFactorForSizeToFit
 					self?.pdfView.minScaleFactor = strongSelf.pdfView.scaleFactorForSizeToFit
 					self?.pdfView.maxScaleFactor = strongSelf.pdfView.scaleFactorForSizeToFit
 					
+					self?.setDisPlayMode()
 					return
 				}
 				
@@ -179,7 +179,6 @@ class MyPDFVC: UIViewController {
 	
 	// This function checks if a play button should be added, and will draw it if it should.
 	@objc func drawPlayButton() {
-		let startTime = Date().timeIntervalSince1970
 		
 		// All possible file extension for video used in pdf goes here
 		let videoExtension = ["mp4"]
@@ -205,17 +204,14 @@ class MyPDFVC: UIViewController {
 			let bounds = CGRect(x: annotation.bounds.minX + 20, y: annotation.bounds.minY + 20, width: size, height: size)
 			let videoAnnotation = VideoAnnotation(bounds: bounds, properties: ["/A": action])
 			pdfView.currentPage?.addAnnotation(videoAnnotation)
-			print(Date().timeIntervalSince1970 - startTime)
-			
 		}
 	}
 	
 	// Check if pdf is vertical or horizontal, set displayMode to .singlePageContinuous for vertical document, usePageViewController if it's horizontal. PageViewController's default displayMode is .singlePage
 	func setDisPlayMode() {
 		// Make sure pdfView has an document, and the document has at least 1 page
-		guard let bounds = pdfView.document?.page(at: 0)?.bounds(for: pdfView.displayBox) else {
-			return
-		}
+		guard let firstPage = pdfView.document?.page(at: 0) else { return }
+		let bounds = firstPage.bounds(for: pdfView.displayBox)
 		
 		if bounds.width >= bounds.height {
 			// Horizontal
@@ -224,8 +220,8 @@ class MyPDFVC: UIViewController {
 		} else {
 			// Vertical
 			pdfView.displayMode = .singlePageContinuous
-			// Manually trigger viewDidLayoutSubviews here is needed, maybe becoz pageViewController works different than setting displayMode.
-			pdfView.superview?.setNeedsLayout()
+			// We will also be setting scaleFactor after document has been got from server, that will cause .singlePageContinuous pdf page to be scrolled a little further down from top of the page. So scroll back to top of the page. pdfView.go(to: PDFPage) is different from pdfView.goToFirstPage(sender: Any?), the latter won't work.
+			pdfView.go(to: firstPage)
 		}
 	}
 }

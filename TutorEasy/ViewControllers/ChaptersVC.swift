@@ -247,7 +247,9 @@ class ChaptersVC: UIViewController {
 	private func cancelAllTasks() {
 		loadStageTask?.cancel()
 		loadStageTask = nil
-		// Somehow, use cellForItem(at:) will miss out some cells
+		// Somehow, chapterTuples can be empty, this has caused app crash once.
+		guard !chapterTuples.isEmpty else { return }
+		// Somehow, use cellForItem(at:) will miss out some cells.
 		for case let cell as ChapterCell in (0 ... chapterTuples.count - 1).map({
 			chaptersCollectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: .init(item: $0, section: 0))
 		}) {
