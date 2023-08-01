@@ -146,6 +146,9 @@ class ChapterDetailVC: UIViewController {
 		let doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(toggleFullScreen))
 		doubleTapGesture.numberOfTapsRequired = 2
 		pdfVC.pdfView.addGestureRecognizer(doubleTapGesture)
+		let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(zoom))
+		
+		pdfVC.pdfView.addGestureRecognizer(pinchGesture)
 		
 		NotificationCenter.default.addObserver(self, selector: #selector(createThumbnails), name: .PDFViewDocumentChanged, object: nil)
 		NotificationCenter.default.addObserver(self, selector: #selector(changeSelectedCell), name: .PDFViewPageChanged, object: nil)
@@ -189,6 +192,14 @@ class ChapterDetailVC: UIViewController {
 	
 	@objc private func toggleFullScreen() {
 		isFullScreen.toggle()
+	}
+	
+	@objc private func zoom(sender: UIPinchGestureRecognizer) {
+		if sender.scale < 1.0 {
+			isFullScreen = false
+		} else {
+			isFullScreen = true
+		}
 	}
 	
 	// When scrolling on pdfView to change pdf page, change selected cell for thumbnail collection view, and update all visible cells' opacity value. This should be called only when not in full screen mode, otherwise it does nothing.
