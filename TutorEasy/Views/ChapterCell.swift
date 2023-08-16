@@ -13,7 +13,7 @@ class ChapterCell: UICollectionViewCell {
 	static let identifier = "chapterCollectionViewCell"
 	// Hold reference to loadChapter and loadImage tasks, so when cell is about to be scrolled off the screen, we can cancel it.
 	var loadChapterTask: Task<Void, Never>? = nil
-	var loadImageTask: Task<Void, Error>? = nil
+	var loadImageTask: Task<Void, Never>? = nil
 	
 	// MARK: - Custom subviews
 	// SkeletonView doesn't work very well with auto layout, using auto layout on these 2 views will cause only 1 cell displaying skeleton animation, dispite collection view has many cells.
@@ -82,6 +82,7 @@ class ChapterCell: UICollectionViewCell {
 			imageView.stopSkeletonAnimation()
 			imageView.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(0.25))
 		}
+		imageView.backgroundColor = (imageView.image == failedImage) ? .systemBrown : nil
 	}
 	
 	override func prepareForReuse() {

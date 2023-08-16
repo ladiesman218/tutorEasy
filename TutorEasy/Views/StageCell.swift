@@ -13,7 +13,7 @@ class StageCell: UICollectionViewCell {
 	static private let skeletonAnimation = GradientDirection.leftRight.slidingAnimation(duration: 2.5, autoreverses: false)
 	
 	var loadStageTask: Task<Void, Never>?
-	var loadImageTask: Task<Void, Error>?
+	var loadImageTask: Task<Void, Never>?
 	
 	let imageView: UIImageView = {
 		let imageView = UIImageView()
@@ -103,6 +103,7 @@ class StageCell: UICollectionViewCell {
 			imageView.stopSkeletonAnimation()
 			imageView.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(0.25))
 		}
+		imageView.backgroundColor = (imageView.image == failedImage) ? .systemBrown : nil
 	}
 	
 	override func prepareForReuse() {

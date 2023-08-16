@@ -10,7 +10,7 @@ import SkeletonView
 
 class CourseCell: UICollectionViewCell {
     static let identifier = "courseCollectionViewCell"
-	var loadImageTask: Task<Void, Error>?
+	var loadImageTask: Task<Void, Never>?
 	
     private let nameLabel: UILabel = {
         let label = UILabel()
@@ -48,6 +48,7 @@ class CourseCell: UICollectionViewCell {
 			imageView.stopSkeletonAnimation()
 			imageView.hideSkeleton(reloadDataAfter: false, transition: .crossDissolve(0.25))
 		}
+		imageView.backgroundColor = (imageView.image == failedImage) ? .systemBrown : nil
 	}
 	    
     required init?(coder: NSCoder) {

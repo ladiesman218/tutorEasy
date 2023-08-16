@@ -75,7 +75,6 @@ class LoginViewController: UIViewController {
 		
 		Task { [weak self] in
 			do {
-				try await Task.sleep(nanoseconds: 4_000_000_000)
 				try await AuthAPI.login(username: username, password: password)
 				self?.navigationController?.popViewController(animated: true)
 			} catch {

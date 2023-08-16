@@ -10,7 +10,7 @@ import SkeletonView
 
 //let serverURL = URL(string: "http://localhost:8080")!     //localhost and docker production environment
 //let serverURL = URL(string: "https://app.douwone.xyz")!		// Gigsgigs
-let serverURL = URL(string: "https://39e4-2408-822a-1da2-5d20-3949-e643-c31c-fd60.ngrok-free.app")!     //ngrok
+let serverURL = URL(string: "https://organic-kingfish-heavily.ngrok-free.app")!     //ngrok
 
 let baseURL = serverURL.appendingPathComponent("api")
 
@@ -58,10 +58,15 @@ enum Encoder {
 let failedImage = UIImage(named: "load-failed.png")!
 
 let placeHolderNumber = 8
-let placeHolderURL = URL(string: "/")!
-let placeHolderChapter = Chapter(directoryURL: URL(fileURLWithPath: ""), name: "", isFree: false, pdfURL: URL(fileURLWithPath: ""), bInstructionURL: nil, teachingPlanURL: nil, imageURL: nil)
-let placeHolderStage = Stage(directoryURL: URL(fileURLWithPath: "/"), name: "", description: " ", imageURL: nil, chapterURLs: [] )
+let placeHolderURL = URL(fileURLWithPath: "/")
+let placeHolderChapter = Chapter(directoryURL: placeHolderURL, name: "", isFree: false, pdfURL: placeHolderURL, bInstructionURL: nil, teachingPlanURL: nil, imageURL: nil)
+let failedURL = URL(fileURLWithPath: "")
+let failedChapter = Chapter(directoryURL: failedURL, name: " ", isFree: false, pdfURL: failedURL, bInstructionURL: nil, teachingPlanURL: nil, imageURL: nil)
+
+let placeHolderStage = Stage(directoryURL: placeHolderURL, name: "", description: " ", imageURL: nil, chapterURLs: [] )
+let failedStage = Stage(directoryURL: failedURL, name: " ", description: "  ", imageURL: nil, chapterURLs: [])
 let placeHolderCourse = Course(id: UUID(), name: "", description: "", price: 1, stageURLs: [], imageURL: nil, annuallyIAPIdentifier: "")
+let failedCourse = Course(id: UUID(), name: " ", description: " ", price: 1.1, stageURLs: [], imageURL: nil, annuallyIAPIdentifier: "")
 
 let skeletonAnimation = GradientDirection.topLeftBottomRight.slidingAnimation()
 let skeletonGradient = SkeletonGradient(baseColor: .asbestos, secondaryColor: .clouds)

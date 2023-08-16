@@ -39,6 +39,7 @@ class CourseListVC: UIViewController {
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
+		failedCourse.image = failedImage
 		// This vc is kinda special, it's the entrance for most of this app's major functions. So we launch loadCourse() in viewDidLoad() and never cancel its tasks.
 		loadCoursesTask = loadCourses()
 		view.backgroundColor = UIColor.systemBackground
@@ -77,19 +78,11 @@ class CourseListVC: UIViewController {
 		let task = Task { [weak self] in
 			// When user is not logged in, AuthenticationVC maybe pushed into nav stack, if loadCourses() fails while AuthVC is the top vc of nav stack, make sure alert won't pop up to confuse user. But we still need to tell user loading courses failed, this is done by setting images for place holder cell's to load-failed.png
 			do {
-//				try await Task.sleep(nanoseconds: 4_000_000_000)
 				self?.courses = try await CourseAPI.getAllCourses()
-				try Task.checkCancellation()
 				self?.courseCollectionView.reloadData()
-			} catch is CancellationError { return }
-			catch {
-				guard let strongSelf = self else { return }
-				for case let cell as CourseCell in (0 ... strongSelf.courses.count - 1).map({
-					self?.courseCollectionView.cellForItem(at: .init(item: $0, section: 0)) }) {
-					cell.imageView.image = failedImage
-					cell.imageView.backgroundColor = .systemBrown
-					cell.setNeedsLayout()
-				}
+			} catch {
+				self?.courses = .init(repeating: failedCourse, count: placeHolderNumber)
+				self?.courseCollectionView.reloadData()
 				
 				// Do not show alert when self is not the top VC of nav stack
 				guard self?.navigationController?.topViewController == self else {
@@ -98,6 +91,7 @@ class CourseListVC: UIViewController {
 					return
 				}
 				
+				guard let strongSelf = self else { return }
 				let retry = UIAlertAction(title: "重试", style: .default) { action in
 					self?.refresh(sender: strongSelf.refreshControl)
 				}
@@ -109,21 +103,14 @@ class CourseListVC: UIViewController {
 		return task
 	}
 	
-	private func loadImage(forItem index: Int) -> Task<Void, Error> {
-		
+	private func loadImage(forItem index: Int) -> Task<Void, Never> {
+		let course = courses[index]
 		let task = Task { [weak self] in
-			//				try await Task.sleep(nanoseconds: 3_000_000_000)
 			guard let strongSelf = self else { return }
-			let course = strongSelf.courses[index]
 			let image = await UIImage.load(from: course.imageURL, size: strongSelf.cellSize)
-			try Task.checkCancellation()
 			
 			self?.courses[index].image = image
-			
-			if let cell = self?.courseCollectionView.cellForItem(at: .init(item: index, section: 0)) as? CourseCell {
-				cell.imageView.image = image
-				cell.setNeedsLayout()
-			}
+			self?.courseCollectionView.reloadItems(at: [.init(item: index, section: 0)])
 		}
 		return task
 	}
@@ -181,7 +168,9 @@ extension CourseListVC: SkeletonCollectionViewDelegate, SkeletonCollectionViewDa
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
-		return courses[indexPath.item] != placeHolderCourse
+		let course = courses[indexPath.item]
+		return course != placeHolderCourse &&
+		course != failedCourse
 	}
 	
 	func collectionView(_ collectionView: UICollectionView, shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {

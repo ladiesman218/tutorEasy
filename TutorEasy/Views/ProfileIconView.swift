@@ -48,7 +48,7 @@ class ProfileIconView: UIView {
         if extraInfo {
             title = UILabel()
 			title!.text = AuthAPI.userInfo?.username ?? Self.logOutTitle
-            title!.textColor = .black
+            title!.textColor = .systemBlue
             title!.translatesAutoresizingMaskIntoConstraints = false
             self.addSubview(title!)
             NSLayoutConstraint.activate([
