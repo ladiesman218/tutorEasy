@@ -31,11 +31,21 @@ var cachedSession: URLSession = {
 extension URLSession {
 	
 	public func dataAndResponse(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+		URLCache.shared.removeAllCachedResponses()
+		// When Server is up and good, but client:
+		// 1. Has 100% package loss, client gets url error, code -1200 or -1001(see a full list here `https://learn.microsoft.com/en-us/dotnet/api/foundation.nsurlerror?view=xamarin-mac-sdk-14`) indicates SSL error and connection can't be made or request timeout.
+		// 2. Has very bad network, client gets 200 with all data, and same for better network
+		// 3. Has 2G - poor or better, client got -1001
 		
+		// When server is down, client has good connection, client end gets 502 bad gateway
+		// With ngrok up, server down, client got 502, when ngrok is also down, client got 404
+		// With ngrok, when client side has googd network but server :
+		// 1. 100% loss is equal to ngrok down, 404
+		// 2. Very bad network got 200 and all data, but can't get images
+		// 3. High latency DNS got 200 and all data including images
 		let (data, response) = try await data(for: request)
-		try Task.checkCancellation()
 		let httpResponse = response as! HTTPURLResponse
-		
+		try Task.checkCancellation()
 		return (data, httpResponse)
 	}
 	

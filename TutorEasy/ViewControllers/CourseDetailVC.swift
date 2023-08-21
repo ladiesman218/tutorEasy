@@ -157,6 +157,9 @@ class CourseDetailVC: UIViewController {
 					self?.refreshControl.endRefreshing()
 					return
 				}
+				#if DEBUG
+				print(error)
+				#endif
 				self?.stageTuples = .init(repeating: (failedURL, failedStage), count: placeHolderNumber)
 				self?.stageCollectionView.reloadData()
 			}
@@ -190,7 +193,7 @@ class CourseDetailVC: UIViewController {
 		
 		let task = Task { [weak self] in
 			guard let strongSelf = self else { return }
-			let image = await UIImage.load(from: stage.imageURL, size: strongSelf.imageSize)
+			let image = await FileAPI.publicGetImageData(url: stage.imageURL, size: strongSelf.imageSize)
 			self?.stageTuples[index].stage.image = image
 			self?.stageCollectionView.reloadItems(at: [.init(item: index, section: 0)])
 		}

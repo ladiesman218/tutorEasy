@@ -220,7 +220,7 @@ class ChaptersVC: UIViewController {
 		let task = Task { [weak self] in
 			guard let strongSelf = self else { return }
 			// UIImage.load() will generate a image from given color if failed to retrieve data from server, or return nil if task is cancelled so it could be started later again when needed.
-			guard var image = await UIImage.load(from: chapter.imageURL, size: strongSelf.imageSize) else {
+			guard var image = await FileAPI.publicGetImageData(url: chapter.imageURL, size: strongSelf.imageSize) else {
 				return
 			}
 			image = (chapter.isFree) ? image.addTrail() : image

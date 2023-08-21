@@ -70,28 +70,6 @@ extension UIImage {
 		return resultImage ?? self
 	}
 	
-	static func load(from url: URL?, size: CGSize) async -> UIImage? {
-		guard let url = url else {
-			// Generate a image if imageURL is nil
-			let image = UIColor.blue.convertToImage(size: size)
-			return image
-		}
-		
-		let req = FileAPI.convertToImageRequest(url: url)
-		var image: UIImage
-		do {
-			image = try await FileAPI.publicGetImageData(request: req, size: size)
-		} catch {
-			// We'll be checking image's value in datasource to decide if a loading task is needed, when task is cancelled, return nothing so if needed, same task can be re-start later.
-			guard !Task.isCancelled else { return nil }
-
-			image = UIColor.blue.convertToImage(size: size)
-			#if DEBUG
-			print("\(error.localizedDescription) for loading image at \(url.path)")
-			#endif
-		}
-		return image
-	}
 }
 
 extension UIColor {

@@ -83,7 +83,9 @@ class CourseListVC: UIViewController {
 			} catch {
 				self?.courses = .init(repeating: failedCourse, count: placeHolderNumber)
 				self?.courseCollectionView.reloadData()
-				
+				#if DEBUG
+				print(error)
+				#endif
 				// Do not show alert when self is not the top VC of nav stack
 				guard self?.navigationController?.topViewController == self else {
 					// This early `return` may actually happen, so when it happens, end refresh if there is one ongoing, so refreshControl won't be displayed if user come back to this vc later.
@@ -107,7 +109,7 @@ class CourseListVC: UIViewController {
 		let course = courses[index]
 		let task = Task { [weak self] in
 			guard let strongSelf = self else { return }
-			let image = await UIImage.load(from: course.imageURL, size: strongSelf.cellSize)
+			let image = await FileAPI.publicGetImageData(url: course.imageURL, size: strongSelf.cellSize)
 			
 			self?.courses[index].image = image
 			self?.courseCollectionView.reloadItems(at: [.init(item: index, section: 0)])
