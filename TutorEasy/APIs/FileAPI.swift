@@ -7,14 +7,16 @@
 
 import UIKit
 
-// In requestWithToken function we force casted server returned URLResponse to HTTPURLResponse. With a url with file scheme(which is what our server responses for file urls currently), the force casting will fail and cause the app crashing. Here we generate the url from scratch, which makes sure it will always be a http request.
 struct FileAPI {
-	static let publicImageEndPoint = baseURL.appendingPathComponent("image")
-	static let contentEndPoint = baseURL.appendingPathComponent("content")
-	// Server responds image url with file:// scheme, generate a url request from it, which is of type http request.
-	static func convertToImageRequest(url: URL) -> URLRequest {
+	enum FileType: String {
+		case publicImage = "image"
+		case protectedContent = "content"
+	}
+	
+	// Server responds file urls with file:// scheme, generate a url request from it, which is of type http request.
+	static func convertToHTTPRequest(url: URL, fileType: FileType) -> URLRequest {
 		let path = url.path
-		let url = publicImageEndPoint.appendingPathComponent(path, isDirectory: false)
+		let url = baseURL.appendingPathComponent(fileType.rawValue).appendingPathComponent(path, isDirectory: false)
 		let request = URLRequest(url: url)
 		return request
 	}
@@ -27,7 +29,7 @@ struct FileAPI {
 			return image
 		}
 		
-		let req = FileAPI.convertToImageRequest(url: url)
+		let req = FileAPI.convertToHTTPRequest(url: url, fileType: .publicImage)
 		do {
 			// If a cached response exists, server will respond 304 not modified for the request, cached data will be used for the image. Nothing needs to be done on client side, other than create the data task in cachedSession.
 			// When dataTask throws, it will go to catch block immediately, later steps won't be processed.
@@ -65,15 +67,13 @@ struct FileAPI {
 		}
 	}
 
-	static func getCourseContent(path: String) async throws -> (Data, HTTPURLResponse) {
-		// Generate http url scheme
-		let url = contentEndPoint.appendingPathComponent(path, isDirectory: false)
-		var request = URLRequest(url: url)
+	static func getCourseContent(url: URL) async throws -> (Data, HTTPURLResponse) {
+		var request = convertToHTTPRequest(url: url, fileType: .protectedContent)
+
 		request.addValue("Bearer \(AuthAPI.tokenValue ?? "")", forHTTPHeaderField: "Authorization")
 		// For cached response, server will return "no-cache" for Cache-Control header, hence later requests will go to server first, only use cached data if user token validation has passed and server returns 304 not modified.
-		let (data, response) = try await cachedSession.data(for: request)
-		let urlResponse = response as! HTTPURLResponse
+		let (data, response) = try await cachedSession.dataAndResponse(for: request)
 		
-		return (data, urlResponse)
+		return (data, response)
 	}
 }
