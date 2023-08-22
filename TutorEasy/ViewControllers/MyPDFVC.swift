@@ -11,6 +11,12 @@ import AVKit
 
 class MyPDFVC: UIViewController {
 	// MARK: - Properties
+	
+	// All possible file extension for video used in pdf goes here
+	static let videoExtension = ["mp4"]
+	// Playbutton's size
+	static let size = CGSize(width: 80, height: 80)
+	
 	var pdfURL: URL!
 	
 	// Whether to display a close button. The button is only needed when this view controller displays nothing but a pdfView(no topView so the button is used for allowing user to go back to previous vc)
@@ -110,23 +116,25 @@ class MyPDFVC: UIViewController {
 			do {
 				guard let strongSelf = self else { return }
 				
-				// try await Task.sleep(nanoseconds: 6_000_000_000)
-				let (data, response) = try await FileAPI.getCourseContent(path: strongSelf.pdfURL.path)
-				try Task.checkCancellation()
-				
+				let (data, response) = try await FileAPI.getCourseContent(url: strongSelf.pdfURL)
 				if let document = PDFDocument(data: data) {
-					self?.loadIndicator.stopAnimating()
+//					let startTime = DispatchTime.now()
+#warning("there will be a 200 - 400ms dead lock for setting pdfView's document alone, and it can't be put in background thread")
 					self?.pdfView.document = document
-
-					// Disable scale for pdfView, set after document has been set, otherwise won't work
+//					let endTime = DispatchTime.now()
+//					let nanoTime = endTime.uptimeNanoseconds - startTime.uptimeNanoseconds
+//					let timeInterval = Double(nanoTime) / 1_000_000_000
+//					print("Function execution time: \(timeInterval) seconds")
+					
+					self?.setDisPlayMode()
+					// Disable scale for pdfView, set after both document and displayMode have been set, otherwise won't work
 					self?.pdfView.scaleFactor = strongSelf.pdfView.scaleFactorForSizeToFit
 					self?.pdfView.minScaleFactor = strongSelf.pdfView.scaleFactorForSizeToFit
 					self?.pdfView.maxScaleFactor = strongSelf.pdfView.scaleFactorForSizeToFit
 					
-					self?.setDisPlayMode()
+					self?.loadIndicator.stopAnimating()
 					return
 				}
-				
 				// Success will return, so here means request failed.
 				guard let navVC = self?.navigationController else { return }
 				// Pop current vc first, no need to stay here
@@ -163,11 +171,10 @@ class MyPDFVC: UIViewController {
 					default:
 						break
 				}
-			} catch is CancellationError { return }
-			catch {}
-			
-			self?.loadIndicator.stopAnimating()
-			// Only when document loaded succussfully, then add the close button. Otherwise it's hard/impossible to place closeButton on top of pdfView
+			}
+			catch {
+				guard !Task.isCancelled else { return }
+			}
 		}
 		return task
 	}
@@ -179,29 +186,23 @@ class MyPDFVC: UIViewController {
 	
 	// This function checks if a play button should be added, and will draw it if it should.
 	@objc func drawPlayButton() {
-		
-		// All possible file extension for video used in pdf goes here
-		let videoExtension = ["mp4"]
-		
-		// Make sure current page contains annotations(link is a form of annotation), otherwise bail out
-		guard let annotations = pdfView.currentPage?.annotations else { return }
-		// Make sure video annotations hasn't been added, otherwise bail. This avoid adding same play button multiple times.
-		guard !annotations.contains(where: {$0.isKind(of: VideoAnnotation.self)} ) else {
-			return
-		}
+
+		// Make sure current page contains annotations(link is a form of annotation), and play button hasn't been drawn(this avoid adding same play button multiple times.), otherwise bail out
+		guard let annotations = pdfView.currentPage?.annotations,
+			  !annotations.contains(where: {$0.isKind(of: VideoAnnotation.self)} ) else { return }
+				//!annotations.isEmpty else { return }
 		
 		// Loop through all annotations on current page that contains an actionable url, which the url itself contains one of path extensions defined in videoExtension array.
 		for annotation in annotations {
-			guard let action = annotation.action as? PDFActionURL else { continue }
-			guard let url = action.url else { continue }
-			
-			// The link's extension has to be contained by videoExtension array, which means it's a link for a video file
-			guard videoExtension.contains(url.pathExtension) else { continue }
-			
-			// Initialize a VideoAnnotation, add it to current page
-			let size = CGFloat(integerLiteral: 80)	// Playbutton's size
+			guard let action = annotation.action as? PDFActionURL,
+				  let url = action.url,
+				  // The link's extension has to be contained by videoExtension array, which means it's a link for a video file
+				  Self.videoExtension.contains(url.pathExtension)
+			else { continue }
+						
 			// Place the play button annotation to bottom left corner of the link's annotation area, offset by 20 points right and 20 upwards.
-			let bounds = CGRect(x: annotation.bounds.minX + 20, y: annotation.bounds.minY + 20, width: size, height: size)
+			let bounds = CGRect(origin: .init(x: annotation.bounds.minX + 20, y: annotation.bounds.minY + 20), size: Self.size)
+
 			let videoAnnotation = VideoAnnotation(bounds: bounds, properties: ["/A": action])
 			pdfView.currentPage?.addAnnotation(videoAnnotation)
 		}
@@ -211,7 +212,7 @@ class MyPDFVC: UIViewController {
 	func setDisPlayMode() {
 		// Make sure pdfView has an document, and the document has at least 1 page
 		guard let firstPage = pdfView.document?.page(at: 0) else { return }
-		let bounds = firstPage.bounds(for: pdfView.displayBox)
+		let bounds = firstPage.bounds(for: .mediaBox)
 		
 		if bounds.width >= bounds.height {
 			// Horizontal
@@ -221,8 +222,9 @@ class MyPDFVC: UIViewController {
 			// Vertical
 			pdfView.displayMode = .singlePageContinuous
 			// We will also be setting scaleFactor after document has been got from server, that will cause .singlePageContinuous pdf page to be scrolled a little further down from top of the page. So scroll back to top of the page. pdfView.go(to: PDFPage) is different from pdfView.goToFirstPage(sender: Any?), the latter won't work.
-			pdfView.go(to: firstPage)
 		}
+		pdfView.goToNextPage(nil)
+		pdfView.go(to: firstPage)
 	}
 }
 
@@ -241,8 +243,10 @@ extension MyPDFVC: PDFViewDelegate {
 		// Disable picture in picture for now. pip still cause some issue
 		playerViewController.allowsPictureInPicturePlayback = false
 		
-		// In PDF file, relative path is used for video files(relative to chapter's directory url), so when accessing the real file, we need to modify that link path, prepend api end point and directory url first
-		let videoURL = FileAPI.contentEndPoint.appendingPathComponent(pdfURL.deletingLastPathComponent().path).appendingPathComponent(url.path)
+		// In PDF file, relative path is used for video files(relative to chapter's directory url), so when accessing the real file, we need to modify that link path.
+		let url = pdfURL.deletingLastPathComponent().appendingPathComponent(url.path)
+		let videoURL = baseURL.appendingPathComponent(FileAPI.FileType.protectedContent.rawValue).appendingPathComponent(url.path, isDirectory: false)
+		
 		player.replaceCurrentItem(with: .init(url: videoURL))
 		playerViewController.player = player
 		
