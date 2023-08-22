@@ -76,6 +76,7 @@
 		B425EA4128D9B9FA003A865D /* Course.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Course.swift; sourceTree = "<group>"; };
 		B42B2FAD29D687D00098C094 /* UILable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UILable.swift; sourceTree = "<group>"; };
 		B42B2FAF29D690D20098C094 /* ChaptersVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChaptersVC.swift; sourceTree = "<group>"; };
+		B4373B7E2A8DD2680030595D /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		B4376C012908CA1D00E17698 /* CourseAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseAPI.swift; sourceTree = "<group>"; };
 		B4376C03290D7FC500E17698 /* ProfileIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileIconView.swift; sourceTree = "<group>"; };
 		B4376C05290E1F2800E17698 /* CourseDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourseDetailVC.swift; sourceTree = "<group>"; };
@@ -225,6 +226,7 @@
 		B44AD57C293C5C7500598D5A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				B4373B7E2A8DD2680030595D /* UIKit.framework */,
 				B4A9170F2A1F656600B4BAF4 /* AVKit.framework */,
 				B4A9170A2A1F64F400B4BAF4 /* AVFoundation.framework */,
 				B44AD57D293C5C7500598D5A /* StoreKit.framework */,

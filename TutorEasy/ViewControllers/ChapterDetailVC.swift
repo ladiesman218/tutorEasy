@@ -17,7 +17,11 @@ class ChapterDetailVC: UIViewController {
 	private var fullThumb: NSLayoutConstraint!
 	private var noThumb: NSLayoutConstraint!
 	
-	var pdfVC: MyPDFVC!
+	let pdfVC: MyPDFVC = {
+		let pdfVC = MyPDFVC()
+		pdfVC.view.translatesAutoresizingMaskIntoConstraints = false
+		return pdfVC
+	}()
 	
 	private var isFullScreen: Bool = false {
 		didSet {
@@ -46,13 +50,17 @@ class ChapterDetailVC: UIViewController {
 			pdfVC.pdfView.scaleFactor = pdfVC.pdfView.scaleFactorForSizeToFit
 			pdfVC.pdfView.minScaleFactor = pdfVC.pdfView.scaleFactorForSizeToFit
 			pdfVC.pdfView.maxScaleFactor = pdfVC.pdfView.scaleFactorForSizeToFit
-
+			
 			// In case scrolling was happened when in full screen, then user exit full screen mode, change selected cell.
 			if !isFullScreen { changeSelectedCell() }
 		}
 	}
 	
-	var chapter: Chapter!
+	var chapter: Chapter! {
+		didSet {
+			pdfVC.pdfURL = chapter.pdfURL
+		}
+	}
 	
 	private var thumbnails: [UIImage?] = .init(repeating: nil, count: placeHolderNumber)
 	
@@ -64,8 +72,8 @@ class ChapterDetailVC: UIViewController {
 		view.translatesAutoresizingMaskIntoConstraints = false
 		return view
 	}()
-	#warning("Add a menu button, when clicking, show the teachingplan and building instruction buttons etc")
-
+#warning("Add a menu button, when clicking, show the teachingplan and building instruction buttons etc")
+	
 	private let teachingPlanButton: ChapterButton = {
 		let button = ChapterButton(image: .init(named: "教案.png")!, titleText: "教案", fontSize: 10)
 		button.tag = 0
@@ -136,22 +144,19 @@ class ChapterDetailVC: UIViewController {
 			fullThumb.isActive = true
 		}
 		
-		pdfVC = MyPDFVC()
-		pdfVC.pdfURL = chapter.pdfURL
 		self.addChild(pdfVC)
-		pdfVC.view.translatesAutoresizingMaskIntoConstraints = false
 		containerView.addSubview(pdfVC.view)
 		view.addSubview(containerView)
-		// Add functionality for double tapping to toggle full screen
+		// Allow double tap and pinch to toggle full screen
 		let doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(toggleFullScreen))
 		doubleTapGesture.numberOfTapsRequired = 2
 		pdfVC.pdfView.addGestureRecognizer(doubleTapGesture)
 		let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(zoom))
-		
 		pdfVC.pdfView.addGestureRecognizer(pinchGesture)
 		
-		NotificationCenter.default.addObserver(self, selector: #selector(createThumbnails), name: .PDFViewDocumentChanged, object: nil)
-		NotificationCenter.default.addObserver(self, selector: #selector(changeSelectedCell), name: .PDFViewPageChanged, object: nil)
+		// These 2 observers should only receive notifications sending from contained pdfVC's pdfView, other instance's pdfView(like clicking teaching plan button to instantiate a new MyPDFVC) will send notifications if object is set to nil.
+		NotificationCenter.default.addObserver(self, selector: #selector(createThumbnails), name: .PDFViewDocumentChanged, object: pdfVC.pdfView)
+		NotificationCenter.default.addObserver(self, selector: #selector(changeSelectedCell), name: .PDFViewPageChanged, object: pdfVC.pdfView)
 		
 		NSLayoutConstraint.activate([
 			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
@@ -206,7 +211,7 @@ class ChapterDetailVC: UIViewController {
 	@objc private func changeSelectedCell() {
 		guard let labelString = pdfVC.pdfView.currentPage?.label, let labelInt = Int(labelString) else { return }
 		let index = labelInt - 1
-
+		
 		// Select item, and scroll it to vertically centered position
 		thumbnailCollectionView.selectItem(at: .init(item: index, section: 0), animated: true, scrollPosition: .centeredVertically)
 		// Call setNeedsLayout for all visible cells to update its opacity value
@@ -229,22 +234,39 @@ class ChapterDetailVC: UIViewController {
 	}
 	
 	@objc func createThumbnails() {
-		guard let pageCount = pdfVC.pdfView.document?.pageCount else { return }
-		let lastIndex = pageCount - 1
-		var images = [UIImage]()
+		guard let document = pdfVC.pdfView.document else { return }
+		let lastIndex = document.pageCount - 1
+		guard lastIndex > 0 else { return }
 		
-		for number in 0 ... lastIndex {
-			let box = pdfVC.pdfView.displayBox
-			let image = pdfVC.pdfView.document!.page(at: number)!.thumbnail(of: .init(width: 500, height: 350), for: box)
-			images.append(image)
+		let box = pdfVC.pdfView.displayBox
+		let size = CGSize(width: 500, height: 300)
+		
+		// Generate thumbnails could be timely expensive, put this work into background thread.
+		Task.detached {
+			var imageTuples = [(Int,UIImage)]()
+			await withTaskGroup(of: (Int, UIImage).self) { group in
+				for index in 0 ... lastIndex {
+					group.addTask(priority: .userInitiated) {
+						let image = document.page(at: index)!.thumbnail(of: size, for: box)
+						return (index, image)
+					}
+				}
+				
+				for await tuple in group {
+					imageTuples.append(tuple)
+				}
+				// Sort by index, then remove indices to form an image array.
+				let sortedImages = imageTuples.sorted { $0.0 < $1.0 }.compactMap { $0.1 }
+				
+				Task { @MainActor [weak self] in
+					self?.thumbnails = sortedImages
+					self?.thumbnailCollectionView.reloadData()
+					self?.thumbnailCollectionView.allowsSelection = true
+					// Select the first cell
+					self?.thumbnailCollectionView.selectItem(at: [0, 0], animated: true, scrollPosition: .top)
+				}
+			}
 		}
-		
-		thumbnails = images
-		thumbnailCollectionView.allowsSelection = true
-		
-		thumbnailCollectionView.reloadData()
-		// Select the first cell
-		thumbnailCollectionView.selectItem(at: [0, 0], animated: true, scrollPosition: .top)
 	}
 }
 
