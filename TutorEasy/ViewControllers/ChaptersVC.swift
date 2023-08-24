@@ -234,6 +234,8 @@ class ChaptersVC: UIViewController {
 	private func cancelAllTasks() {
 		loadStageTask?.cancel()
 		loadStageTask = nil
+		// If all chapter folder's name were wrong/don't meets the naming requirements, chapterTuples.count chould be 0
+		guard chapterTuples.count - 1 > 0 else { return }
 		// When refreshing, use cellForItem() only gets the first 8 cells but more are possibly in memory.
 		for case let cell as ChapterCell in (0 ... chapterTuples.count - 1).map({
 			chaptersCollectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: .init(item: $0, section: 0))

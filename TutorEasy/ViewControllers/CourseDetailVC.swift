@@ -138,6 +138,7 @@ class CourseDetailVC: UIViewController {
 	private func cancelAllTasks() {
 		loadCourseTask?.cancel()
 		loadCourseTask = nil
+		guard stageTuples.count - 1 > 0 else { return }
 		for case let cell as StageCell in (0 ... stageTuples.count - 1).map({
 			stageCollectionView.dequeueReusableCell(withReuseIdentifier: StageCell.identifier, for: .init(item: $0, section: 0))
 		}) {
