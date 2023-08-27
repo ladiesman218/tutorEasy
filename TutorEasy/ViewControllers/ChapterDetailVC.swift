@@ -39,17 +39,12 @@ class ChapterDetailVC: UIViewController {
 				fullThumb.isActive = true
 			}
 			
-			UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseOut, animations:{ [unowned self] in
-				// layoutIfNeeded is for animation, here we animate layout changes, so changes has to be effect before animation starts
-				view.layoutIfNeeded()
-				// setNeedsLayout is for triggering pdf auto resize, when usePageViewController, viewDidLayoutSubViews will be called automatically when isFullScreen changed, hence handling the resize. This is only needed when displayMode is set to .singlePageContinuous, which means pdf page is in vertical mode.
-				view.setNeedsLayout()
-			})
-			
-			// Adjust scaleFactor after size of pdfView has changed
-			pdfVC.pdfView.scaleFactor = pdfVC.pdfView.scaleFactorForSizeToFit
-			pdfVC.pdfView.minScaleFactor = pdfVC.pdfView.scaleFactorForSizeToFit
-			pdfVC.pdfView.maxScaleFactor = pdfVC.pdfView.scaleFactorForSizeToFit
+			UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseOut) { [weak self] in
+				// Calling layoutIfNeeded() on self.view will animate topView and thumbnailCollectionView's layout change
+				self?.view.layoutIfNeeded()
+				// Calling setNeedsLayout() on pdfVC's view will trigger its viewDidLayoutSubviews() function, in which we changed pdfView's scaleFactor. Actually when testing, calling self?.view.layoutIfNeeded() also triggers the function, but has no actual effect, adding this fix the bug.
+				self?.pdfVC.view.setNeedsLayout()
+			}
 			
 			// In case scrolling was happened when in full screen, then user exit full screen mode, change selected cell.
 			if !isFullScreen { changeSelectedCell() }
@@ -67,11 +62,7 @@ class ChapterDetailVC: UIViewController {
 	// MARK: - Custom subviews
 	private var topView: UIView!
 	private var backButtonView: UIView!
-	private let containerView: UIView = {
-		let view = UIView()
-		view.translatesAutoresizingMaskIntoConstraints = false
-		return view
-	}()
+	
 #warning("Add a menu button, when clicking, show the teachingplan and building instruction buttons etc")
 	
 	private let teachingPlanButton: ChapterButton = {
@@ -132,8 +123,8 @@ class ChapterDetailVC: UIViewController {
 		
 		fullTop = topView.heightAnchor.constraint(equalToConstant: Self.topViewHeight)
 		noTop = topView.heightAnchor.constraint(equalToConstant: 0)
-		fullThumb = thumbnailCollectionView.widthAnchor.constraint(equalToConstant: view.frame.size.width * 0.2)
-		noThumb = thumbnailCollectionView.widthAnchor.constraint(equalToConstant: 0)
+		fullThumb = thumbnailCollectionView.trailingAnchor.constraint(equalTo: view.leadingAnchor, constant: view.frame.size.width * 0.2)
+		noThumb = thumbnailCollectionView.trailingAnchor.constraint(equalTo: view.leadingAnchor)
 		
 		// Manually set to avoid unnecessary animations
 		if isFullScreen {
@@ -145,8 +136,8 @@ class ChapterDetailVC: UIViewController {
 		}
 		
 		self.addChild(pdfVC)
-		containerView.addSubview(pdfVC.view)
-		view.addSubview(containerView)
+		view.addSubview(pdfVC.view)
+		
 		// Allow double tap and pinch to toggle full screen
 		let doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(toggleFullScreen))
 		doubleTapGesture.numberOfTapsRequired = 2
@@ -179,18 +170,13 @@ class ChapterDetailVC: UIViewController {
 			thumbnailCollectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
 			thumbnailCollectionView.topAnchor.constraint(equalTo: topView.bottomAnchor, constant: 10),
 			thumbnailCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-			
-			containerView.leadingAnchor.constraint(equalTo: thumbnailCollectionView.trailingAnchor),
-			containerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-			containerView.topAnchor.constraint(equalTo: thumbnailCollectionView.topAnchor),
-			containerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-			
-			pdfVC.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-			pdfVC.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-			pdfVC.view.topAnchor.constraint(equalTo: containerView.topAnchor),
-			pdfVC.view.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+						
+			pdfVC.view.leadingAnchor.constraint(equalTo: thumbnailCollectionView.trailingAnchor),
+			pdfVC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+			pdfVC.view.topAnchor.constraint(equalTo: thumbnailCollectionView.topAnchor),
+			pdfVC.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
 		])
-		// Button's centerVertically() should be called after constraints have been set, coz it needs button's frame to have been set first.
+		// Button's centerVertically() should be called after constraints have been set, coz it needs button's frame to have been set first. Both viewWillLayoutSubviews() and viewDidLayoutSubviews() can be and will be called multiple times(at least in this vc) hence cause bugs.
 		teachingPlanButton.centerVertically()
 		buildingInstructionButton.centerVertically()
 	}

@@ -45,7 +45,7 @@ class MyPDFVC: UIViewController {
 		return indicator
 	}()
 	
-	private let closeButton: CustomButton = {
+	private lazy var closeButton: CustomButton = {
 		let button = CustomButton()
 		button.animated = true
 		button.layer.cornerRadius = 10
@@ -70,8 +70,6 @@ class MyPDFVC: UIViewController {
 		pdfView.addSubview(loadIndicator)
 		view.addSubview(pdfView)
 		
-		closeButton.addTarget(self, action: #selector(backButtonClicked), for: .touchUpInside)
-		
 		NSLayoutConstraint.activate([
 			pdfView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
 			pdfView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
@@ -86,6 +84,7 @@ class MyPDFVC: UIViewController {
 		
 		if showCloseButton {
 			view.addSubview(closeButton)
+			closeButton.addTarget(self, action: #selector(backButtonClicked), for: .touchUpInside)
 			NSLayoutConstraint.activate([
 				closeButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
 				closeButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
@@ -109,6 +108,17 @@ class MyPDFVC: UIViewController {
 		loadTask = nil
 	}
 	
+	// Change scale factor when view's layoutChanges automatically, then disable zoom-in/zoom-out, so users can't change it. This viewDidLayoutSubviews() will be automatically called when this vc is a childVC of ChapterDetailVC, user toggles ChapterDetailVC's isFullScreen value
+	override func viewWillLayoutSubviews() {
+		super.viewWillLayoutSubviews()
+		// For now, the only thing we do inside this function call is to auto-set pdfView's scaleFactor and disable zooming after set. So only do it when scale factor hasn't been set to the proper value.
+		guard pdfView.scaleFactor != pdfView.scaleFactorForSizeToFit else { return }
+		pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
+		// Following 2 will disable zoom-in / zoom-out
+		pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
+		pdfView.maxScaleFactor = pdfView.scaleFactorForSizeToFit
+	}
+	
 	private func loadDocument() -> Task<Void, Never> {
 		loadIndicator.startAnimating()
 		
@@ -127,10 +137,6 @@ class MyPDFVC: UIViewController {
 //					print("Function execution time: \(timeInterval) seconds")
 					
 					self?.setDisPlayMode()
-					// Disable scale for pdfView, set after both document and displayMode have been set, otherwise won't work
-					self?.pdfView.scaleFactor = strongSelf.pdfView.scaleFactorForSizeToFit
-					self?.pdfView.minScaleFactor = strongSelf.pdfView.scaleFactorForSizeToFit
-					self?.pdfView.maxScaleFactor = strongSelf.pdfView.scaleFactorForSizeToFit
 					
 					self?.loadIndicator.stopAnimating()
 					return
@@ -169,11 +175,22 @@ class MyPDFVC: UIViewController {
 						// Service un-reachable, either client end doesn't have a network connection, or server is down
 						MessagePresenter.showMessage(title: "服务器无响应", message: "请检查设备网络，或联系管理员\(adminEmail)", on: navVC.topViewController!, actions: [cancel])
 					default:
-						break
+						MessagePresenter.showMessage(title: "未知错误", message: "", on: navVC.topViewController!, actions: [])
 				}
 			}
 			catch {
 				guard !Task.isCancelled else { return }
+				// Maybe request timed-out or due to other reasons, threw an error,
+				guard let navVC = self?.navigationController else { return }
+				// Pop current vc first, no need to stay here
+				navVC.popViewController(animated: true)
+				
+				if let _ = error as? URLError {
+					MessagePresenter.showMessage(title: "无法载入课程文件", message: "网络错误", on: navVC.topViewController!, actions: [])
+				}
+				#if DEBUG
+				print("\(error.localizedDescription) for loading pdf file \(String(describing: self?.pdfURL))")
+				#endif
 			}
 		}
 		return task
@@ -218,13 +235,19 @@ class MyPDFVC: UIViewController {
 			// Horizontal
 			// Configure PDFView to display one page at a time, while keep the ability to scroll up and down on the pdfView itself.
 			pdfView.usePageViewController(true)
+			// Trigger viewDidLayoutSubviews(), which set pdfView's scaleFactor
+			view.setNeedsLayout()
 		} else {
 			// Vertical
 			pdfView.displayMode = .singlePageContinuous
-			// We will also be setting scaleFactor after document has been got from server, that will cause .singlePageContinuous pdf page to be scrolled a little further down from top of the page. So scroll back to top of the page. pdfView.go(to: PDFPage) is different from pdfView.goToFirstPage(sender: Any?), the latter won't work.
+			// setNeedsLayout() does not force an immediate update, but instead waits for the next update cycle, without this, view won't know it's needed for layout again.
+			view.setNeedsLayout()
+			// layoutIfNeeded() forces the view to update its layout immediately. If we don't call this manually, layout will happen after pdfView.go(to: destination), so pdf view will scroll a little bit further down from top of the page
+			view.layoutIfNeeded()
+			// We will also be setting scaleFactor after document has been got from server, that will cause .singlePageContinuous pdf page to be scrolled a little further down from top of the page(guess zoom-in will begin from current page's center). So scroll back to top of the page. pdfView.go(to: PDFPage) is different from pdfView.goToFirstPage(sender: Any?), the latter won't work.
+			let destination = PDFDestination(page: firstPage, at: CGPoint(x: 0, y: firstPage.bounds(for: .mediaBox).maxY))
+			pdfView.go(to: destination)
 		}
-		pdfView.goToNextPage(nil)
-		pdfView.go(to: firstPage)
 	}
 }
 
