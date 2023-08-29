@@ -67,6 +67,9 @@ class MyPDFVC: UIViewController {
 		
 		// Disbale text selection should be called when PDFViewVisiblePagesChanged, when calling in PDFViewPageChanged it fails sometime.
 		NotificationCenter.default.addObserver(self, selector: #selector(disableSelection), name: .PDFViewVisiblePagesChanged, object: nil)
+		// Disable zooming was set in viewWillLayoutSubviews(), but without this, when in .usePageViewController mode, scrolling to a new pdf page will make that zoomable again some time.
+		NotificationCenter.default.addObserver(self, selector: #selector(setAndDisbaleZooming), name: .PDFViewVisiblePagesChanged, object: nil)
+		
 		pdfView.addSubview(loadIndicator)
 		view.addSubview(pdfView)
 		
@@ -109,8 +112,13 @@ class MyPDFVC: UIViewController {
 	}
 	
 	// Change scale factor when view's layoutChanges automatically, then disable zoom-in/zoom-out, so users can't change it. This viewDidLayoutSubviews() will be automatically called when this vc is a childVC of ChapterDetailVC, and user toggles ChapterDetailVC's isFullScreen value
-	override func viewWillLayoutSubviews() {
-		super.viewWillLayoutSubviews()
+	override func viewDidLayoutSubviews() {
+		super.viewDidLayoutSubviews()
+		setAndDisbaleZooming()
+	}
+	
+	// MARK: - Custom functions
+	@objc private func setAndDisbaleZooming() {
 		pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
 		// Following 2 will disable zoom-in / zoom-out
 		pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
