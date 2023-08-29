@@ -38,6 +38,10 @@ class CourseCell: UICollectionViewCell {
 		self.createShadow()
     }
 	
+	required init?(coder: NSCoder) {
+		fatalError()
+	}
+	
 	override func layoutSubviews() {
 		super.layoutSubviews()
 		imageView.frame = contentView.frame
@@ -51,10 +55,6 @@ class CourseCell: UICollectionViewCell {
 		imageView.backgroundColor = (imageView.image == failedImage) ? .systemBrown : nil
 	}
 	    
-    required init?(coder: NSCoder) {
-        fatalError()
-    }
-    
 	override func prepareForReuse() {
 		super.prepareForReuse()
 		loadImageTask?.cancel()

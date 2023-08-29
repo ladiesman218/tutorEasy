@@ -108,11 +108,9 @@ class MyPDFVC: UIViewController {
 		loadTask = nil
 	}
 	
-	// Change scale factor when view's layoutChanges automatically, then disable zoom-in/zoom-out, so users can't change it. This viewDidLayoutSubviews() will be automatically called when this vc is a childVC of ChapterDetailVC, user toggles ChapterDetailVC's isFullScreen value
+	// Change scale factor when view's layoutChanges automatically, then disable zoom-in/zoom-out, so users can't change it. This viewDidLayoutSubviews() will be automatically called when this vc is a childVC of ChapterDetailVC, and user toggles ChapterDetailVC's isFullScreen value
 	override func viewWillLayoutSubviews() {
 		super.viewWillLayoutSubviews()
-		// For now, the only thing we do inside this function call is to auto-set pdfView's scaleFactor and disable zooming after set. So only do it when scale factor hasn't been set to the proper value.
-		guard pdfView.scaleFactor != pdfView.scaleFactorForSizeToFit else { return }
 		pdfView.scaleFactor = pdfView.scaleFactorForSizeToFit
 		// Following 2 will disable zoom-in / zoom-out
 		pdfView.minScaleFactor = pdfView.scaleFactorForSizeToFit
