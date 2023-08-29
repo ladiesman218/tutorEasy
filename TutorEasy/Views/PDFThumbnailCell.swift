@@ -11,7 +11,7 @@ class PDFThumbnailCell: UICollectionViewCell {
 	static let identifier = "pdfThumbnailCell"
 	// Cells not selected will have a little transparency, selected will be fully opaque
 	static let opacity: Float = 0.7
-	var imageView: UIImageView!
+	var imageView: UIImageView = UIImageView()
 	
 	let loadIndicator: UIActivityIndicatorView = {
 		let indicator = UIActivityIndicatorView()
@@ -23,22 +23,10 @@ class PDFThumbnailCell: UICollectionViewCell {
 
 	override init(frame: CGRect) {
 		super.init(frame: frame)
-		imageView = UIImageView()
-		contentView.layer.cornerRadius = contentView.frame.size.width * cornerRadiusMultiplier
-		contentView.layer.backgroundColor = UIColor.systemFill.cgColor
-		contentView.clipsToBounds = true
 		
 		contentView.addSubview(imageView)
 		contentView.addSubview(loadIndicator)
 		loadIndicator.frame = contentView.bounds
-		
-		imageView.translatesAutoresizingMaskIntoConstraints = false
-		NSLayoutConstraint.activate([
-			imageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-			imageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-			imageView.topAnchor.constraint(equalTo: contentView.topAnchor),
-			imageView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-		])
 	}
 	
 	required init?(coder: NSCoder) {
@@ -47,6 +35,11 @@ class PDFThumbnailCell: UICollectionViewCell {
 	
 	override func layoutSubviews() {
 		super.layoutSubviews()
+
+		contentView.layer.cornerRadius = contentView.frame.size.width * cornerRadiusMultiplier
+		contentView.layer.backgroundColor = UIColor.systemFill.cgColor
+		contentView.clipsToBounds = true
+		imageView.frame = contentView.bounds
 		if imageView.image == nil {
 			loadIndicator.startAnimating()
 		} else {
