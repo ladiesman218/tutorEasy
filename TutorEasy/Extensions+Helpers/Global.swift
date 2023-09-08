@@ -59,9 +59,9 @@ let failedImage = UIImage(named: "load-failed.png")!
 
 let placeHolderNumber = 8
 let placeHolderURL = URL(fileURLWithPath: "/")
-let placeHolderChapter = Chapter(directoryURL: placeHolderURL, name: "", isFree: false, pdfURL: placeHolderURL, bInstructionURL: nil, teachingPlanURL: nil, imageURL: nil)
+let placeHolderChapter = Chapter(directoryURL: placeHolderURL, name: "", isFree: false, pdfURL: placeHolderURL, bInstructionURL: nil, teachingPlanURL: nil, sstURL: nil, imageURL: nil)
 let failedURL = URL(fileURLWithPath: "")
-let failedChapter = Chapter(directoryURL: failedURL, name: " ", isFree: false, pdfURL: failedURL, bInstructionURL: nil, teachingPlanURL: nil, imageURL: nil)
+let failedChapter = Chapter(directoryURL: failedURL, name: " ", isFree: false, pdfURL: failedURL, bInstructionURL: nil, teachingPlanURL: nil, sstURL: nil, imageURL: nil)
 
 let placeHolderStage = Stage(directoryURL: placeHolderURL, name: "", description: " ", imageURL: nil, chapterURLs: [] )
 let failedStage = Stage(directoryURL: failedURL, name: " ", description: "  ", imageURL: nil, chapterURLs: [])

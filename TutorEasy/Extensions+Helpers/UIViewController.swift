@@ -7,6 +7,7 @@
 
 import UIKit
 import PDFKit
+import AVKit
 
 extension UIViewController {
 	
@@ -125,4 +126,43 @@ class CustomTapGestureRecognizer: UITapGestureRecognizer {
 
 class CustomButton: UIButton {
 	var animated: Bool?
+}
+
+extension UIViewController: AVPlayerViewControllerDelegate {
+	
+	func playVideo(url: URL) {
+		// If the player is playing in picture in picture mode, there is a chance user could click the play button again to start another playback, make sure that doesn't happen.
+		//		guard player.currentItem == nil else { return }
+		let playerViewController = AVPlayerViewController()
+		playerViewController.player = AVPlayer()
+		playerViewController.entersFullScreenWhenPlaybackBegins = true
+		playerViewController.delegate = self
+		playerViewController.showsTimecodes = true
+		
+		//		if #available(iOS 16.0, *) {
+		//			playerViewController.allowsVideoFrameAnalysis = true
+		//		}
+		
+		// Disable picture in picture for now. pip still cause some issue
+		playerViewController.allowsPictureInPicturePlayback = false
+		
+		playerViewController.player?.replaceCurrentItem(with: .init(url: url))
+		
+		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
+		
+		self.present(playerViewController, animated: true) {
+			playerViewController.player?.play()
+		}
+	}
+	
+	@objc private func didFinishPlaying() {
+		Task {
+			// According to documentation, sleep doesn’t block the underlying thread.
+			try await Task.sleep(nanoseconds: 300_000_000)
+			await MainActor.run {
+				// According to documentation, this only dismiss the view controller that was presented modally by the view controller.
+				self.dismiss(animated: true)
+			}
+		}
+	}
 }

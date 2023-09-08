@@ -14,15 +14,17 @@ class ChapterModel: Codable {
     let pdfURL: URL
 	let bInstructionURL: URL?
 	let teachingPlanURL: URL?
+	let sstURL: URL?
 	let imageURL: URL?
 	
-	init(directoryURL: URL, name: String, isFree: Bool, pdfURL: URL, bInstructionURL: URL?, teachingPlanURL: URL?, imageURL: URL?) {
+	init(directoryURL: URL, name: String, isFree: Bool, pdfURL: URL, bInstructionURL: URL?, teachingPlanURL: URL?, sstURL: URL?, imageURL: URL?) {
 		self.directoryURL = directoryURL
 		self.name = name
 		self.isFree = isFree
 		self.pdfURL = pdfURL
 		self.bInstructionURL = bInstructionURL
 		self.teachingPlanURL = teachingPlanURL
+		self.sstURL = sstURL
 		self.imageURL = imageURL
 	}
 }

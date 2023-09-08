@@ -48,7 +48,7 @@ class AuthenticationVC: UIViewController {
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
-    
+	#warning("what error message will be shown when login info is wrong")
     private let loginVC = LoginViewController()
     private lazy var registerVC = RegisterViewController()
     

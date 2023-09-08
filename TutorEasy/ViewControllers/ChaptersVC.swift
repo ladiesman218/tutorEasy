@@ -45,7 +45,7 @@ class ChaptersVC: UIViewController {
 		stageTitle.layer.backgroundColor = UIColor.systemTeal.cgColor
 		return stageTitle
 	}()
-#warning("添加双师堂按钮")
+	
 	private let chaptersCollectionView: UICollectionView = {
 		let layout = UICollectionViewFlowLayout()
 		let chaptersCollectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)

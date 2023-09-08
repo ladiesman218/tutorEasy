@@ -7,13 +7,12 @@
 
 import UIKit
 import PDFKit
-import AVKit
 
 class MyPDFVC: UIViewController {
 	// MARK: - Properties
 	
 	// All possible file extension for video used in pdf goes here
-	static let videoExtension = ["mp4"]
+	static let videoExtension = ["mp4", "mov", "m4v"]
 	// Playbutton's size
 	static let size = CGSize(width: 80, height: 80)
 	
@@ -21,10 +20,6 @@ class MyPDFVC: UIViewController {
 	
 	// Whether to display a close button. The button is only needed when this view controller displays nothing but a pdfView(no topView so the button is used for allowing user to go back to previous vc)
 	var showCloseButton: Bool = false
-	
-	private let player: AVPlayer = AVPlayer()
-	// After video finished playing, try to play it again will give black screen with ongoing audio. Debug view hierarchy shows something wierd in AVPlayerViewController's subview. Solution for now is to create a new instance of AVPlayerViewController everytime user click to play a video, so it has to be instantiated inside the pdfViewWillClick delegate method.
-	private var playerViewController: AVPlayerViewController!
 	
 	private var loadTask: Task<Void, Never>? = nil
 	
@@ -259,56 +254,8 @@ class MyPDFVC: UIViewController {
 
 extension MyPDFVC: PDFViewDelegate {
 	func pdfViewWillClick(onLink sender: PDFView, with url: URL) {
-		// If the player is playing in picture in picture mode, there is a chance user could click the play button again to start another playback, make sure that doesn't happen.
-		//		guard player.currentItem == nil else { return }
-		playerViewController = AVPlayerViewController()
-		playerViewController.entersFullScreenWhenPlaybackBegins = true
-		playerViewController.delegate = self
-		playerViewController.showsTimecodes = true
-		//		if #available(iOS 16.0, *) {
-		//			playerViewController.allowsVideoFrameAnalysis = true
-		//		}
-		
-		// Disable picture in picture for now. pip still cause some issue
-		playerViewController.allowsPictureInPicturePlayback = false
-		
-		// In PDF file, relative path is used for video files(relative to chapter's directory url), so when accessing the real file, we need to modify that link path.
 		let url = pdfURL.deletingLastPathComponent().appendingPathComponent(url.path)
 		let videoURL = baseURL.appendingPathComponent(FileAPI.FileType.protectedContent.rawValue).appendingPathComponent(url.path, isDirectory: false)
-		
-		player.replaceCurrentItem(with: .init(url: videoURL))
-		playerViewController.player = player
-		
-		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
-		
-		self.present(playerViewController, animated: true) { [unowned self] in
-			playerViewController.player?.play()
-		}
-		
+		playVideo(url: videoURL)
 	}
-}
-
-extension MyPDFVC: AVPlayerViewControllerDelegate {
-	
-	// When pip started, this method returns true, which enbales user to view pdf contents. If this returns false, pdf contents will be blocked by playerVC itself(which is a blank screen in pip mode).
-	func playerViewControllerShouldAutomaticallyDismissAtPictureInPictureStart(_ playerViewController: AVPlayerViewController) -> Bool {
-		return true
-	}
-	
-	// When clicking the restore button in pip window, restore playerViewController and keep playing the video. Without this, the resotre button acts like the close button.
-	func playerViewController(_ playerViewController: AVPlayerViewController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
-		self.present(playerViewController, animated: true)
-	}
-	
-	@objc private func didFinishPlaying() {
-		player.replaceCurrentItem(with: nil)
-		// If/when playback is in a pip window, due to the current implementation, playerVC is dismissed, and will be restored after playback finished. In that case the following dismiss command will happen earlier than the restoration without asyncAfter, therefor no dismission will actually happen. Adding asyncAfter will delay dismission, practically guarantee restoration happens first, and we get a successful dismiss.
-		Task {
-			try await Task.sleep(nanoseconds: 3_000_000)
-			await MainActor.run {
-				playerViewController.dismiss(animated: true)
-			}
-		}
-	}
-	
 }
