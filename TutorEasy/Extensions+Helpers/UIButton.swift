@@ -6,7 +6,7 @@
 //
 
 import UIKit
-// From https://stackoverflow.com/a/22621613/7224424 and modified to meet our needs for buttons added into the topView in ChapterDetailVC, to display links for teaching plan pdf, etc.
+// Seems like when added as a subview of UICollectionViewCell, UIbuton layout itself differently by default. Original answer at https://stackoverflow.com/a/22621613/7224424
 extension UIButton {
 	func centerVertically(padding: CGFloat = 0) {
 		
@@ -14,27 +14,18 @@ extension UIButton {
 			  let titleLabelSize = self.titleLabel?.frame.size else {
 			return
 		}
-
-		let totalHeight = imageViewSize.height + titleLabelSize.height + padding
 		
 		self.imageEdgeInsets = UIEdgeInsets(
 			top: 0,
-			left: 0.0,
-			bottom: 0.0,
-			right: -titleLabelSize.width
+			left: 0,
+			bottom: titleLabelSize.height,
+			right: 0
 		)
 		
 		self.titleEdgeInsets = UIEdgeInsets(
 			top: 0.0,
 			left: -imageViewSize.width,
-			bottom: -(totalHeight - titleLabelSize.height),
-			right: 0.0
-		)
-		
-		self.contentEdgeInsets = UIEdgeInsets(
-			top: 0.0,
-			left: 0.0,
-			bottom: titleLabelSize.height,
+			bottom: -imageViewSize.height,
 			right: 0.0
 		)
 	}

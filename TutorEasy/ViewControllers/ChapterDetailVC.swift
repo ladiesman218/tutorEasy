@@ -12,10 +12,14 @@ import AVKit
 class ChapterDetailVC: UIViewController {
 	
 	// MARK: - Properties
+	// These 4 are for toggling pdfView's full screen mode. pdfView's top and leading anchor are constrainted to topView and thumbnailCollectionView, when go into full screen mode, change these 2's layout will give us better animation than changing pdfView's top and leading constraint.
 	private var fullTop: NSLayoutConstraint!
 	private var noTop: NSLayoutConstraint!
 	private var fullThumb: NSLayoutConstraint!
 	private var noThumb: NSLayoutConstraint!
+	// Following 2 are for buttonsCollectionView
+	private var noButtons: NSLayoutConstraint!
+	private var fullButtons: NSLayoutConstraint!
 	
 	let pdfVC: MyPDFVC = {
 		let pdfVC = MyPDFVC()
@@ -23,7 +27,7 @@ class ChapterDetailVC: UIViewController {
 		return pdfVC
 	}()
 	
-	private var isFullScreen: Bool = false {
+	private var isFullScreen: Bool! {
 		didSet {
 			if isFullScreen {
 				fullTop.isActive = false
@@ -31,6 +35,8 @@ class ChapterDetailVC: UIViewController {
 				
 				noTop.isActive = true
 				noThumb.isActive = true
+				// When goes into full screen, hide buttonsCollectionVC
+				isToolsDisplaying = false
 			} else {
 				noTop.isActive = false
 				noThumb.isActive = false
@@ -38,42 +44,33 @@ class ChapterDetailVC: UIViewController {
 				fullTop.isActive = true
 				fullThumb.isActive = true
 			}
-			
-			UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseOut) { [weak self] in
-				// Calling layoutIfNeeded() on self.view will animate topView and thumbnailCollectionView's layout change
-				self?.view.layoutIfNeeded()
-				// Calling setNeedsLayout() on pdfVC's view will trigger its viewDidLayoutSubviews() function, in which we changed pdfView's scaleFactor. Actually when testing, calling self?.view.layoutIfNeeded() also triggers the function, but has no actual effect, adding this fix the bug.
-				self?.pdfVC.view.setNeedsLayout()
-			}
-			
-			// In case scrolling was happened when in full screen, then user exit full screen mode, change selected cell.
-			if !isFullScreen { changeSelectedCell() }
 		}
 	}
 	
-	var chapter: Chapter! {
+	private var isToolsDisplaying: Bool! {
 		didSet {
-			pdfVC.pdfURL = chapter.pdfURL
+			if isToolsDisplaying {
+				noButtons.isActive = false
+				fullButtons.isActive = true
+			} else {
+				fullButtons.isActive = false
+				noButtons.isActive = true
+			}
 		}
 	}
+	
+	var chapter: Chapter!
 	
 	private var thumbnails: [UIImage?] = .init(repeating: nil, count: placeHolderNumber)
 	
 	// MARK: - Custom subviews
 	private var topView: UIView!
 	private var backButtonView: UIView!
-	
-#warning("Add a menu button, when clicking, show the teachingplan and building instruction buttons etc")
-	
-	private let teachingPlanButton: ChapterButton = {
-		let button = ChapterButton(image: .init(named: "教案.png")!, titleText: "教案", fontSize: 10)
-		button.tag = 0
-		return button
-	}()
-	
-	private let buildingInstructionButton: ChapterButton = {
-		let button = ChapterButton(image: .init(named: "搭建说明.png")!, titleText: "搭建说明", fontSize: 10)
-		button.tag = 1
+		
+	private let toolsButton: UIButton = {
+		let button = UIButton()
+		button.translatesAutoresizingMaskIntoConstraints = false
+		button.setImage(UIImage(named: "toolbox")!, for: .normal)
 		return button
 	}()
 	
@@ -94,6 +91,8 @@ class ChapterDetailVC: UIViewController {
 		return collectionView
 	}()
 	
+	private let buttonsCollectionVC = ButtonsCollectionVC(collectionViewLayout: UICollectionViewFlowLayout())
+	
 	// MARK: - Controller functions
 	override func viewDidLoad() {
 		super.viewDidLoad()
@@ -103,40 +102,29 @@ class ChapterDetailVC: UIViewController {
 		topView.backgroundColor = .orange
 		backButtonView = setUpGoBackButton(in: topView)
 		
-		teachingPlanButton.isEnabled = chapter.teachingPlanURL != nil
-		teachingPlanButton.addTarget(self, action: #selector(goToPDF), for: .touchUpInside)
-		topView.addSubview(teachingPlanButton)
-		
-		buildingInstructionButton.isEnabled = chapter.bInstructionURL != nil
-		buildingInstructionButton.addTarget(self, action: #selector(goToPDF), for: .touchUpInside)
-		topView.addSubview(buildingInstructionButton)
-		
 		chapterTitle.text = chapter.name
 		chapterTitle.font = chapterTitle.font.withSize(Self.topViewHeight / 2)
 		topView.addSubview(chapterTitle)
 		
+		toolsButton.addTarget(self, action: #selector(toggleTools), for: .touchUpInside)
+		topView.addSubview(toolsButton)
+		
+		// Setting up pdfVC
+		pdfVC.pdfURL = chapter.pdfURL
+		self.addChild(pdfVC)
+		view.addSubview(pdfVC.view)
+		
+		// Config thumbnailCollectionView
 		thumbnailCollectionView.delegate = self
 		thumbnailCollectionView.dataSource = self
 		// Disable selection, then enable it when thumbnails have been generated. Change of selection before document has been loaded crash the app.
 		thumbnailCollectionView.allowsSelection = false
 		view.addSubview(thumbnailCollectionView)
 		
-		fullTop = topView.heightAnchor.constraint(equalToConstant: Self.topViewHeight)
-		noTop = topView.heightAnchor.constraint(equalToConstant: 0)
-		fullThumb = thumbnailCollectionView.trailingAnchor.constraint(equalTo: view.leadingAnchor, constant: view.frame.size.width * 0.2)
-		noThumb = thumbnailCollectionView.trailingAnchor.constraint(equalTo: view.leadingAnchor)
-		
-		// Manually set to avoid unnecessary animations
-		if isFullScreen {
-			noTop.isActive = true
-			noThumb.isActive = true
-		} else {
-			fullTop.isActive = true
-			fullThumb.isActive = true
-		}
-		
-		self.addChild(pdfVC)
-		view.addSubview(pdfVC.view)
+		// Config buttonsCollectionView, its view will over lap with pdfVC's view, although setting its zPosition can make the view visible, it won't respond to scroll or tapping interaction. Adding the view after adding pdfVC's view solves the problem.
+		buttonsCollectionVC.chapter = chapter
+		addChild(buttonsCollectionVC)
+		view.addSubview(buttonsCollectionVC.view)
 		
 		// Allow double tap and pinch to toggle full screen
 		let doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(toggleFullScreen))
@@ -149,18 +137,29 @@ class ChapterDetailVC: UIViewController {
 		NotificationCenter.default.addObserver(self, selector: #selector(createThumbnails), name: .PDFViewDocumentChanged, object: pdfVC.pdfView)
 		NotificationCenter.default.addObserver(self, selector: #selector(changeSelectedCell), name: .PDFViewPageChanged, object: pdfVC.pdfView)
 		
+		// Setting up changable constraints
+		fullTop = topView.heightAnchor.constraint(equalToConstant: Self.topViewHeight)
+		noTop = topView.heightAnchor.constraint(equalToConstant: 0)
+		fullThumb = thumbnailCollectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: view.frame.size.width * 0.2)
+		noThumb = thumbnailCollectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor)
+		// Squeezing buttonsCollectionVC's width may cause some cells displaying no button while scrolling too fast, or misplaced buttons when toggling display/not too fast, so here we just push it outside of the screen when not displaying.
+		fullButtons = buttonsCollectionVC.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -UIViewController.topViewHeight * 1.5)
+		noButtons = buttonsCollectionVC.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+		
+		isToolsDisplaying = false
+		isFullScreen = false
+		
 		NSLayoutConstraint.activate([
 			topView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
 			
-			teachingPlanButton.trailingAnchor.constraint(equalTo: topView.trailingAnchor, constant: 0),
-			teachingPlanButton.topAnchor.constraint(equalTo: topView.topAnchor),
-			teachingPlanButton.bottomAnchor.constraint(equalTo: topView.bottomAnchor),
-			teachingPlanButton.widthAnchor.constraint(equalToConstant: teachingPlanButton.width),
+			toolsButton.trailingAnchor.constraint(equalTo: topView.trailingAnchor, constant: -20),
+			toolsButton.topAnchor.constraint(equalTo: topView.topAnchor, constant: Self.topViewHeight * 0.1),
+			toolsButton.bottomAnchor.constraint(equalTo: topView.bottomAnchor, constant: -Self.topViewHeight * 0.1),
+			toolsButton.widthAnchor.constraint(equalTo: toolsButton.heightAnchor),
 			
-			buildingInstructionButton.trailingAnchor.constraint(equalTo: teachingPlanButton.leadingAnchor),
-			buildingInstructionButton.topAnchor.constraint(equalTo: topView.topAnchor),
-			buildingInstructionButton.bottomAnchor.constraint(equalTo: topView.bottomAnchor),
-			buildingInstructionButton.widthAnchor.constraint(equalToConstant: buildingInstructionButton.width),
+			buttonsCollectionVC.view.topAnchor.constraint(equalTo: topView.bottomAnchor),
+			buttonsCollectionVC.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+			buttonsCollectionVC.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 			
 			chapterTitle.leadingAnchor.constraint(equalTo: backButtonView.trailingAnchor, constant: Self.topViewHeight * 0.2),
 			chapterTitle.trailingAnchor.constraint(equalTo: topView.trailingAnchor, constant: -Self.topViewHeight * 2),
@@ -170,19 +169,22 @@ class ChapterDetailVC: UIViewController {
 			thumbnailCollectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
 			thumbnailCollectionView.topAnchor.constraint(equalTo: topView.bottomAnchor, constant: 10),
 			thumbnailCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-						
+			
 			pdfVC.view.leadingAnchor.constraint(equalTo: thumbnailCollectionView.trailingAnchor),
-			pdfVC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+			pdfVC.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 			pdfVC.view.topAnchor.constraint(equalTo: thumbnailCollectionView.topAnchor),
 			pdfVC.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
 		])
-		// Button's centerVertically() should be called after constraints have been set, coz it needs button's frame to have been set first. Both viewWillLayoutSubviews() and viewDidLayoutSubviews() can be and will be called multiple times(at least in this vc) hence cause bugs.
-		teachingPlanButton.centerVertically()
-		buildingInstructionButton.centerVertically()
 	}
 	
 	@objc private func toggleFullScreen() {
 		isFullScreen.toggle()
+		animateLayoutChange()
+	}
+	
+	@objc private func toggleTools(animated: Bool) {
+		isToolsDisplaying.toggle()
+		animateLayoutChange()
 	}
 	
 	@objc private func zoom(sender: UIPinchGestureRecognizer) {
@@ -191,6 +193,21 @@ class ChapterDetailVC: UIViewController {
 		} else {
 			isFullScreen = true
 		}
+		animateLayoutChange()
+	}
+	
+	private func animateLayoutChange() {
+		UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseOut) { [weak self] in
+			// Calling layoutIfNeeded() on self.view to animate topView and thumbnailCollectionView's layout change
+			self?.view.layoutIfNeeded()
+			// Calling setNeedsLayout() on pdfVC's view will trigger its viewDidLayoutSubviews() function, in which we changed pdfView's scaleFactor. Although calling self?.view.layoutIfNeeded() also triggers the function call, but has no actual effect because scaleFactor has to be changed after layout animation has finished, not during animation.
+			self?.pdfVC.view.setNeedsLayout()
+		} completion: { [weak self] _ in
+			// Changing of pdf current page may happen in full screen mode, when exit full screen, change selected cell. This should be called after layout change animation has finished, otherwise won't work.
+			if self?.isFullScreen == false {
+				self?.changeSelectedCell()
+			}
+		}
 	}
 	
 	// When scrolling on pdfView to change pdf page, change selected cell for thumbnail collection view, and update all visible cells' opacity value. This should be called only when not in full screen mode, otherwise it does nothing.
@@ -198,28 +215,13 @@ class ChapterDetailVC: UIViewController {
 		guard let labelString = pdfVC.pdfView.currentPage?.label, let labelInt = Int(labelString) else { return }
 		let index = labelInt - 1
 		
-		// Select item, and scroll it to vertically centered position
-		thumbnailCollectionView.selectItem(at: .init(item: index, section: 0), animated: true, scrollPosition: .centeredVertically)
+		// Select item, and scroll it to vertically centered position, or if it's the first index, scroll to top
+		thumbnailCollectionView.selectItem(at: .init(item: index, section: 0), animated: true, scrollPosition: (index == 0) ? .top : .centeredVertically)
 		// Call setNeedsLayout for all visible cells to update its opacity value
 		thumbnailCollectionView.visibleCells.forEach { $0.setNeedsLayout() }
 	}
 	
-	@objc private func goToPDF(sender: UIButton) {
-		let newVC = MyPDFVC()
-		if sender.tag == 0 {
-			// Teaching plan
-			guard let url = chapter.teachingPlanURL else { return }
-			newVC.pdfURL = url
-		} else if sender.tag == 1 {
-			// Building instruction
-			guard let url = chapter.bInstructionURL else { return }
-			newVC.pdfURL = url
-		}
-		newVC.showCloseButton = true
-		self.navigationController?.pushIfNot(newVC: newVC)
-	}
-	
-	@objc func createThumbnails() {
+	@objc private func createThumbnails() {
 		guard let document = pdfVC.pdfView.document else { return }
 		let lastIndex = document.pageCount - 1
 		guard lastIndex > 0 else { return }
