@@ -97,7 +97,11 @@ class CourseListVC: UIViewController {
 				let retry = UIAlertAction(title: "重试", style: .default) { action in
 					self?.refresh(sender: strongSelf.refreshControl)
 				}
-				let cancel = UIAlertAction(title: "取消", style: .cancel)
+				
+				let cancel = UIAlertAction(title: "取消", style: .cancel) { _ in
+					self?.refreshControl.endRefreshing()
+					self?.courseCollectionView.scrollToItem(at: .init(item: 0, section: 0), at: .top, animated: true)
+				}
 				error.present(on: strongSelf, title: "无法获取课程列表", actions: [retry, cancel])
 			}
 			self?.refreshControl.endRefreshing()

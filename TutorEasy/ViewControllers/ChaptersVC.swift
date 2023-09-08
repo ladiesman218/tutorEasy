@@ -266,7 +266,7 @@ extension ChaptersVC: SkeletonCollectionViewDataSource, SkeletonCollectionViewDe
 		return chapterTuples.count
 	}
 	
-	// cellForItemAt() will be called at a wierd time. For example, adding break point on condition of indexPath.itme == 15, it will be paused when collectionView is scrolled to the top, and the bottom, both situation the 16th cell is off screen(Maybe becoz of collectionView's bounce is enbaled?).
+	// cellForItemAt() will be called at a wierd time. For example, adding break point on condition of indexPath.itme == 15, it will be paused when collectionView is scrolled to the top and the bottom, both situation the 16th cell is off screen(turn off collectionView's bounce won't solve the issue).
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ChapterCell.identifier, for: indexPath) as! ChapterCell
