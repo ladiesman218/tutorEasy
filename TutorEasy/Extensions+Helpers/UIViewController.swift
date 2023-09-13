@@ -133,25 +133,24 @@ extension UIViewController: AVPlayerViewControllerDelegate {
 	func playVideo(url: URL) {
 		// If the player is playing in picture in picture mode, there is a chance user could click the play button again to start another playback, make sure that doesn't happen.
 		//		guard player.currentItem == nil else { return }
-		let playerViewController = AVPlayerViewController()
-		playerViewController.player = AVPlayer()
-		playerViewController.entersFullScreenWhenPlaybackBegins = true
-		playerViewController.delegate = self
-		playerViewController.showsTimecodes = true
-		
-		//		if #available(iOS 16.0, *) {
-		//			playerViewController.allowsVideoFrameAnalysis = true
-		//		}
-		
-		// Disable picture in picture for now. pip still cause some issue
-		playerViewController.allowsPictureInPicturePlayback = false
-		
-		playerViewController.player?.replaceCurrentItem(with: .init(url: url))
-		
 		NotificationCenter.default.addObserver(self, selector: #selector(didFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: nil)
 		
-		self.present(playerViewController, animated: true) {
-			playerViewController.player?.play()
+		Task.detached { [weak self] in
+			// Either initiating a controller or a player is time consuming, put it in background thread.
+			let playerViewController = await AVPlayerViewController()
+			let player = AVPlayer()
+			player.replaceCurrentItem(with: .init(url: url))
+
+			Task { @MainActor [weak self] in
+				playerViewController.player = player
+				playerViewController.delegate = self
+				// Disable pip playback for now, it causes more problems than benifits
+				playerViewController.allowsPictureInPicturePlayback = false
+				
+				self?.present(playerViewController, animated: true) {
+					playerViewController.player?.play()
+				}
+			}
 		}
 	}
 	

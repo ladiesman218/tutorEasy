@@ -46,6 +46,8 @@ extension URLSession {
 		let (data, response) = try await data(for: request)
 		let httpResponse = response as! HTTPURLResponse
 		try Task.checkCancellation()
+		// If it's a server error, give general error message to hide possible sensitive info.
+		if httpResponse.statusCode >= 500 { throw ResponseError(reason: "服务器错误，请联系管理员\(adminEmail)") }
 		return (data, httpResponse)
 	}
 	

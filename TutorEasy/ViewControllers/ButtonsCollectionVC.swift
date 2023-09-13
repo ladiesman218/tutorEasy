@@ -16,11 +16,11 @@ class ButtonsCollectionVC: UICollectionViewController {
 	private var buttonsArray = [ChapterButton]()
 	
 	// MARK: - Custom subviews
-
+	
 	// MARK: - Controller functions
 	override func viewDidLoad() {
 		super.viewDidLoad()
-
+		
 		view.translatesAutoresizingMaskIntoConstraints = false
 		collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: Self.cellIdentifier)
 		collectionView.backgroundColor = .systemBlue.withAlphaComponent(0.7)
@@ -53,9 +53,12 @@ class ButtonsCollectionVC: UICollectionViewController {
 	override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
 		
 		let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Self.cellIdentifier, for: indexPath)
-		let button = buttonsArray[indexPath.item]
-		// Clear subviews or some cells will show 2 buttons when scrolling up and down too fast
+		
+		// Remove previously added button, cuase cell is reused
 		cell.contentView.subviews.forEach { $0.removeFromSuperview() }
+		
+		// Add the right button
+		let button = buttonsArray[indexPath.item]
 		cell.contentView.addSubview(button)
 		button.frame = cell.contentView.bounds
 		return cell
@@ -64,7 +67,7 @@ class ButtonsCollectionVC: UICollectionViewController {
 	@objc private func chapterButtonTapped(sender: ChapterButton) {
 		guard let destURL = sender.destinationURL else { return }
 		let ext = destURL.pathExtension
-
+		
 		if ext == "pdf" {
 			let newVC = MyPDFVC()
 			newVC.pdfURL = destURL
