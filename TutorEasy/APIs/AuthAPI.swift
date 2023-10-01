@@ -82,6 +82,10 @@ struct AuthAPI {
 		
 		let (data, _) = try await noCacheSession.dataAndResponse(for: req)
 		
+		if let responseError = try? Decoder.isoDate.decode(ResponseError.self, from: data) {
+			throw responseError
+		}
+		
 		let token = try Decoder.isoDate.decode(Token.self, from: data)
 		
 		self.tokenValue = token.value

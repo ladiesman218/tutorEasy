@@ -8,7 +8,7 @@
 import UIKit
 
 class LoginViewController: UIViewController {
-	
+	//MARK: - Custom Views
 	private let loginNameTextField: UITextField = {
 		let textField = UITextField()
 		textField.autocapitalizationType = .none
@@ -57,6 +57,20 @@ class LoginViewController: UIViewController {
 		return indicator
 	}()
 	
+	private let forgetPWButton: UIButton = {
+		let button = UIButton()
+		button.translatesAutoresizingMaskIntoConstraints = false
+		button.setTitle("忘记密码", for: .normal)
+		button.setTitleColor(.systemBlue, for: .normal)
+		return button
+	}()
+	
+	//MARK: - Custom Functions
+	override func viewDidLayoutSubviews() {
+		super.viewDidLayoutSubviews()
+		forgetPWButton.titleLabel?.font = forgetPWButton.titleLabel?.font.withSize(loginNameTextField.frame.height * 0.7)
+	}
+	
 	@objc private func login() {
 		guard let username = loginNameTextField.text, !username.isEmpty else {
 			MessagePresenter.showMessage(title: "无效用户名", message: "请输入用户名", on: self, actions: [])
@@ -88,6 +102,11 @@ class LoginViewController: UIViewController {
 		}
 	}
 	
+	@objc private func forgetPassword() {
+		print("clicked")
+	}
+	
+	// MARK: - Controller Functions
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		view.backgroundColor = .systemBackground
@@ -97,6 +116,8 @@ class LoginViewController: UIViewController {
 		loginButton.addSubview(loginIndicator)
 		view.addSubview(loginButton)
 		loginButton.addTarget(self, action: #selector(login), for: .touchUpInside)
+		view.addSubview(forgetPWButton)
+		forgetPWButton.addTarget(self, action: #selector(forgetPassword), for: .touchUpInside)
 		
 		NSLayoutConstraint.activate([
 			loginNameTextField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
@@ -107,7 +128,10 @@ class LoginViewController: UIViewController {
 			passwordTextField.topAnchor.constraint(equalTo: loginNameTextField.bottomAnchor, constant: 20),
 			passwordTextField.widthAnchor.constraint(equalTo: loginNameTextField.widthAnchor),
 			
-			loginButton.topAnchor.constraint(equalTo: passwordTextField.bottomAnchor, constant: 20),
+			forgetPWButton.topAnchor.constraint(equalTo: passwordTextField.bottomAnchor),
+			forgetPWButton.trailingAnchor.constraint(equalTo: passwordTextField.trailingAnchor),
+			
+			loginButton.topAnchor.constraint(equalTo: forgetPWButton.bottomAnchor, constant: 20),
 			loginButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
 			loginButton.widthAnchor.constraint(equalTo: loginNameTextField.widthAnchor, multiplier: 0.8),
 			
